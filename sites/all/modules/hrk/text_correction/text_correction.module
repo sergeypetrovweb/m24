@@ -1,0 +1,12 @@
+<?php
+
+function text_correction_include(){
+    static $used = array();
+
+    if (!isset($used['text_correction']['lang_correction'])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'text_correction') . '/includes/ReflectionTypeHint.php');
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'text_correction') . '/includes/UTF8.php');
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'text_correction') . '/includes/Text/LangCorrect.php');
+        $used['text_correction']['lang_correction'] = TRUE;
+    }
+}

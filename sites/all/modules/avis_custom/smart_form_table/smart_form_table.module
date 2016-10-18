@@ -1,0 +1,260 @@
+<?php
+/**
+ * Implements hook_element_info().
+ */
+function smart_form_table_element_info() {
+  $types['smart_form_table'] = array(
+    '#tree' => TRUE,
+    '#process' => array('_process_smart_form_table'),
+    '#element_validate' => array('_validate_smart_form_table'),
+    '#columns' => array(),
+    '#add_name' => t('Add'),
+    '#theme' => array('avis_sort_table'),
+    '#default_value' => array(),
+  );
+
+  return $types;
+}
+
+/**
+ * Implements _validate_smart_form_table().
+ */
+function  _validate_smart_form_table($element, &$form_state, $form) {
+  //Логика галки "Удалить"
+  $form_state_values = $form_state['values'];
+  $values = drupal_array_get_nested_value(
+    $form_state['values'],
+    $element['#array_parents']
+  );
+  $save_values = $values;
+  $element_rows = array_filter(element_children($element), 'is_numeric');
+  $weight_index = array();
+
+  foreach ($element_rows as $row) {
+    $weight_index[$row] = $element[$row]['weight']['#value'];
+    unset($values[$row]);
+  }
+
+  asort($weight_index);
+
+  $i = 0;
+  foreach ($weight_index as $row => $weight) {
+    if ($save_values[$row]['remove'] != 1) {
+      $values[$i] = $save_values[$row];
+      $i++;
+    }
+  }
+
+  drupal_array_set_nested_value(
+    $form_state_values,
+    $element['#array_parents'],
+    $values,
+    TRUE
+  );
+  $form_state['values'] = $form_state_values;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function smart_form_table_theme($existing, $type, $theme, $path) {
+  $themes = array(
+    'avis_sort_table' => array(
+      'render element' => 'element'
+    ),
+  );
+
+  return $themes;
+}
+
+/**
+ * Implements theme_avis_sort_table().
+ */
+function theme_avis_sort_table($var) {
+  $element = $var['element']; //Елемент form_sort_table.
+  $element_key = implode('__', $element['#array_parents']);
+
+  $weight_css_class = $element_key . '-weight';
+  $header = array();
+  $rows = array();
+  $header[] = array(
+    'data' => '<span class="glyphicon glyphicon-retweet"></span>',
+    'class' => 'col-label'
+  );
+  //$column_keys = array();
+  foreach ($element['#columns'] as $id => $column) {
+    //$column_name = 'col_' . $id;
+    //$column_keys[$column_name] = implode('__', array_filter($element[0][$column_name]['#array_parents'], 'is_string'));
+    $header[] = array(
+      'data' => isset($column['title']) ? $column['title'] : '',
+      //'class' => $column_keys[$column_name],
+    );
+  }
+  $header[] = array(
+    'data' => '<span class="glyphicon glyphicon-remove"></span>',
+    'class' => 'col-remove'
+  );
+  $header[] = t('Weight');
+
+  $element_rows = array_filter(element_children($element), 'is_numeric');
+
+  foreach ($element_rows as $row) {
+    $data = array();
+    $data[] = array(
+      'data' => drupal_render($element[$row]['label']),
+      'class' => array('col-label')
+    );
+    //Обходим колонки
+    foreach ($element['#columns'] as $id => $column) {
+      $column_html = array();
+      foreach ($column['fields'] as $name => $field) {
+
+        $column_html[] .= drupal_render($element[$row][$name]);
+      }
+      $data[] = array(
+        'data' => implode('', $column_html),
+        //'class' => $column_keys[$column_name],
+      );
+    }
+    //Обходим колонки---
+    $data[] = array(
+      'data' => drupal_render($element[$row]['remove']),
+      'class' => 'col-remove'
+    );
+    $element[$row]['weight']['#attributes']['class'] = array($weight_css_class);
+    $data[] = drupal_render($element[$row]['weight']);
+    $rows[] = array(
+      'data' => $data,
+      'class' => array('draggable'),
+    );
+  }
+
+  $table_id = 'id_' . $element_key;
+  $output = '';
+  $output .= theme(
+    'table',
+    array(
+      'header' => $header,
+      'rows' => $rows,
+      'attributes' => array(
+        'id' => $table_id,
+        'class' => array('table-bordered')
+      ),
+    )
+  );
+  $output .= drupal_render($element['add_' . $element_key]);
+  $output .= drupal_render($element['count_' . $element_key]);
+
+  drupal_add_tabledrag($table_id, 'order', 'sibling', $weight_css_class);
+
+  return $output;
+}
+
+/**
+ * Provides get row functionality.
+ */
+function _smart_form_table_get_row($index, $element) {
+  $values = empty($element['#default_value'][$index]) ? array() : $element['#default_value'][$index];
+
+  $row = array(
+    'label' => array(
+      '#markup' => '',
+    ),
+    'remove' => array(
+      '#type' => 'checkbox',
+      '#default_value' => isset($values['remove']) ? $values['remove'] : 0,
+    ),
+    'weight' => array(
+      '#type' => 'weight',
+      '#title' => t('Weight'),
+      '#default_value' => isset($values['weight']) ? $values['weight'] : 10,
+      '#delta' => 10,
+      '#title_display' => 'invisible',
+    ),
+  );
+  foreach ($element['#columns'] as $id => $column) {
+    foreach ($column['fields'] as $field_name => $field) {
+      if (isset($values[$field_name])) {
+        $field['#default_value'] = $values[$field_name];
+      }
+      $row[$field_name] = $field;
+    }
+  }
+
+  return $row;
+}
+
+/**
+ * Process smart form table.
+ */
+function _process_smart_form_table($element, $form_state, $form) {
+  $element_key = implode('__', $element['#array_parents']);
+  $count_name = 'count_' . $element_key;
+
+  $rows_count = 1;
+
+  if (!empty($element['#default_value'])) {
+    $rows = array_filter($element['#default_value'], 'is_array');
+    $rows_count = count($rows);
+    foreach ($rows as $row_index => $row) {
+      $element[$row_index] = _smart_form_table_get_row(
+        $row_index,
+        $element
+      );
+    }
+  }
+  else {
+    $element[0] = _smart_form_table_get_row(0, $element);
+  }
+
+  if (empty($form_state['input'][$count_name])) {
+    $form_state['input'][$count_name] = $rows_count;
+  }
+
+  for ($i = $rows_count; $i < $form_state['input'][$count_name]; $i++) {
+    $element[$i] = _smart_form_table_get_row($i, $element);
+  }
+
+  //Кнопка "Добавить"
+  $element['add_' . $element_key] = array(
+    '#type' => 'submit',
+    '#attributes' => array('target' => array($element_key)),
+    '#name' => 'add_' . $element_key,
+    '#value' => $element['#add_name'],
+    '#submit' => array('_smart_form_table_add_more_add_one'),
+    //Увеличиваем счетчик строк на 1.
+    '#ajax' => array(
+      'callback' => '_smart_form_table_add_more_callback',
+      //Указываем какую часть формы надо заменить
+      'wrapper' => $form['#id'],
+      //Сss id который будет заменен на часть формы из _ui_strings_add_more_callback
+    ),
+  );
+
+  //Определим скрытый эллемент формы для хранения количества строк.
+  $element[$count_name] = array(
+    '#type' => 'hidden',
+    '#name' => $count_name,
+    '#value' => $form_state['input'][$count_name]
+  );
+
+  //dsm($form_state['storage']['smart_form_table'][$element_key]);
+  return $element;
+}
+
+/**
+ * Add more add one.
+ */
+function _smart_form_table_add_more_add_one($form, &$form_state) {
+  $element_key = $form_state['triggering_element']['#attributes']['target'][0];
+  $count_name = 'count_' . $element_key;
+  $form_state['input'][$count_name]++;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Add more callback.
+ */
+function _smart_form_table_add_more_callback($form, $form_state) {
+  return $form;
+}

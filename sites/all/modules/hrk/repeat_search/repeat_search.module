@@ -1,0 +1,176 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+
+function repeat_search_menu()
+{
+    $items['ajax/repeat_search/delete/%'] = array(
+        'title' => 'Delete search variant',
+        'page callback' => 'repeat_search_ajax_delete',
+        'page arguments' => array(3),
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+        'delivery callback' => 'ajax_deliver',
+    );
+
+    return $items;
+}
+
+/**
+ * Implement hook_block_info()
+ */
+function repeat_search_block_info()
+{
+    $blocks['repeat_search'] = array(
+        'info' => t('Repeat search'),
+        'cache' => DRUPAL_NO_CACHE, // default
+    );
+    return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function repeat_search_block_view($delta = '')
+{
+    $block = array();
+
+    switch ($delta) {
+        case('repeat_search'):
+            $block['subject'] = t('Repeat search');
+            $block['content'] = repeat_search_block();
+            break;
+    }
+
+    return $block;
+}
+
+/**
+ * Implement hook_theme()
+ */
+
+function repeat_search_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'repeat_search' => array(
+            'template' => 'repeat-search',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'rs_flight_unit' => array(
+            'template' => 'repeat-search-flight-unit',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'rs_hotel_unit' => array(
+            'template' => 'repeat-search-hotel-unit',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        )
+    );
+
+    return $theme;
+}
+
+function repeat_search_block()
+{
+    $session = hrk_system_session('repeat_search', 'variants');
+
+    $variants = array_reverse($session->getSession(null, array()), TRUE);
+
+    if (!empty($variants)) {
+        foreach ($variants as &$variant) {
+            if ($variant['type'] == 'flight') {
+
+                $search_info = hrk_sf_get_params_from_results_page_link($variant['path'], TRUE);
+
+                $variant['direction'] = $search_info['direction_type'];
+
+                if (!empty($search_info['trip'])) {
+                    $first = (object)reset($search_info['trip']);
+                    $end = (object)end($search_info['trip']);
+
+                    $variant['info']['from'] = array(
+                        'time' => strtotime($first->departure),
+                        'type' => $first->direction_from['type'],
+                        'code' => $first->direction_from['code'],
+                    );
+
+                    hrk_sf_codes()->delayCode($first->direction_from['type'], $first->direction_from['code']);
+
+                    $variant['info']['to'] = array(
+                        'time' => !empty($end->return) ? strtotime($end->return) : '',
+                        'type' => $end->direction_to['type'],
+                        'code' => $end->direction_to['code'],
+                    );
+                    hrk_sf_codes()->delayCode($end->direction_to['type'], $end->direction_to['code']);
+                }
+            }
+
+            if ($variant['type'] == 'hotel') {
+                $search_info = hrk_sh_get_params_from_results_page_link($variant['path'], TRUE);
+
+                if (!empty($search_info['location_id'])) {
+                    hrk_sh_codes()->delayCode('cities', $search_info['location_id']);
+                    $variant['info'] = $search_info;
+                    $variant['info']['check_in'] = strtotime($variant['info']['check_in']);
+                    $variant['info']['check_out'] = strtotime($variant['info']['check_out']);
+                }
+            }
+        }
+
+        hrk_sf_codes()->delayStart();
+        hrk_sh_codes()->delayStart();
+
+        foreach ($variants as &$variant) {
+            if (!empty($variant['info']) && $variant['type'] == 'flight') {
+                foreach ($variant['info'] as &$dir_variant) {
+                    $codes = hrk_sf_codes()->getCode($dir_variant['type'], $dir_variant['code']);
+                    $dir_variant['trip'] = reset($codes);
+                }
+            }
+
+            if (!empty($variant['info']) && $variant['type'] == 'hotel') {
+                $locations = hrk_sh_codes()->getCode('cities', $variant['info']['location_id']);
+                $variant['info']['location'] = reset($locations);
+            }
+        }
+    }
+
+    drupal_add_js(drupal_get_path('module', 'repeat_search') . '/js/repeat_search.js', array('scope' => 'footer'));
+    return theme('repeat_search', array('variants' => $variants));
+}
+
+function repeat_search_ajax_delete($index)
+{
+    $session = hrk_system_session('repeat_search', 'variants');
+
+    $session->destroy($index);
+}
+
+function hrk_rs_save_history($path, $type)
+{
+
+    $session = hrk_system_session('repeat_search', 'variants');
+
+    $trips = $session->getSession();
+
+    if (!empty($trips)) {
+        //check if this variant already exist
+        foreach ($trips as $key => $trip) {
+            $trip = (object)$trip;
+            if ($trip->path == $path) unset($trips[$key]);
+        }
+    }
+
+    if (count($trips) > 5) array_shift($trips);
+
+    $trips[] = array(
+        'path' => $path,
+        'type' => $type
+    );
+    ksort($trips);
+    $session->setSession($trips, TRUE);
+}

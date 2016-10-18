@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function li_translit_libraries_info()
+{
+    $libraries['translit'] = array(
+        'name' => 'jQuery liTranslit',
+        'version arguments' => array(
+            'file' => 'jquery.translit.js',
+            'pattern' => '@(?i:jQuery liTranslit) ([0-9\.a-z]+)@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'jquery.translit.js'
+            )
+        )
+    );
+
+    return $libraries;
+}

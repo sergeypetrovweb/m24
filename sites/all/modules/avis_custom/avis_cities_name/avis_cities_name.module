@@ -1,0 +1,242 @@
+<?php
+/**
+ * @file
+ * Module to get right cities name from Phpmorphy.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function avis_cities_name_menu() {
+  $items = array();
+  $items['control/cities_name'] = array(
+    'title' => 'Склонение городов',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для склонения названий городов',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_cities_name_batch_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['control/cities_name/test/%/%'] = array(
+    'title' => 'Склонение городов',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для склонения названий городов',
+    'page callback' => 'add_new_fix_name',
+    'page arguments' => array(3, 4),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements batch_form().
+ */
+function avis_cities_name_batch_form($form, &$form_state) {
+  $form['#markup'] = '<h2>Если очистить поле таблица, то поле кода и поле имени для склонения будут работать как кастомніе для добавления кастомных значений</h2>';
+  $form['table'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'avis_parsing_cities',
+    '#title' => 'Таблица',
+  );
+
+  $form['code'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'code',
+    '#title' => 'Поле кода',
+    '#required' => TRUE,
+  );
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'name',
+    '#title' => 'Поле имени для склонения',
+    '#required' => TRUE,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Начать',
+  );
+  return $form;
+}
+
+/**
+ * Implements batch_form_submit().
+ */
+function avis_cities_name_batch_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['table']) && !empty($form_state['values']['table'])) {
+    $cities = db_select($form_state['values']['table'], 'n')
+      ->fields('n', array(
+        $form_state['values']['code'],
+        $form_state['values']['name']
+      ))
+      ->execute()
+      ->fetchAllKeyed(0, 1);
+  }
+  else {
+    $cities = array($form_state['values']['code'] => $form_state['values']['name']);
+  }
+
+  $alr_have = db_select('avis_fixed_names', 'n')
+    ->fields('n', array('code'))
+    ->execute()
+    ->fetchAllKeyed(0, 0);
+
+  foreach ($cities as $code => $element) {
+    if (!isset($alr_have[$code])) {
+      $operations[] = array('avis_cities_name_fix', array($code, $element));
+    }
+  }
+
+  $batch = array(
+    // Массив операций и их параметров
+    'operations' => $operations,
+    // Функция, которая будет выполнена после окончания всех операций
+    'finished' => 'avis_cities_name_batch_finished',
+    // Заголовок страницы с прогресс баром.
+    // Опционально, по умолчанию t('Processing')
+    'title' => 'Идёт склонение..',
+    // Сообщение, показываемое при инициализации.
+    // Опционально, по умолчанию t('Initializing.')
+    'init_message' => 'Подготовка данных',
+    // Сообщение, показывемое при выполнении операций.
+    // Опционально, по умолчанию t('Completed @current of @total.')
+    'progress_message' => 'Выполнено @current из @total.',
+    // Сообщение показываемое при ошибке выполнения операции.
+    // Опционально, по умолчанию t('An error has occurred.')
+    'error_message' => 'Произошла ошибка.',
+  );
+
+  batch_set($batch);
+}
+
+/**
+ * Implements batch_form_operations_worker().
+ */
+function avis_cities_name_fix($code, $word, &$context) {
+  add_new_fix_name($code, $word);
+
+  // Эта информация будет доступна в mymodule_batch_finished
+  $context['results'][] = $code;
+  $context['message'] = 'Идёт склонение....';
+}
+
+/**
+ * Implements batch_form_operations_result().
+ */
+function avis_cities_name_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message('Успешно завершено! Обработано:' . count($results));
+  }
+  else {
+    drupal_set_message('Завершено с ошибками.', 'error');
+  }
+}
+
+/**
+ * Function return all declension of city name by cidy code.
+ */
+function get_all_form_name($code, $type) {
+  $have = db_select('avis_fixed_names', 'n')
+    ->fields('n')
+    ->condition('n.code', $code)
+    ->execute()
+    ->fetchObject();
+
+  if (!empty($have)) {
+    return $have;
+  }
+  else {
+
+    switch ($type) {
+      case 'city':
+        $getname = db_select('hrk_sf_cities', 'p')
+          ->fields('p', array('name_ru'))
+          ->condition('p.code', $code)
+          ->execute()
+          ->fetchField();
+        break;
+
+      case 'country':
+        $getname = db_select('hrk_sf_countries', 'p')
+          ->fields('p', array('name_ru'))
+          ->condition('p.code', $code)
+          ->execute()
+          ->fetchField();
+        break;
+    }
+
+    if (!empty($getname)) {
+      $result = (object) add_new_fix_name($code, $getname);
+    }
+    else {
+      $result = NULL;
+    }
+
+    return $result;
+  }
+}
+
+/**
+ * Function return declension from Phpmorphy.
+ */
+function add_new_fix_name($code, $word) {
+  require_once(dirname(__FILE__) . '/include/phpmorphy/src/common.php');
+  $dir = dirname(__FILE__) . '/include/phpmorphy/dicts';
+  $opts = array(
+    'storage' => PHPMORPHY_STORAGE_FILE,
+    // Enable prediction by suffix
+    'predict_by_suffix' => TRUE,
+    // Enable prediction by prefix
+    'predict_by_db' => TRUE
+  );
+
+  $dict_bundle = new phpMorphy_FilesBundle($dir, 'rus');
+
+  try {
+    $morphy = new phpMorphy($dict_bundle, $opts);
+  }
+  catch (phpMorphy_Exception $e) {
+    die('Error occured while creating phpMorphy instance: ' . $e->getMessage());
+  }
+
+  $word_one = mb_strtoupper($word);
+
+  try {
+    // word by word processing
+    // each function return array with result or FALSE when no form(s) for given word found(or predicted)
+    $all_forms = $morphy->getAllForms($word_one);
+
+    if (FALSE === $all_forms) {
+      die("Can`t find or predict $word_one word");
+    }
+
+  }
+  catch (phpMorphy_Exception $e) {
+    die('Error occured while text processing: ' . $e->getMessage());
+  }
+
+  $result = array(
+    'code' => $code,
+    'imenitelniy' => $all_forms[0] ? mb_convert_case($all_forms[0], MB_CASE_TITLE, "UTF-8") : '',
+    'roditelniy' => $all_forms[1] ? mb_convert_case($all_forms[1], MB_CASE_TITLE, "UTF-8") : '',
+    'datelniy' => $all_forms[2] ? mb_convert_case($all_forms[2], MB_CASE_TITLE, "UTF-8") : '',
+    'vinitelniy' => $all_forms[3] ? mb_convert_case($all_forms[3], MB_CASE_TITLE, "UTF-8") : '',
+    'tvoritelniy' => $all_forms[4] ? mb_convert_case($all_forms[4], MB_CASE_TITLE, "UTF-8") : '',
+    'predlojniy' => $all_forms[5] ? mb_convert_case($all_forms[5], MB_CASE_TITLE, "UTF-8") : '',
+  );
+
+  foreach ($result as $padej => $rez) {
+    if (empty($rez)) {
+      $result[$padej] = $all_forms[0];
+    }
+  }
+  // Drupal 7, dynamic query
+  db_insert('avis_fixed_names')
+    ->fields($result)
+    ->execute();
+
+  return $result;
+}
+
+

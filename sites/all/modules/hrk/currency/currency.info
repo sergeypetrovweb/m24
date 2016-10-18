@@ -1,0 +1,16 @@
+name = Block currency switcher
+description = Add currency switcher block
+core = 7.x
+package = HRK
+
+dependencies[] = ep_api
+dependencies[] = ultimate_cron
+
+files[] = class/currency.currency.inc
+
+scripts[] = js/currency.js
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-travel"
+datestamp = "1407427200"

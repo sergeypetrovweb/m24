@@ -1,0 +1,75 @@
+header {
+  .ajax-progress, .ajax-progress-throbber {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.1);
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    z-index: 500;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .ajax-progress-throbber .throbber {
+    height: 80px;
+    width: 80px;
+    background: #fff url('../images/ajax-loader.gif') no-repeat center center;
+    opacity: 0.9;
+    -webkit-box-shadow: 0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+    -moz-box-shadow:    0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+    box-shadow:         0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+    border-radius: 50%;
+    z-index: 501;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    margin-top: -25px;
+    margin-left: -25px;
+  }
+
+  .ajax-progress-throbber .message {
+    display: none;
+  }
+}
+
+// Fixed header
+#header-padding {
+  padding-top: 70px;
+  background-color: #fff;
+}
+
+.headroom {
+  -moz-transition: transform 200ms linear;
+  -webkit-transition: transform 200ms linear;
+  transition: transform 200ms linear;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  z-index: 999;
+  -webkit-box-shadow: 0 0 5px 0 rgba(50, 50, 50, 0.35);
+  -moz-box-shadow:    0 0 5px 0 rgba(50, 50, 50, 0.35);
+  box-shadow:         0 0 5px 0 rgba(50, 50, 50, 0.35);
+}
+.headroom--pinned {
+  -moz-transform: translateY(0%);
+  -webkit-transform: translateY(0%);
+  transform: translateY(0%);
+}
+.headroom--unpinned {
+  -moz-transform: translateY(-100%);
+  -webkit-transform: translateY(-100%);
+  transform: translateY(-100%);
+}
+//(End) Fixed Header
+
+fieldset.captcha {
+  margin-bottom: 20px;
+
+  .fieldset-description,
+  legend {
+    display: none;
+  }
+}

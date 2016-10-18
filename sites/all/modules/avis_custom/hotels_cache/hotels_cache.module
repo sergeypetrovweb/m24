@@ -1,0 +1,160 @@
+<?php
+/**
+ * @file
+ * Cache for populars hotels
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function hotels_cache_menu() {
+  $items = array();
+
+  $items['control/parse_hotels'] = array(
+    'title' => 'Parsing',
+    'page callback' => '__parse_air_hotels',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Provides parse hotels.
+ */
+function __parse_air_hotels() {
+  db_set_active('stage');
+  $route = db_select('avis_parsing_directions', 'dir');
+  $route->innerJoin('hrk_sf_cities', 'sf', 'dir.code_to = sf.code');
+  $route->innerJoin('hrk_sh_cities', 'sh', 'sh.name_en = sf.name_en');
+  $route->leftJoin('air_hotels_time', 'ht', 'sh.ctid = ht.cid');
+  $route = $route
+    ->fields('dir', array('code_to', 'id'))
+    ->fields('ht', array('time'))
+    ->fields('sh', array('name_en', 'lid', 'ctid'))
+    ->condition('ht.time', NULL)
+    ->orderBy('dir.id', 'asc')
+    ->range(0, 1)
+    ->execute()
+    ->fetchAllAssoc('code_to');
+  db_set_active('default');
+  if ($route) {
+    //dsm($route);
+    $route = array_shift($route);
+    $cl_session = hrk_cl_create_session();
+    $cl = hrk_cl_engine();
+    if (empty($cl_session) || !$cl->connect()) {
+      if (!empty($cl_session['sid'])) {
+        $cl->deleteSession($cl_session['sid']);
+      }
+    }
+
+    $sh_request_params = array(
+      'check_in' => '2015-10-15',
+      'check_out' => '2015-10-18',
+      'rooms' => array(
+        0 => array(
+          'adt' => 1,
+          'chd' => 0,
+          'age' => 0,
+        ),
+      ),
+      'location_id' => $route->lid,
+    );
+
+    $request = hrk_cl_search_hotels_request($cl_session['session'])
+      ->setCountry('RU')
+      ->setCurrency(currency_get_active_currency())
+      ->setDates($sh_request_params['check_in'], $sh_request_params['check_out'])
+      ->setRooms($sh_request_params['rooms'])
+      ->setLocationID($sh_request_params['location_id']);
+    $request_xml = $request->getRequest();
+
+    $response = $cl->doRequest($request_xml, $request::SOAP_ACTION);
+
+    if (!$response) {
+      hrk_cl_delete_session($cl_session['sid']);
+      // dsm('нет ответа');
+      db_set_active('stage');
+      db_insert('air_hotels_time')
+        ->fields(array(
+          'cid' => $route->ctid,
+          'time' => 1,
+        ))
+        ->execute();
+      db_set_active('default');
+      return 'нет ответа';
+    }
+
+    $result = hrk_sh_parse_response($response);
+
+    if (!empty($result['error'])) {
+      hrk_cl_delete_session($cl_session['sid']);
+      //dsm($result);
+      db_set_active('stage');
+      db_insert('air_hotels_time')
+        ->fields(array(
+          'cid' => $route->ctid,
+          'time' => 1,
+        ))
+        ->execute();
+      db_set_active('default');
+      return 'ошибка';
+    }
+
+    if ($result['hotels']) {
+      $hotels_to_save = array_splice($result['hotels'], 0, 5);
+      // dsm($hotels_to_save, '$hotels_to_save');
+      db_set_active('stage');
+      $transaction = db_transaction();
+      try {
+        if ($hotels_to_save) {
+
+          $save = db_insert('air_hotels')->fields(array(
+            'name',
+            'lower_price',
+            'address',
+            'rating',
+            'img_src',
+            'location_id',
+            'location_code',
+          ));
+
+          foreach ($hotels_to_save as $hotel) {
+            $save->values(array(
+              'name' => $hotel['name'],
+              'lower_price' => $hotel['lower_price'],
+              'address' => $hotel['address'],
+              'rating' => $hotel['rating'],
+              'img_src' => $hotel['img_src'],
+              'location_id' => $route->lid,
+              'location_code' => $route->code_to,
+            ));
+          }
+          $save->execute();
+
+          db_insert('air_hotels_time')
+            ->fields(array(
+              'cid' => $route->ctid,
+              'time' => time(),
+            ))
+            ->execute();
+        }
+        else {
+          db_insert('air_hotels_time')
+            ->fields(array(
+              'cid' => $route->ctid,
+              'time' => 1,
+            ))
+            ->execute();
+        }
+      }
+      catch (Exception $e) {
+        $transaction->rollback();
+        watchdog_exception('Route parsing', $e);
+      }
+      db_set_active('default');
+    }
+  }
+  return '!!';
+}

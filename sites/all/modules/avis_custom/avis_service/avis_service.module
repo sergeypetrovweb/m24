@@ -1,0 +1,269 @@
+<?php
+/**
+ * @file
+ * Module(testing) with implements functionality for create user from user_migrate
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function avis_service_menu() {
+  $items = array();
+  $items['connect/user/login'] = array(
+    'title' => 'Логин',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страница авторизации',
+    'page callback' => 'avis_service_login',
+    'page arguments' => array(),
+    'access arguments' => array('access content'),
+  );
+
+  $items['connect/bonus/add'] = array(
+    'title' => 'Добавить бонус',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Добавить бонус',
+    'page callback' => 'avis_service_bonus_add',
+    'page arguments' => array(),
+    'access callback' => array('user_access'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['connect/y/user'] = array(
+    'title' => 'Добавить бонус',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Добавить бонус',
+    'page callback' => 'y_test_add_user',
+    'page arguments' => array(),
+    'access callback' => array('user_access'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['connect/y/bonus'] = array(
+    'title' => 'Добавить бонус',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Добавить бонус',
+    'page callback' => 'y_test_bonus',
+    'page arguments' => array(),
+    'access callback' => array('user_access'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Testing for add user function.
+ */
+function y_test_add_user() {
+  $return = y_avisServiceCreateUser('Test_Avis', 'Test_Avis', '123123123', 'test_test_test@avis.com');
+  //dsm($return);
+  return '!!!';
+}
+
+/**
+ * Testing for syncr bonus function.
+ */
+function y_test_bonus() {
+  $return = y_syncrBonus(1000, 'test_test_test@avis.com');
+  //dsm($return);
+  return '!!!';
+}
+
+/**
+ * Synhronize user to mambo24.ru function
+ */
+function y_avisServiceCreateUser($name, $surname, $pass, $mail) {
+  $create_user_url = 'http://mambo24.ru/rest-user';
+  $adminToken = '99ba9370a53cdfd54297a0e8a90505f8';
+
+  $user_options = array(
+    'method' => 'POST',
+    'data' => 'email=' . $mail . '&password=' . $pass . '&name=' . $name
+      . '&surname=' . $surname,
+  );
+
+  $result = y_httpRequest($create_user_url, $user_options, $adminToken);
+
+  $data = json_decode($result);
+  return isset($data->userId);
+}
+
+/**
+ * Synhronize bonus from mambo24.ru function
+ */
+function avis_service_bonus_add() {
+  $bonus = $_POST['bonus'];
+  $mail = $_POST['userEmail'];
+  $user = user_load_by_mail($mail);
+
+  $user_data = NULL;
+
+  if ($user && $bonus) {
+    $user->field_user_bonus[LANGUAGE_NONE][0]['value'] = $bonus;
+    $save = user_save($user);
+    if ($save) {
+      $user_data = json_encode(array('uid' => 'OK'));
+    }
+    else {
+      $user_data = json_encode(array('uid' => 'USER_NOT_SAVE'));
+    }
+  }
+  else {
+    $user_data = json_encode(array('uid' => 'NOT_FIND_USER'));
+  }
+  print $user_data;
+  return;
+}
+
+/**
+ * LOGIN with POST method
+ */
+function avis_service_login() {
+  $username = $_POST['user'];
+  $password = $_POST['password'];
+
+  if (isset($_COOKIE['drupal_session_name']) && isset($_COOKIE['drupal_session_id']) && isset($_COOKIE['drupal_session_token'])) {
+    global $user;
+    $cookie = '' . $_COOKIE['drupal_session_name'] . '=' . $_COOKIE['drupal_session_id'] . '';
+    $login_data = json_encode(array(
+      'cookie' => $cookie,
+      'token' => $_COOKIE['drupal_session_token'],
+      'user' => $user->name
+    ));
+    print $login_data;
+    return;
+  }
+  else {
+    $login_url = $GLOBALS['base_url'] . '/user_migrate/user/login';
+
+    $user_data = '{
+			"username" : "' . $username . '",
+			"password" : "' . $password . '"
+		}';
+
+    $user_options = array(
+      'headers' => array(
+        'Content-Type' => 'application/json'
+      ),
+      'method' => 'POST',
+      'data' => $user_data
+    );
+  };
+
+  $result = drupal_http_request($login_url, $user_options);
+
+  if ($result->code == 200) {
+    $user_data = json_decode($result->data);
+
+    setcookie('drupal_session_name', $user_data->session_name);
+    setcookie('drupal_session_id', $user_data->sessid);
+
+    $cookie = '' . $user_data->session_name . '=' . $user_data->sessid . '';
+
+    $token_options = array(
+      'headers' => array(
+        'Cookie' => $cookie,
+      ),
+      'method' => 'GET',
+    );
+
+    $token = drupal_http_request($GLOBALS['base_url'] . '/services/session/token', $token_options);
+
+    setcookie('drupal_session_token', $token->data);
+
+    $login_data = json_encode(array(
+      'cookie' => $cookie,
+      'token' => $token->data,
+      'result' => $user_data->user->name
+    ));
+    print $login_data;
+    return;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * EXAMPLE. Function for create user on current site
+ */
+function avis_service_create_user($name, $surname, $pass, $mail) {
+  $url = $GLOBALS['base_url'] . '/user_migrate/user';
+
+  $user_data_array = array(
+    'mail' => $mail,
+    'pass' => $pass,
+    'status' => 1,
+    'roles' => 2,
+    'field_user_name' => array(
+      'und' => array(
+        0 => array(
+          'value' => $name
+        )
+      )
+    ),
+    'field_user_surname' => array(
+      'und' => array(
+        0 => array(
+          'value' => $surname
+        )
+      )
+    ),
+  );
+
+  $user_data = json_encode($user_data_array);
+
+
+  $log_req = drupal_http_request(
+    $GLOBALS['base_url'] . '/connect/user/login',
+    array(
+      'data' => 'password=pass&user=admin',
+      'method' => 'POST',
+    )
+  );
+
+  $login_data = drupal_json_decode($log_req->data);
+//  dsm($login_data);
+  $user_options = array(
+    'headers' => array(
+      'Content-Type' => 'application/json',
+      'Cookie' => $login_data['cookie'],
+      'X-CSRF-Token' => $login_data['token'],
+    ),
+    'method' => 'POST',
+    'data' => $user_data,
+  );
+
+  $result = drupal_http_request($url, $user_options);
+  $data = json_decode($result->data);
+
+  if ($result->code == 200) {
+    return $data->uid;
+  }
+  else {
+    return $result->error;
+  }
+//  return $result;
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function avis_service_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_register_form') {
+    $form['#submit'][] = 'create_mambo_user';
+  }
+}
+
+/**
+ * Provides creation user on mambo24.ru()
+ */
+function create_mambo_user($form, &$form_state) {
+  y_avisServiceCreateUser(
+    $form_state['values']['field_user_name'][LANGUAGE_NONE][0]['value'],
+    $form_state['values']['field_user_surname'][LANGUAGE_NONE][0]['value'],
+    $form_state['values']['pass'],
+    $form_state['values']['mail']
+  );
+}

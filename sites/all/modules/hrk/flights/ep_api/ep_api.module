@@ -1,0 +1,149 @@
+<?php
+
+define('EP_PROVIDER_AMADEUS', 1);
+define('EP_PROVIDER_TRAVEL_FUSION', 2);
+
+/**
+ * Implements hook_menu().
+ */
+function ep_api_menu()
+{
+    $items['admin/config/system/ep'] = array(
+        'title' => t('e-Power Configuration'),
+        'description' => t('Administer basic settings for the e-Power module.'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('ep_configuration_form'),
+        'access callback' => TRUE,
+        'file' => 'ep_api_admin.inc'
+    );
+    return $items;
+}
+
+
+function ep_api_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['ep_api'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'ep_api') . $dir . $type . ".inc");
+        $used['ep_api'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+function ep_api_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'ep_popup' => array(
+            'template' => 'ep-popup',
+            'variables' => array('title' => 'Error'),
+            'path' => $path . '/templates'
+        )
+    );
+
+    return $theme;
+}
+
+function ep_api_cronapi()
+{
+    $items = array();
+    $items['ep_api_close_sessions'] = array(
+        'title' => t('Close amadeus session after 15 minutes'),
+        'file' => 'cron.inc',
+        'file path' => drupal_get_path('module', 'ep_api') . '/cron',
+        'callback' => 'ep_api_close_sessions',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('*/1 * * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+function hrk_ep_create_session()
+{
+    ep_api_include('EPower');
+    return \includes\EPower::createSession();
+}
+
+function hrk_ep_get_session($sid)
+{
+    ep_api_include('EPower');
+    return \includes\EPower::getSession($sid);
+}
+
+function hrk_ep_engine()
+{
+    ep_api_include('EPower');
+    return new \includes\EPower();
+}
+
+function hrk_ep_delete_session($sid)
+{
+    ep_api_include('EPower');
+    return \includes\EPower::deleteSession($sid);
+}
+
+function hrk_ep_make_search_request($type)
+{
+    switch ($type) {
+        case'flight':
+            ep_api_include('EP_FlightSearch', 'requests');
+            return new \requests\EP_FlightSearch();
+            break;
+        case 'flight_calendar':
+            ep_api_include('EP_Calendar', 'requests');
+            return new \requests\EP_Calendar();
+    }
+}
+
+function hrk_ep_booking_request($type)
+{
+    switch ($type) {
+        case'booking':
+            ep_api_include('EP_Booking', 'requests');
+            return new \requests\EP_Booking();
+            break;
+        case'lcc':
+            ep_api_include('Ep_LCC', 'requests');
+            return new \requests\Ep_LCC();
+            break;
+        case'booking_ext':
+            ep_api_include('EP_BookingExt', 'requests');
+            return new \requests\EP_BookingExt();
+            break;
+        case'booking_reference':
+            ep_api_include('EP_BookingReference', 'requests');
+            return new \requests\EP_BookingReference();
+            break;
+    }
+}
+
+function hrk_ep_cancel_booking(){
+    ep_api_include('EP_Cancel', 'requests');
+    return new \requests\EP_Cancel();
+}
+
+
+function hrk_ep_errors()
+{
+    ep_api_include('EP_Errors');
+    return new \includes\EP_Errors();
+}
+
+function ep_popup($popup_name, $args = array())
+{
+    drupal_add_js(drupal_get_path('module', 'ep_api') . '/js/ep_popup.js');
+    return theme('ep_popup', array_merge(array('popup' => $popup_name), $args));
+}
+
+function ep_check_db_session_expire($db_session)
+{
+    if (!empty($db_session) && $db_session['created'] <= strtotime('- 15 minutes', REQUEST_TIME)) return TRUE;
+
+    return FALSE;
+}

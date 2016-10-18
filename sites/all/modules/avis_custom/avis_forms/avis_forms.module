@@ -1,0 +1,144 @@
+<?php
+/**
+ * @file
+ * Api for ajax forms.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function avis_forms_menu() {
+  $items = array();
+
+  $items['admin/config/user-interface/ajax_forms'] = array(
+    'title' => 'Настройки аякс форм',
+    'description' => 'Страница настроек для аякс форм',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_avis_forms_form'),
+    'access arguments' => array('administer site configuration'),
+    // Настройки доступа к странице настроек модуля
+    'file' => 'avis_forms.admin.inc',
+    // Файл, в котором лежит функция отрисовки страницы настроек модуля (foundation_config_form)
+  );
+
+  // controller link
+  $items['modal/%'] = array(
+    'title' => 'Processing link',
+    'page callback' => '_avis_modal_form_controller',
+    'page arguments' => array(1, 2),
+    //TODO тут можно добавить аргументы с langcode
+    'access arguments' => array('access content'),
+  );
+
+  $items['ajax_forms_ajax'] = array(
+    'page callback' => 'ajax_forms_ajax_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  return $items;
+}
+
+function _avis_modal_form_controller($path) {
+  $form_id = variable_get('avis_forms_' . $path . '_id', '');
+  $form_type = variable_get('avis_forms_' . $path . '_type', '');
+  $form_title = variable_get('avis_forms_' . $path . '_title', '');
+  //$message = variable_get('avis_forms_' . $path . '_message', '');
+  $output = '';
+  if (!empty($form_id) && !empty($form_type)) {
+    switch ($form_type) {
+      case 'webform' :
+        $output = '<a class="close-reveal-modal icon-end"></a><div id="modal-title-wrapper"><h2 class="form-title"><span>' . $form_title . '</span></h2></div>' . render(node_view(node_load($form_id)));
+        break;
+
+      case 'comment' :
+        $comment = new stdClass;
+        $comment->nid = $form_id;
+        $form = drupal_get_form('comment_form', $comment);
+        $output = '<a class="close-reveal-modal icon-end"></a><div id="modal-title-wrapper"><h2 class="form-title"><span>' . $form_title . '</span></h2></div>' . render($form);
+        break;
+
+      case 'default' :
+        $output = '<h2 class="form-title">' . $form_title . '</h2>' . render(drupal_get_form($form_id));
+        break;
+    }
+    print '<div class="modal">' . $output . '</div>';
+  }
+}
+
+function avis_forms_init() {
+  $ids = explode("\n", trim(variable_get('id_textarea', 'example')));
+  $form_ids = array();
+  foreach ($ids as $id) {
+    $id = trim($id);
+    if (variable_get('avis_forms_' . $id . '_id', FALSE)) {
+      $form_ids[] = variable_get('avis_forms_' . $id . '_id', FALSE);
+    }
+  }
+  $GLOBALS['avis_forms_id_textarea'] = $form_ids;
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function avis_forms_form_alter(&$form, &$form_state, $form_id) {
+  global $theme;
+  if ($theme !== 'seven' && arg(0) !== 'admin' && arg(0) !== 'control') {
+    if (isset($form['#node'])) { // patch Undefined index: #node в функции avis_forms_form_alter() bug
+      if (is_object($form['#node'])) {
+        if ($form['#node']->type == "webform" || $form_id == "comment_form") {
+          $form_id = $form['#node']->nid;
+        }
+      }
+    }
+
+    if (array_search($form_id, $GLOBALS['avis_forms_id_textarea']) !== FALSE) {
+      // Добавляем div, куда будем ложить сообщения, в самый верх формы
+      // Включаем ajax для кнопки
+      $form['#prefix'] = '<div id="' . $form['#id'] . '-ajax-forms-messages"></div>';
+      $form['actions']['submit']['#ajax'] = array(
+        'path' => 'ajax_forms_ajax',
+      );
+    }
+  }
+}
+
+/**
+ * Provides ajax callback for form submit
+ */
+function ajax_forms_ajax_callback() {
+  global $user;
+//    module_load_include('pages.inc', 'user');
+//    module_load_include('inc', 'node', 'node.pages');
+
+  // Получаем данные о форме и её состоянии
+  list($form, $form_state) = ajax_get_form();
+  // Заставляем выполниться все действия формы, то есть
+  // выполняем все validate и submit функции для этой формы.
+  drupal_process_form($form['#form_id'], $form, $form_state);
+
+  // Собираем сообщения, которые вылезли в процессе выполнения формы
+  $commands = array();
+  $messages = theme('status_messages');
+  $commands[] = array('command' => 'log', 'data' => 'sdsddddddddddddddd');
+//    dsm($messages);
+  if (strpos($messages, 'error') !== FALSE) {
+    //$commands[] = array('command' => 'log', 'data' => $messages);
+    $commands[] = ajax_command_html('#' . $form['#id'] . '-ajax-forms-messages', $messages);
+  }
+  else {
+    $commands[] = ajax_command_replace('#' . $form['#id'], '');
+    $success = t('<p>Thanks, your application has been received. We will answer you in the near time! With the best regards, mambo24travel.com team.</p>');
+
+    if (($form['#form_id'] == 'webform_client_form_315' || $form['#form_id'] == 'webform_client_form_319') && function_exists('generate_payment_form')) {
+      $success = render(generate_payment_form());
+    }
+
+    $commands[] = ajax_command_html('#' . $form['#id'] . '-ajax-forms-messages', $success);
+  }
+
+  // Записываем сообщение в div, который был добавлен вверху формы
+  return array('#type' => 'ajax', '#commands' => $commands);
+}

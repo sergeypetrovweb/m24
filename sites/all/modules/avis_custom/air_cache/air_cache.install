@@ -1,0 +1,161 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function air_cache_schema() {
+  $schema = array();
+
+  $schema['air_combinations'] = array(
+    'description' => 'Flight combinations for fast search.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'The primary identifier for booking.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'airline_code' => array(
+        'description' => 'Airline code',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'price' => array(
+        'description' => 'Price',
+        'type' => 'float',
+        'length' => '24',
+        'not null' => TRUE,
+      ),
+      'time_in_air' => array(
+        'description' => 'Seconds in air',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'transfer_flights' => array(
+        'description' => 'Transfer flights',
+        'type' => 'varchar',
+        'length' => '5',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'arrival' => array(
+        'description' => 'Arrival',
+        'type' => 'varchar',
+        'length' => '15',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'city_arrival' => array(
+        'description' => 'City arrival',
+        'type' => 'varchar',
+        'length' => '5',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'city_departure' => array(
+        'description' => 'City departure',
+        'type' => 'varchar',
+        'length' => '5',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'plain' => array(
+        'description' => 'Plain',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+      'design_quantity' => array(
+        'description' => 'Design quantity',
+        'type' => 'varchar',
+        'length' => '3',
+        'not null' => FALSE,
+        'default' => '0',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $schema['air_directions_time'] = array(
+    'description' => 'Flight combinations for fast search.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'did' => array(
+        'description' => 'Direction code',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'time' => array(
+        'description' => 'Parsed on',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['air_calendar'] = array(
+    'description' => 'Data for landing calendar',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'did' => array(
+        'description' => 'Direction code',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'month' => array(
+        'description' => 'Direction code',
+        'type' => 'varchar',
+        'length' => '7',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'price' => array(
+        'description' => 'Price',
+        'type' => 'float',
+        'length' => '24',
+        'not null' => TRUE,
+      ),
+      'time' => array(
+        'description' => 'Parsed on',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function air_cache_uninstall() {
+  drupal_uninstall_schema('air_combinations');
+  drupal_uninstall_schema('air_directions_time');
+  drupal_uninstall_schema('air_calendar');
+}

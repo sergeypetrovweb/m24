@@ -1,0 +1,154 @@
+<?php
+/**
+ * @file
+ * Migration module for users from mambo24.ru
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function avis_user_migrate_menu() {
+  $items = array();
+  $items['control/user_migrate'] = array(
+    'title' => 'Миграция юзеров',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для начала миграции',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_user_migrate_batch_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements batch_form().
+ */
+function avis_user_migrate_batch_form($form, &$form_state) {
+  db_set_active('migrate_from');
+  $mambausers = db_select('user', 'u')
+    ->fields('u')
+    ->execute()
+    ->fetchAll();
+
+  db_set_active('default');
+  $users = db_select('users', 'u')
+    ->fields('u')
+    ->execute()
+    ->fetchAll();
+
+  foreach ($mambausers as $mambauser) {
+    $new = TRUE;
+
+    foreach ($users as $someuser) {
+      if ($mambauser->email == $someuser->mail) {
+        $new = FALSE;
+        break;
+      }
+    }
+
+    if ($new) {
+      $form_state['newusers'][] = $mambauser;
+    }
+  }
+
+  if (!empty($form_state['newusers'])) {
+    drupal_set_message('Новых пользователей: ' . count($form_state['newusers']));
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Начать',
+    );
+  }
+  else {
+    drupal_set_message('Новых пользователей не обнаружено');
+  }
+
+  return $form;
+}
+
+/**
+ * Implements batch_form_submit().
+ */
+function avis_user_migrate_batch_form_submit($form, &$form_state) {
+  foreach ($form_state['newusers'] as $newuser) {
+    $operations[] = array('avis_user_migrate_data', array($newuser));
+  }
+
+  $batch = array(
+    // Массив операций и их параметров
+    'operations' => $operations,
+    // Функция, которая будет выполнена после окончания всех операций
+    'finished' => 'avis_user_migrate_batch_finished',
+    // Заголовок страницы с прогресс баром.
+    // Опционально, по умолчанию t('Processing')
+    'title' => 'Идёт парсинг..',
+    // Сообщение, показываемое при инициализации.
+    // Опционально, по умолчанию t('Initializing.')
+    'init_message' => 'Подготовка данных',
+    // Сообщение, показывемое при выполнении операций.
+    // Опционально, по умолчанию t('Completed @current of @total.')
+    'progress_message' => 'Выполнено @current из @total.',
+    // Сообщение показываемое при ошибке выполнения операции.
+    // Опционально, по умолчанию t('An error has occurred.')
+    'error_message' => 'Произошла ошибка.',
+  );
+
+  batch_set($batch);
+}
+
+/**
+ * Migration logic.
+ */
+function avis_user_migrate_data($newuser, &$context) {
+  $new_user = array(
+    'name' => generate_login($newuser->name, $newuser->surname),
+    'pass' => $newuser->password_hash,
+    'mail' => $newuser->email,
+    'status' => 1,
+    'init' => $newuser->email,
+    'roles' => array(
+      DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+    ),
+    'field_user_name' => array(
+      'und' => array(
+        0 => array(
+          'value' => $newuser->name,
+        ),
+      ),
+    ),
+    'field_user_surname' => array(
+      'und' => array(
+        0 => array(
+          'value' => $newuser->surname,
+        ),
+      ),
+    ),
+  );
+
+  $user = user_save(NULL, $new_user);
+
+  db_insert('avis_migrate_users')
+    ->fields(array(
+      'mamba_id' => $newuser->id,
+      'uid' => $user->uid,
+    ))
+    ->execute();
+
+  // Эта информация будет доступна в mymodule_batch_finished
+  $context['results'][] = $user;
+
+  $context['message'] = 'Идёт миграция юзера ' . $newuser->id;
+}
+
+/**
+ * Results.
+ */
+function avis_user_migrate_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message('Успешно завершено!');
+  }
+  else {
+    drupal_set_message('Завершено с ошибками.', 'error');
+  }
+}

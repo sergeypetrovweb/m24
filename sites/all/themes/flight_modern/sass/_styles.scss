@@ -1,0 +1,822 @@
+header {
+  ul.nav.navbar-nav.login {
+    margin-left: 0;
+
+    .user-not-logged-in {
+      padding-top: 9px;
+    }
+  }
+
+  ul.nav.navbar-nav.login > li.dropdown {
+    &.user {
+      padding: 16px 0 12px;
+
+      .dropdown-menu {
+        left: auto;
+        right: 22px;
+      }
+    }
+
+    &.languages {
+      .dropdown-toggle {
+        text-indent: -9999px;                 /* sends the text off-screen */
+        position: relative;
+        white-space: nowrap;
+
+        span {
+          text-indent: 0;
+          position: absolute;
+          top: 0;
+          left: 0;
+          padding: 0 15px;
+          display: block;
+
+          img {
+            display: block;
+          }
+        }
+      }
+
+      .active_dropdown img {
+        width: 19px;
+        height: auto;
+      }
+
+      .dropdown-menu {
+        left: auto;
+        right: -13px;
+
+        .active {
+          display: none;
+        }
+      }
+    }
+
+    &.currency {
+      .dropdown-toggle {
+        padding-right: 16px;
+      }
+
+      .dropdown-menu:before {
+        right: 80px;
+      }
+    }
+  }
+
+  .user-name {
+    //font: normal 16px 'Arial';
+
+    .glyphicon-triangle-bottom {
+      font-size: 9px;
+      color: #555;
+    }
+
+    .user-pic,
+    .glyphicon {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .user-pic {
+      margin: 0 8px;
+    }
+
+    img {
+      width: 38px;
+      height: 38px;
+      display: inline-block;
+      border-radius: 50%;
+    }
+  }
+
+  .dropdown-toggle {
+    background: none !important;
+  }
+
+  .dropdown-menu > .active > a {
+    background-color: transparent;
+    color: #10ACD6 !important;
+  }
+
+  li.dropdown.open span.active_dropdown {
+    background: none;
+  }
+
+  .navbar-nav > li > .dropdown-menu {
+    border: 1px solid #eee;
+    -webkit-box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, 0.2);
+    -moz-box-shadow:    2px 2px 5px 0 rgba(0, 0, 0, 0.2);
+    box-shadow:         2px 2px 5px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 0;
+    background-color: #f9f9f9;
+    top: 65px;
+    min-width: 155px;
+    padding: 2px 0;
+
+    &:before {
+      content: '';
+      width: 36px;
+      height: 16px;
+      display: inline-block;
+      position: absolute;
+      top: -8px;
+      right: 18px;
+      background: url('/sites/all/themes/flight_modern/images/arrow_ctools_dropdown.png') no-repeat center;
+    }
+
+    li {
+      &:last-child {
+        a {
+          border-bottom: none;
+        }
+      }
+
+      a {
+        color: #777;
+        font: normal 15px 'Arial';
+        width: 120px;
+        padding: 11px 0;
+        margin: 0 auto;
+        border-bottom: 1px solid #eee;
+        border-right: none !important;
+        @include transitionAll(.15s);
+
+        &:hover {
+          background: transparent;
+          color: #10ACD6;
+
+          span.glyphicon {
+            color: #10ADD6;
+          }
+        }
+
+        span.glyphicon {
+          color: #ababab;
+          font-size: 16px;
+          position: relative;
+          top: 3px;
+          margin-right: 9px;
+          @include transitionAll(.15s);
+        }
+      }
+    }
+  }
+}
+
+#panelpage {
+  background: #fff;
+  position: relative;
+  &.twocol {
+    @include breakpoint ($desktop) {
+      display: table;
+    }
+
+    .left-column {
+      @include breakpoint ($desktop) {
+        display: table-cell;
+        width: 60%;
+      }
+    }
+
+    .right-column {
+      background: #FFFFDD;
+      vertical-align: top;
+      width: 100%;
+      height: auto;
+      @include breakpoint ($desktop) {
+        display: table-cell;
+        width: 40%;
+      }
+    }
+  }
+
+  .left-column {
+    padding: 50px;
+    vertical-align: top;
+  }
+
+  .right-column {
+    width: 0;
+    height: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  h2 {
+    font: bold 30px/1.2 "Arial";
+    color: #444;
+    margin: 20px 0;
+
+    &:first-child {
+      margin: 0 0 20px;
+    }
+  }
+
+  li,p,a {
+    font: 16px/1.2 "Arial";
+    color: #535353;
+  }
+
+  p {
+    line-height: 1.5;
+  }
+
+  ul {
+    padding-left: 7px;
+  }
+
+  #inform {
+    padding-bottom: 50px;
+    border-bottom: 1px dashed #999;
+
+    h2 {
+      margin-top: 5px;
+    }
+
+    li {
+      display: block;
+      top: 0;
+      margin: 16px 0;
+
+      &:before {
+        position: relative;
+        top: 5px;
+        display: inline-block;
+        font-family: 'Glyphicons Halflings';
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        font-size: 20px;
+        color: #FFDA24;
+        margin-right: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    }
+  }
+
+  .node-webform > h2 {
+    display: none;
+  }
+
+  .webform-client-form {
+    padding-top: 23px;
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input.form-text {
+      margin: 5px 0;
+      height: 50px;
+      width: 100%;
+      padding: 10px;
+      font: 16px "Arial";
+      color: #999999;
+    }
+
+    textarea {
+      margin: 5px 0 10px;
+      height: 210px;
+      width: 100%;
+      padding: 10px;
+      font: 16px "Arial";
+      color: #999999;
+    }
+  }
+
+  @include breakpoint ($desktop) {
+    .map {
+      height: 1000px;
+    }
+  }
+
+  @include breakpoint ($tablet) {
+    .map {
+      height: 500px;
+    }
+  }
+  @include breakpoint ($mobile) {
+    .map {
+      height: 300px;
+    }
+  }
+
+}
+
+//Если заказов в личном кабинете нет, выводится блок.
+#account.orders-empty {
+  border-bottom: none;
+  background: transparent;
+  padding: 0;
+}
+
+#panelpage .no-orders {
+  border: none;
+  padding: 0;
+  text-align: left;
+
+  .button {
+    font: bold 15px/46px 'Arial';
+    color: #fff;
+
+    &:first-child {
+      margin-left: 0;
+    }
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.no-orders {
+  background-color: #fff;
+  border: 1px solid #E5E3E4;
+  text-align: center;
+  padding: 34px 15px 58px;
+
+  .content {
+    max-width: 690px;
+    margin: 0 auto;
+  }
+
+  h2 {
+    font: bold 30px/1.2 'Arial';
+    color: #444;
+  }
+
+  p {
+    font: normal 16px/1.5 'Arial';
+    color: #525252;
+    margin: 0;
+  }
+
+  .buttons {
+    padding-top: 12px;
+    margin-bottom: 3px;
+  }
+
+  .button {
+    display: inline-block;
+    height: 46px;
+    padding: 0 32px;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    font: bold 15px/46px 'Arial';
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+    margin: 10px 7px 0;
+    @include transitionAll(.15s);
+
+    &:hover {
+      text-decoration: none;
+      color: #fff;
+    }
+  }
+
+  .button_flight {
+    background-color: #E94E38;
+    -webkit-box-shadow: 3px 3px 0 0 #B22D1B;
+    -moz-box-shadow:    3px 3px 0 0 #B22D1B;
+    box-shadow:         3px 3px 0 0 #B22D1B;
+
+    &:hover {
+      background-color: #da4835;
+    }
+    &:active {
+      background-color: #cc4331;
+    }
+  }
+
+  .button_hotel {
+    background-color: #F4BE1C;
+    -webkit-box-shadow: 3px 3px 0 0 #C49509;
+    -moz-box-shadow:    3px 3px 0 0 #C49509;
+    box-shadow:         3px 3px 0 0 #C49509;
+
+    &:hover {
+      background-color: #ecb81b;
+    }
+    &:active {
+      background-color: #dfae1a;
+    }
+  }
+}
+//(Конец) Если заказов в личном кабинете нет, выводится блок.
+
+//Блок Наша команда.
+  #ourteam {
+    padding: 50px;
+
+    ul {
+      list-style: none;
+
+      li {
+        margin: 25px 0;
+        display: table;
+
+        > div {
+          display: table-cell;
+          vertical-align: middle;
+        }
+
+        .photowrap {
+          padding-right: 20px;
+
+          img {
+            -webkit-border-radius: 50%;
+            -moz-border-radius: 50%;
+            border-radius: 50%;
+          }
+        }
+
+        .info {
+          h3, h4 {
+            margin: 0;
+          }
+
+          h3 {
+            font: bold 16px/1.5 "Arial";
+            color: #535353;
+          }
+
+          h4 {
+            margin-top: -1px;
+            font: 16px/1.5 "Arial";
+            color: #535353;
+          }
+
+          a {
+            margin-top: 4px;
+
+            &:before {
+              position: relative;
+              display: inline-block;
+              font-family: 'Glyphicons Halflings';
+              font-style: normal;
+              font-weight: normal;
+              line-height: 1;
+              font-size: 18px;
+              color: #10AED6;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
+            }
+          }
+        }
+      }
+    }
+  }
+//(Конец) Блок Наша команда.
+
+//Страница забронированной комнаты отеля
+
+.page-hotels-book {
+  .information_block {
+    .form-submit {
+      background: #fff;
+      color: #FFA800;
+      border: 0;
+      padding: 10px 25px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+      float: right;
+      margin-top: 9px;
+      outline: none !important;
+      width: auto;
+    }
+  }
+
+  .buy_hotel_block {
+    .thumb_hotel_buy {
+      img {
+        width: 100%;
+        height: auto;
+      }
+    }
+
+    td.guest_name,
+    tr.book-policy-popup .popup-window {
+      text-align: left;
+    }
+
+    tr.price_summary td {
+      text-align: right;
+      font-size: 20px;
+
+      .currency {
+        color: #e94e38;
+      }
+    }
+
+    .col-xs-12.room_info a {
+      cursor: default;
+      border-bottom: none;
+    }
+  }
+
+  .form-actions {
+    display: none;
+  }
+}
+
+//(Конец) Страница забронированной комнаты отеля
+
+.view-display-id-lending_combo {
+  thead {
+    background: #fff;
+    padding: 15px 20px 10px;
+    border-bottom: 1px solid #CFCDCE;
+    border-radius: 4px;
+    margin-bottom: 12px;
+
+    tr {
+      display: block;
+    }
+  }
+
+  tbody {
+    tr {
+      display: block;
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #CFCDCE;
+      border-radius: 4px;
+      margin-top: 7px;
+    }
+  }
+
+  tr {
+    letter-spacing : -.36em;
+  }
+
+  td,
+  th {
+    width: 10%;
+    display: inline-block;
+    letter-spacing : normal;
+    color: #595959;
+    font-weight: normal;
+    font-size: 16px;
+
+    &.views-field-airline-code {
+      width: 12%;
+    }
+
+    &.views-field-plain {
+      width: 11%;
+      text-align: center;
+    }
+
+    &.views-field-arrival {
+      width: 19%;
+    }
+
+    &.views-field-transfer-flights {
+      width: 9%;
+      text-align: center;
+    }
+
+    &.views-field-design-quantity {
+      width: 11%;
+      text-align: center;
+    }
+
+    &.views-field-nothing {
+      width: 17%;
+    }
+
+    &.views-field-price {
+      width: 10%;
+      text-align: right;
+    }
+
+    &.views-field-cid {
+      width: 10%;
+    }
+  }
+
+  .air-logo {
+    width: auto;
+    max-height: 63px;
+    max-width: 100%;
+  }
+
+  td.views-field-price {
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .buy {
+    background: #E94E38;
+    padding: 7px 13px;
+    border-radius: 2px;
+    color: #fff;
+    font-weight: bold;
+    border: 0;
+    outline: none !important;
+    margin: 0;
+    width: 80px;
+    text-transform: capitalize;
+    text-align: center;
+  }
+
+  .glyphicon {
+    top: 2px;
+
+    &.glyphicon-triangle-bottom {
+      font-size: 14px;
+      color: #10aed6;
+    }
+  }
+
+  @media (max-width: 991px) {
+    thead {
+      display: none;
+    }
+
+    td {
+      width: 100% !important;
+      display: block;
+      text-align: center !important;
+      padding: 10px 0;
+
+      .buy {
+        float: none;
+        display: inline-block;
+        width: 100%;
+        max-width: 350px;
+      }
+    }
+  }
+
+  .views-exposed-form {
+    .views-widget-filter-transfer_flights {
+      width: 100%;
+      padding: 0 0 20px;
+
+      .form-radios > div {
+        display: inline-block;
+      }
+
+      input {
+        display: none;
+      }
+
+      label {
+        color: #595959;
+        font-weight: normal;
+        font-size: 16px;
+        padding: 5px 20px;
+        background: transparent;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+
+        &:hover {
+          cursor: pointer;
+        }
+      }
+
+      input:checked + label {
+        background: #E2E2E2;
+      }
+    }
+    .views-submit-button {
+      display: none;
+    }
+  }
+}
+
+#airports-list {
+  margin: 20px 0;
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      color: #595959;
+      font-weight: normal;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+  }
+}
+
+.page-route {
+  h2 {
+    color: #10aed6;
+    margin: 20px 0;
+  }
+}
+
+#come-form-list {
+  margin: 20px 0;
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      margin: 3px 0;
+
+      @include breakpoint($desktop){
+        @include span(1 of 3);
+
+        &:nth-child(3n) {
+          @include span(1 of 3 last);
+        }
+        &:nth-child(3n+1) {
+          clear: both;
+        }
+      }
+
+      @include breakpoint($tablet){
+        @include span(1.5 of 3);
+
+        &:nth-child(2n) {
+          @include span(1.5 of 3 last);
+        }
+        &:nth-child(2n+1) {
+          clear: both;
+        }
+      }
+
+      a,
+      a:visited {
+        color: #595959;
+        font-weight: normal;
+        font-size: 16px;
+        text-decoration: none;
+        border-bottom: 1px solid #595959;
+        @include transitionAll(0.3s);
+
+        &:hover,
+        &:active {
+          border-color: transparent;
+        }
+      }
+    }
+  }
+}
+
+#city-info {
+  .city-text {
+    color: #595959;
+    font-weight: normal;
+    font-size: 16px;
+    margin: 10px 0;
+  }
+
+  .city-imgs {
+    margin: 40px 0 20px;
+    @include clearfix;
+
+    .city-img-wrap {
+      @include breakpoint($desktop) {
+        @include span(7 of 21);
+
+        &:nth-child(3n) {
+          @include span(7 of 21 last);
+        }
+      }
+
+      img {
+        width: 100%;
+        height: auto;
+      }
+    }
+  }
+}
+
+
+/*
+Бонусы в личном кабинете
+*/
+
+#breadcrumbs {
+  .profile_logo {
+    text-transform: uppercase;
+  }
+
+  .user-page-item.user-bonus {
+    //float: right;
+    display: inline-block;
+    margin: 0 20px 0 0;
+  }
+}
+
+.breadcrumbs-flights .parameters-transit {
+  position: relative;
+  width: 35px;
+  display: inline-block;
+  text-align: center;
+
+  span {
+    position: absolute;
+    font-size: 10px;
+    top: -4px;
+    left: 1px;
+  }
+}

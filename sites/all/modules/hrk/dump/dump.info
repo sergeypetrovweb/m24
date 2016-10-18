@@ -1,0 +1,11 @@
+name = HRK Debug
+description = Beautiful Debug mode
+core = 7.x
+package = HRK
+configure = admin/config/system/dump
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-debug"
+datestamp = "1407427200"
+

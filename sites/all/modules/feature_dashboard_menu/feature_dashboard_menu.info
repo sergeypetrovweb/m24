@@ -1,0 +1,16 @@
+name = Dashboard menu
+core = 7.x
+package = Features
+dependencies[] = features
+dependencies[] = menu
+features[features_api][] = api:2
+features[menu_custom][] = management
+features[menu_links][] = management_--:admin/config/payment
+features[menu_links][] = management_--:control/ourteam
+features[menu_links][] = management_-:control/brands
+features[menu_links][] = management_-:control/social
+features[menu_links][] = management_:control/contacts
+features[menu_links][] = management_:control/footer
+features[menu_links][] = management_:control/hotels
+features[menu_links][] = management_:control/spec_city
+features[menu_links][] = management_:control/spec_flight

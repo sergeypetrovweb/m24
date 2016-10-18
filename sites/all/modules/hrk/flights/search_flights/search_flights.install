@@ -1,0 +1,349 @@
+<?php
+
+function search_flights_schema()
+{
+    $schema = array();
+
+    /* COUNTRY */
+    $schema['hrk_sf_countries'] = array(
+        'description' => 'The base table for countries.',
+        'fields' => array(
+            'cid' => array(
+                'description' => 'The primary identifier for a countries.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'code' => array(
+                'description' => 'The two-letter country code',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_en' => array(
+                'description' => 'The country en name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_ru' => array(
+                'description' => 'The country ru name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'phone_code' => array(
+                'description' => 'The country phone code.',
+                'type' => 'varchar',
+                'length' => 5,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'three_letter_code' => array(
+                'description' => 'The three-letter country code',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+
+        ),
+        'primary key' => array('cid'),
+    );
+
+    /* City */
+    $schema['hrk_sf_cities'] = array(
+        'description' => 'The base table for cities.',
+        'fields' => array(
+            'ctid' => array(
+                'description' => 'The primary identifier for a city code.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'cid' => array(
+                'description' => 'The current {hrk_sf_countries}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'code' => array(
+                'description' => 'The city code.',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_en' => array(
+                'description' => 'The city en name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_ru' => array(
+                'description' => 'The city ru name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            )
+        ),
+        'primary key' => array('ctid'),
+    );
+
+    /* Airports */
+    $schema['hrk_sf_airports'] = array(
+        'description' => 'The base table for airports.',
+        'fields' => array(
+            'aid' => array(
+                'description' => 'The primary identifier for a airport code.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'cid' => array(
+                'description' => 'The current {hrk_sf_countries}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'ctid' => array(
+                'description' => 'The current {hrk_sf_cities}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'code' => array(
+                'description' => 'The city code.',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_en' => array(
+                'description' => 'The city en name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_ru' => array(
+                'description' => 'The city ru name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            )
+        ),
+        'primary key' => array('aid'),
+    );
+
+    /* Airlines */
+    $schema['hrk_sf_airlines'] = array(
+        'description' => 'The base table for amadeus_airlines.',
+        'fields' => array(
+            'alid' => array(
+                'description' => 'The primary identifier for a amadeus_airlines.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'code' => array(
+                'description' => 'The airlines code.',
+                'type' => 'varchar',
+                'length' => 4,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name' => array(
+                'description' => 'The airlines name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            )
+        ),
+        'primary key' => array('alid')
+    );
+
+    /* Airplanes */
+    $schema['hrk_sf_airplanes'] = array(
+        'description' => 'The base table for airplane names.',
+        'fields' => array(
+            'apid' => array(
+                'description' => 'The primary identifier for a airplane name.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'code' => array(
+                'description' => 'The airplane code.',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name' => array(
+                'description' => 'The airplane name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            )
+        ),
+        'primary key' => array('apid')
+    );
+
+    /* Results */
+    $schema['hrk_sf_results'] = array(
+        'description' => 'The table for search results.',
+        'fields' => array(
+            'rid' => array(
+                'description' => 'The primary identifier for result search.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'sid' => array(
+                'description' => 'Session identifier',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'hash' => array(
+                'description' => 'The hash from query string.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'created' => array(
+                'description' => 'The timestamp when was created search result.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'result' => array(
+                'description' => 'The search result array with gzcompress().',
+                'type' => 'longtext'
+            )
+        ),
+        'primary key' => array('rid')
+    );
+
+    return $schema;
+}
+
+/**
+ * Реализация hook_install()
+ */
+function search_flights_install()
+{
+    $countriesIds = _search_flights_install_countries();
+    $citiesIds = _search_flights_install_cities($countriesIds);
+    _search_flights_install_airports($countriesIds, $citiesIds);
+    _search_flights_install_airlines();
+    _search_flights_install_airplanes();
+
+}
+
+function search_flights_uninstall()
+{
+    drupal_uninstall_schema('search_flights');
+}
+
+
+function _search_flights_install_countries()
+{
+    $countries = array();
+    $ids = array();
+
+    include drupal_get_path('module', 'search_flights') . '/install/countries.php';
+
+    foreach ($countries as $country) {
+        $ids[$country['code']] = db_insert('hrk_sf_countries')
+            ->fields($country)
+            ->execute();
+    }
+    return $ids;
+}
+
+function _search_flights_install_cities($countriesIds)
+{
+    $cities = array();
+    $ids = array();
+
+    include drupal_get_path('module', 'search_flights') . '/install/cities.php';
+
+    foreach ($cities as $city) {
+        if (isset($countriesIds[$city['country_code']])) {
+            $temp_city = array(
+                'cid' => $countriesIds[$city['country_code']],
+                'code' => $city['code'],
+                'name_en' => $city['name_en'],
+                'name_ru' => (isset($city['name_ru'])) ? $city['name_ru'] : $city['name_en'],
+            );
+            $ids[$city['code']] = db_insert('hrk_sf_cities')
+                ->fields($temp_city)
+                ->execute();
+        }
+    }
+
+    return $ids;
+}
+
+function _search_flights_install_airports($countriesIds, $citiesIds)
+{
+    $airports = array();
+
+    include drupal_get_path('module', 'search_flights') . '/install/airports.php';
+
+    foreach ($airports as $airport) {
+        if (isset($countriesIds[$airport['country_code']]) && isset($citiesIds[$airport['city_code']])) {
+            $temp_airport = array(
+                'cid' => $countriesIds[$airport['country_code']],
+                'ctid' => $citiesIds[$airport['city_code']],
+                'code' => $airport['code'],
+                'name_en' => $airport['name_en'],
+                'name_ru' => (isset($airport['name_ru'])) ? $airport['name_ru'] : $airport['name_en'],
+            );
+            db_insert('hrk_sf_airports')
+                ->fields($temp_airport)
+                ->execute();
+        }
+    }
+}
+
+function _search_flights_install_airlines()
+{
+    $airlines = array();
+
+    include drupal_get_path('module', 'search_flights') . '/install/airlines.php';
+
+    foreach ($airlines as $airline) {
+        db_insert('hrk_sf_airlines')
+            ->fields($airline)
+            ->execute();
+    }
+}
+
+function _search_flights_install_airplanes()
+{
+    $airplanes = array();
+
+    include drupal_get_path('module', 'search_flights') . '/install/airplanes.php';
+
+    foreach ($airplanes as $airplane) {
+        db_insert('hrk_sf_airplanes')
+            ->fields($airplane)
+            ->execute();
+    }
+}

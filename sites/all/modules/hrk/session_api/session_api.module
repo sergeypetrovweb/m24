@@ -1,0 +1,19 @@
+<?php
+
+function session_api_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['session_api'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'session_api') . $dir . ucfirst($type) . "SessionApi.inc");
+        $used['session_api'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+function hrk_system_session($module, $prefix)
+{
+    session_api_include('system');
+    return SystemSessionApi::init($module, $prefix);
+}

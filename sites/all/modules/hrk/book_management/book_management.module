@@ -1,0 +1,571 @@
+<?php
+
+function bm_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['book_management'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'book_management') . $dir . $type . ".inc");
+        $used['book_management'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function book_management_permission()
+{
+    return array(
+        'management_flights_booking' => array(
+            'title' => t('Management flights booking'),
+            'restrict access' => TRUE,
+        ),
+        'management_hotels_booking' => array(
+            'title' => t('Management hotels booking'),
+            'restrict access' => TRUE,
+        ),
+    );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function book_management_menu()
+{
+    global $user;
+
+    $items['admin/book-management/flights'] = array(
+        'title' => t('Management flights booking'),
+        'access arguments' => array('management_flights_booking'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_flights_list_form'),
+        'type' => MENU_LOCAL_TASK,
+        'file' => 'admin.book_management_flights.inc'
+    );
+
+    $items['admin/book-management/hotels'] = array(
+        'title' => t('Management hotels booking'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_hotels_list_form'),
+        'access arguments' => array('management_hotels_booking'),
+        'type' => MENU_LOCAL_TASK,
+        'file' => 'admin.book_management_hotels.inc'
+    );
+
+    /*HOTELS OPERATIONS*/
+    $items['admin/book_management/hotels/%/delete'] = array(
+        'title' => 'Delete hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_hotels_delete_form', 3),
+        'access arguments' => array('management_hotels_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_hotels.inc'
+    );
+
+    $items['admin/book_management/hotels/%/checkout'] = array(
+        'title' => 'Checkout hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_hotels_checkout_form', 3),
+        'access arguments' => array('management_hotels_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_hotels.inc'
+    );
+
+    $items['admin/book_management/hotels/%/cancel'] = array(
+        'title' => 'Cancel hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_hotels_cancel_form', 3),
+        'access arguments' => array('management_hotels_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_hotels.inc'
+    );
+    /*FLIGHTS OPERATIONS*/
+    $items['admin/book_management/flights/%/delete'] = array(
+        'title' => 'Delete hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_flights_delete_form', 3),
+        'access arguments' => array('management_flights_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_flights.inc'
+    );
+
+    $items['admin/book_management/flights/%/checkout'] = array(
+        'title' => 'Checkout hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_flights_checkout_form', 3),
+        'access arguments' => array('management_flights_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_flights.inc'
+    );
+
+    $items['admin/book_management/flights/%/cancel'] = array(
+        'title' => 'Cancel hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('admin_book_management_flights_cancel_form', 3),
+        'access arguments' => array('management_flights_booking'),
+        'type' => MENU_CALLBACK,
+        'file' => 'admin.book_management_flights.inc'
+    );
+
+    $items['user-book-management'] = array(
+        'title' => t('Private office'),
+        'page callback' => 'book_management_user_management',
+        'access callback' => 'user_is_logged_in',
+    );
+
+    $items['user-book-management/%'] = array(
+        'title' => t('Private office'),
+        'page callback' => 'book_management_user_management',
+        'page arguments' => array(1),
+        'access callback' => 'user_view_access',
+        'access arguments' => array(1),
+    );
+
+    $items['user-book-management/%/%/%/delete'] = array(
+        'title' => 'Delete hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('book_management_user_management_book_delete_form', 3, 1, 2),
+        'access callback' => 'user_view_access',
+        'access arguments' => array(1),
+    );
+
+    $items['user-book-management/%/%/%/cancel'] = array(
+        'title' => 'Delete hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('book_management_user_management_book_cancel_form', 3, 1, 2),
+        'access callback' => 'user_view_access',
+        'access arguments' => array(1),
+    );
+
+    $items['user-book-management/%/%/%/checkout'] = array(
+        'title' => 'Delete hotel book',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('book_management_user_management_book_checkout_form', 3, 1, 2),
+        'access callback' => 'user_view_access',
+        'access arguments' => array(1),
+    );
+
+
+    return $items;
+}
+
+/**
+ * Implement hook_theme()
+ */
+
+function book_management_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'bm_user_book_list' => array(
+            'template' => 'user-book-list',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        )
+    );
+
+    return $theme;
+}
+
+
+function book_management_cronapi()
+{
+    $items = array();
+    $items['book_management_check_booking_status'] = array(
+        'title' => t('Check booking status'),
+        'file' => 'cron.inc',
+        'file path' => drupal_get_path('module', 'book_management') . '/cron',
+        'callback' => 'book_management_check_booking_status',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('*/30 * * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+function book_management_user_management($uid = 0)
+{
+    if(!$uid){
+        global $user;
+    }else{
+        $user = user_load($uid);
+    }
+
+    if (empty($user->uid)) drupal_not_found();
+
+    /*GET USER FLIGHTS BOOK*/
+    $bf_result = db_select('hrk_bf_book', 'bf')->fields('bf', array())->condition('uid', $user->uid)->condition('is_deleted', 0)->execute();
+
+    $bf = array();
+    foreach ($bf_result as $row) {
+        $bf[$row->bid] = (array)$row;
+        $bf[$row->bid]['data'] = hrk_helper_result_decode($row->data);
+    }
+
+    /*GET USER HOTELS BOOK*/
+    $bh_result = db_select('hrk_bh_book', 'bh')->fields('bh', array())->condition('uid', $user->uid)->condition('is_deleted', 0)->execute();
+
+    $bh = array();
+    foreach ($bh_result as $row) {
+        $bh[$row->bid] = (array)$row;
+        $bh[$row->bid]['data'] = hrk_helper_result_decode($row->data);
+    }
+
+    $result['bf'] = $bf;
+    $result['bh'] = $bh;
+
+    drupal_add_js(array('pagination_settings' => array(
+        'pager_first' => t('First'),
+        'pager_last' => t('Last'),
+        'pager_prev' => t('Previous'),
+        'pager_next' => t('Next'),
+    )), 'setting');
+
+    libraries_load('mixup');
+    libraries_load('pagination', 'min');
+    drupal_add_js(drupal_get_path('module', 'book_management') . '/js/users_book_list.js');
+
+    return theme('bm_user_book_list', $result);
+}
+
+function book_management_user_management_book_delete_form($form, &$form_state, $bid, $uid, $type)
+{
+
+    switch ($type) {
+        case 'hotels':
+            $book = hrk_bh_book($bid);
+            if (!$book) drupal_not_found();
+            break;
+        case 'flights':
+            $book = hrk_bf_book($bid);
+            if (!$book) drupal_not_found();
+            break;
+        default:
+            drupal_not_found();
+            break;
+    }
+
+    $form['#prefix'] = '<div class="user-container">';
+    $form['#suffix'] = '</div>';
+
+    $form['bid'] = array('#type' => 'value', '#value' => $bid);
+    $form['type'] = array('#type' => 'value', '#value' => $type);
+
+    $confirm_question = t('Are you sure you want to delete booking?');
+
+    return confirm_form($form, $confirm_question, 'user-book-management/' . $uid, t('This action cannot be undone.'), t('Delete'), t('Cancel'));
+}
+
+
+function book_management_user_management_book_delete_form_submit($form, &$form_state)
+{
+
+    $values = (object)$form_state['values'];
+    $uid = $form_state['build_info']['args'][1];
+    $type = $form_state['build_info']['args'][2];
+
+    switch ($values->type) {
+        case 'flights':
+            $book = hrk_bf_book($values->bid);
+
+            if ($book) {
+                $book = (object)$book;
+
+                db_update('hrk_bf_book')->fields(array('is_deleted' => 1))->condition('bid', $values->bid)->execute();
+
+                drupal_set_message(t('Booking with  with a Book ID: @booking_id, Ticket ID: @ticket_id successfully deleted.', array(
+                    '@booking_id' => $book->cid,
+                    '@ticket_id' => ($book->tid) ? $book->tid : t('None'),
+                )));
+            } else {
+                drupal_set_message(t('Booking not found', 'warning'));
+            }
+            break;
+        case 'hotels':
+            $book = hrk_bh_book($values->bid);
+
+            if ($book) {
+                $book = (object)$book;
+
+                db_update('hrk_bh_book')->fields(array('is_deleted' => 1))->condition('bid', $values->bid)->execute();
+
+                drupal_set_message(t('Booking with  with a Book ID: @booking_id, Order ID: @order_id, Segment ID: @segment_id, Reference: @reference successfully deleted.', array(
+                    '@booking_id' => $book->bkid,
+                    '@order_id' => $book->orid,
+                    '@segment_id' => $book->seid,
+                    '@reference' => $book->reference,
+                )));
+            } else {
+                drupal_set_message(t('Booking not found', 'warning'));
+            }
+            break;
+    }
+
+    drupal_goto('user-book-management/' . $uid, array('fragment' => $type));
+}
+
+
+function book_management_user_management_book_cancel_form($form, &$form_state, $bid, $uid, $type)
+{
+    switch ($type) {
+        case 'hotels':
+            $book = hrk_bh_book($bid);
+            if (!$book) drupal_not_found();
+            break;
+        case 'flights':
+            $book = hrk_bf_book($bid);
+            if (!$book) drupal_not_found();
+            break;
+        default:
+            drupal_not_found();
+            break;
+    }
+
+    if (!empty($book['is_cancel'])) return array('cancel' => array('#markup' => t('Unable to pay for the reservation, the reservation is canceled')));
+
+    $form['#prefix'] = '<div class="user-container">';
+    $form['#suffix'] = '</div>';
+
+    $form['bid'] = array('#type' => 'value', '#value' => $bid);
+    $form['type'] = array('#type' => 'value', '#value' => $type);
+
+    $confirm_question = t('Are you sure you want to cancel booking ?');
+
+    return confirm_form($form, $confirm_question, 'user-book-management/' . $uid, t('This action cannot be undone.'), t('Cancel'), t('Back'));
+}
+
+
+function book_management_user_management_book_cancel_form_submit($form, &$form_state)
+{
+    $values = (object)$form_state['values'];
+    $uid = $form_state['build_info']['args'][1];
+    $type = $form_state['build_info']['args'][2];
+
+    switch ($type) {
+        case 'flights':
+            $book = hrk_bf_book($values->bid);
+
+            if ($book && !$book->is_ticket && !$book->tid) {
+                $book = (object)$book;
+                $book_info = (object)$book->data['book'];
+
+                $db_session = hrk_ep_create_session();
+
+                if (!$db_session) {
+                    drupal_set_message(t('Failed to create session'), 'error');
+                    return TRUE;
+                }
+
+                $passenger = (object)$book_info->passenger['ADT'][0];
+
+                $request = hrk_ep_cancel_booking()->setContextID($book->cid)->setVerificationSurName($passenger->last_name);
+
+                $ep = hrk_ep_engine();
+
+                if (!$ep->connect($db_session['session'])) {
+                    hrk_ep_delete_session($db_session['sid']);
+                    drupal_set_message(t('Connection error'), 'error');
+                    return TRUE;
+                }
+
+                $response = $ep->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+                if (!$response) {
+                    hrk_ep_delete_session($db_session['sid']);
+                    drupal_set_message(t('You can not cancel your reservation, Amadeus not answer!'), 'error');
+                    return TRUE;
+                };
+
+                $result = hrk_bf_parse($response)->cancel();
+
+                if ($result['error']) {
+                    hrk_ep_errors()->save($db_session['session'], array($result['error']), \includes\EP_Errors::ERROR_BOOKING);
+                    drupal_set_message($result['error']['text'], 'error');
+                    return TRUE;
+                }
+
+                if (empty($result['success'])) {
+                    hrk_ep_delete_session($db_session['sid']);
+                    drupal_set_message(t('You can not cancel your reservation, Amadeus return empty Cancel Status!'), 'error');
+                    return TRUE;
+                }
+
+                db_update('hrk_bf_book')->fields(array('is_cancel' => 1))->condition('bid', $book->bid)->execute();
+                hrk_ep_delete_session($db_session['sid']);
+
+                $to = '';
+                if ($book->uid) {
+                    $user = user_load($book->uid);
+                    if ($user->mail != $book->email) {
+                        $to .= $user->mail . ',';
+                    }
+                }
+                $to .= $book->email;
+
+                bf_mail_book($to, $book->bid);
+
+                if ($book->is_ticket && $book->azid) {
+                    az_cancel_payment($book->azid);
+                }
+
+                drupal_set_message(t('Booking with a Book ID: @booking_id, Ticket ID: @ticket_id successfully canceled.', array(
+                    '@booking_id' => $book->cid,
+                    '@ticket_id' => ($book->tid) ? $book->tid : t('None'),
+                )));
+            } else {
+                drupal_set_message(t('Booking not found', 'warning'));
+            }
+
+            break;
+        case 'hotels':
+            $book = hrk_bh_book($values->bid);
+            if ($book) {
+                $book = (object)$book;
+
+                $db_session = hrk_cl_create_session();
+
+                $request = hrk_cl_cancel_book($db_session['session'], $book->seid);
+
+                $cl = hrk_cl_engine();
+                $response = $cl->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+                if (!$response) {
+                    hrk_cl_delete_session($db_session['sid']);
+                    drupal_set_message(t('You can not cancel your reservation, carsolize not answer!'), 'error');
+                    return TRUE;
+                };
+
+                bh_include('BH_Helper');
+                $result = \includes\BH_Helper::parseCancelResponse($response);
+
+                if ($result['error']) {
+                    hrk_cl_errors()->save($db_session['session'], array($result['error']), \includes\CL_Errors::ERROR_BOOKING);
+                    drupal_set_message($result['error']['text'] . $result['error']['message'], 'error');
+                    return TRUE;
+                }
+
+                if (empty($result['cancel_id'])) {
+                    hrk_cl_delete_session($db_session['sid']);
+                    drupal_set_message(t('You can not cancel your reservation,carsolize return empty Cancel ID not!'), 'error');
+                    return TRUE;
+                }
+
+                $book->cancel_id = $result['cancel_id'];
+                db_update('hrk_bh_book')->fields(array('is_cancel' => 1, 'cancel_id' => $result['cancel_id']))->condition('bid', $book->bid)->execute();
+                hrk_cl_delete_session($db_session['sid']);
+
+                $to = '';
+                if ($book->uid) {
+                    $user = user_load($book->uid);
+                    if ($user->mail != $book->email) {
+                        $to .= $user->mail . ',';
+                    }
+                }
+                $to .= $book->email;
+
+                bh_mail_book($to, $book->bid);
+
+                if ($book->is_paid && $book->azid) {
+                    az_cancel_payment($book->azid);
+                }
+
+                drupal_set_message(t('Booking with  with a Book ID: @booking_id, Order ID: @order_id, Segment ID: @segment_id, Reference: @reference successfully canceled.Cancel ID: @cancel_id', array(
+                    '@booking_id' => $book->bkid,
+                    '@order_id' => $book->orid,
+                    '@segment_id' => $book->seid,
+                    '@reference' => $book->reference,
+                    '@cancel_id' => $book->cancel_id,
+                )));
+
+            } else {
+                drupal_set_message(t('Booking not found', 'warning'));
+            }
+
+            break;
+    }
+
+    drupal_goto('user-book-management/' . $uid, array('fragment' => $type));
+}
+
+
+
+function book_management_user_management_book_checkout_form($form, &$form_state, $bid, $uid, $type){
+
+    switch ($type) {
+        case 'hotels':
+            $book = hrk_bh_book($bid);
+            if (!$book) drupal_not_found();
+
+            $book = (object)$book;
+            $hotel = (object)$book->data;
+
+            if ($book->is_cancel) return array('cancel' => array('#markup' => t('Unable to pay for the reservation, the reservation is canceled')));
+
+            if (empty($book->azid)) {
+                $az = hrk_az_create_payment(ceil($hotel->price['price']), $hotel->price['currency']);
+
+                if ($az) {
+                    /*UPDATE BOOK RECORD*/
+                    db_update('hrk_bh_book')->fields(array('azid' => $az['azid']))->condition('bid', $book->bid)->execute();
+                }
+            } else {
+                $az = hrk_az_get_payment($book->azid);
+            }
+
+            if ($az) {
+                /*UPDATE AZ PAYMENT : IF CURRENCY CHANGED*/
+                $form = array_merge($form, azericard_payment_form($form, $form_state, $az));
+            }
+            break;
+        case 'flights':
+            $book = hrk_bf_book($bid);
+            if (!$book) drupal_not_found();
+
+            $book = (object)$book;
+            $book_info = $book->data['book'];
+            $book_info = (object)$book_info;
+
+            if ($book->is_cancel) return array('cancel' => array('#markup' => t('Unable to pay for the reservation, the reservation is canceled')));
+
+            if (empty($book->azid)) {
+
+                $price = $book_info->price;
+                $user_active_currency = strtoupper(currency_get_active_currency($price['currency']));
+                $amount = ceil($price['fare'][$user_active_currency] + $price['commission'][$user_active_currency]);
+                $az = hrk_az_create_payment($amount, $user_active_currency);
+
+                if ($az) {
+                    /*UPDATE BOOK RECORD*/
+                    db_update('hrk_bf_book')->fields(array('azid' => $az['azid']))->condition('bid', $book->bid)->execute();
+                }
+            } else {
+                $az = hrk_az_get_payment($book->azid);
+            }
+
+            if ($az) {
+                /*UPDATE AZ PAYMENT : IF CURRENCY CHANGED*/
+                $form = array_merge($form, azericard_payment_form($form, $form_state, $az));
+            }
+
+            break;
+        default:
+            drupal_not_found();
+            break;
+    }
+
+    $form['#prefix'] = '<div class="user-container">';
+    $form['#suffix'] = '</div>';
+
+    $form['bid'] = array('#type' => 'value', '#value' => $bid);
+    $form['type'] = array('#type' => 'value', '#value' => $type);
+
+
+    $confirm_question = t('Are you sure you want to pay booking?');
+
+    return confirm_form($form, $confirm_question, 'user-book-management/' . $uid, '', t('Pay'), t('Cancel'));
+}

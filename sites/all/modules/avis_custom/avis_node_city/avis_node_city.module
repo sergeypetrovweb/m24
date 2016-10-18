@@ -1,0 +1,161 @@
+<?php
+/**
+ * @file
+ * Creating nodes for City node type.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function avis_node_city_menu() {
+  $items = array();
+  $items['control/node_city'] = array(
+    'title' => 'Город',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для операций с типом город',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_node_city_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Form to create().
+ */
+function avis_node_city_form($form, &$form_state) {
+  $form['submit_create'] = array(
+    '#type' => 'submit',
+    '#value' => 'Создать города',
+    '#submit' => array('avis_node_city_create'),
+  );
+  $form['submit_delete'] = array(
+    '#type' => 'submit',
+    '#value' => 'Удалить города',
+    '#submit' => array('avis_node_city_delete'),
+  );
+  return $form;
+}
+
+/**
+ * Function create cities base.
+ */
+function avis_node_city_create($form, &$form_state) {
+  $query = db_select('air_city_info', 'n');
+  $query->innerJoin('hrk_sf_cities', 'c', 'n.code = c.code');
+  $query->fields('n');
+  $query->fields('c', array('name_en', 'name_ru'));
+  $cities = $query->execute()->fetchAll();
+
+
+  if ($cities) {
+    // Создаём новую очередь
+    $queue = DrupalQueue::get('create_city_queue');
+    $queue->createQueue();
+
+    // Каждый элемент ставим в очередь, т.е.
+    // по факту - идёт запись в базу данных
+    foreach ($cities as $city) {
+      $queue->createItem($city);
+    }
+  }
+
+  drupal_set_message('Добавлено на выполнение');
+}
+
+/**
+ * Function clean cities base.
+ */
+function avis_node_city_delete($form, &$form_state) {
+  drupal_set_time_limit(600);
+  $nids = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('n.type', 'city')
+    ->execute()
+    ->fetchCol();
+  foreach ($nids as $nid) {
+    node_delete($nid);
+  }
+  drupal_set_message('Удалено ' . count($nids) . ' нод');
+}
+
+/**
+ * Function for download file.
+ */
+function download_external_file($url, $uri, $save_mode = FILE_EXISTS_RENAME, $manage_file = TRUE) {
+  $url_info = parse_url($url);
+  $url_path_info = pathinfo($url_info['path']);
+
+  //This helps with filenames with spaces
+  $url = $url_info['scheme'] . '://' . $url_info['host'] . $url_path_info['dirname'] . '/' . rawurlencode($url_path_info['basename']);
+
+  //Need to remove the filename from the uri
+  $uri_target = file_uri_target($uri);
+  $uri_scheme = file_uri_scheme($uri);
+  $uri_path_info = pathinfo($uri_target);
+  $directory = file_stream_wrapper_uri_normalize($uri_scheme . "://" . $uri_path_info['dirname']);
+
+  if (file_prepare_directory($directory, FILE_CREATE_DIRECTORY)) {
+    $drupal_result = drupal_http_request($url);
+    if (!empty($drupal_result->data)) {
+      $path = file_stream_wrapper_uri_normalize($uri);
+      if ($manage_file) {
+        $new_file = file_save_data($drupal_result->data, $path, $save_mode);
+      }
+      else {
+        return file_unmanaged_save_data($drupal_result->data, $path, $save_mode);
+      }
+    }
+    else {
+      drupal_set_message("Error downloading file, no data recieved for " . $url);
+      return FALSE;
+    }
+
+    $new_file->display = 1;
+    return (array) $new_file;
+  }
+  else {
+    drupal_set_message("Could not create directory");
+  }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function avis_node_city_cron_queue_info() {
+  $queue['create_city_queue'] = array(
+    'worker callback' => 'avis_node_city_item_process',
+    'time' => 60,
+  );
+  return $queue;
+}
+
+/**
+ * Function return images from Google Image Api
+ */
+function avis_node_city_item_process($city) {
+  $search = 'город ' . $city->name_ru;
+  $how_much = 3;
+  $json = file_get_contents('http://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=' . $how_much . '&imgsz=high&imgtype=clipart&as_filetype=JPG&q=' . urlencode($search) . '&start=0');
+  $imgs = json_decode($json);
+
+  $node = new stdClass();
+  $node->type = 'city';
+  node_object_prepare($node);
+  $node->title = $city->name_ru;
+  $node->language = LANGUAGE_NONE;
+  $node->body[LANGUAGE_NONE][0]['value'] = trim($city->text);
+  $node->body[LANGUAGE_NONE][0]['format'] = 'filtered_html';
+
+  foreach ($imgs->responseData->results as $key => $img_array) {
+    $uri = 'public://cities/' . urlencode($city->name_en) . $key . '.jpg';
+    $new_file = download_external_file($img_array->url, $uri, FILE_EXISTS_REPLACE);
+    $node->field_city_photos[LANGUAGE_NONE][] = $new_file;
+  }
+
+  $node->field_city_code[LANGUAGE_NONE][0]['value'] = $city->code;
+  $node->uid = 1; // необязательно
+  $node->status = 1; // необязательно
+  $node->promote = 1; // необязательно
+  node_save($node);
+}

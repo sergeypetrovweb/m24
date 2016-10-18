@@ -1,0 +1,5 @@
+name = Air Routes
+description = "Module add functionality for popular flights routes"
+package = Avis
+version = 1.0
+core = 7.x

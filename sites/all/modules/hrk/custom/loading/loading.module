@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * Implement hook_block_info()
+ */
+function loading_block_info()
+{
+    $blocks['screen'] = array(
+        'info' => t('Loading screen'),
+        'cache' => DRUPAL_NO_CACHE, // default
+    );
+
+    return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function loading_block_view($delta = '')
+{
+    $block = array();
+
+    switch ($delta) {
+        case('screen'):
+            $block['subject'] = t('Loading screen');
+            $block['content'] = loading_screen();
+            break;
+    }
+
+    return $block;
+}
+
+/**
+ * Implement hook_theme()
+ */
+
+function loading_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'loading_screen' => array(
+            'template' => 'loading-screen',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        )
+    );
+
+    return $theme;
+}
+
+function loading_screen()
+{
+    $output = array();
+    $query = db_select('node', 'n')->fields('n', array('nid'))->condition('type', 'advertising_banners');
+
+    $result = $query->execute();
+    $nids = array();
+
+    foreach ( $result as $row) {
+        $nids[$row->nid] = $row->nid;
+    }
+
+    if($nids){
+        $rand_nids = array_rand($nids, 2);
+        $nodes = node_load_multiple($rand_nids);
+
+        foreach ($nodes as $node) {
+            $field_banner = field_get_items('node', $node, 'field_banner');
+            $field_logo = field_get_items('node', $node, 'field_advertising_logo');
+            $output[] = (object)array(
+                'banner' =>image_style_url('flight__advertising_banners',$field_banner[0]['uri']),
+                'logo'=> image_style_url('flight__advertising_banners_logo',$field_logo[0]['uri']),
+                'title'=>$node->title
+            );
+        }
+    }
+
+    return theme('loading_screen',array('advertisements'=>$output));
+}

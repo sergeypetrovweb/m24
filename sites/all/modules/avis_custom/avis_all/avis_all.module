@@ -1,0 +1,962 @@
+<?php
+/**
+ * @file
+ * Collection of small, scattered edits
+ */
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function avis_all_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['special_offers'] = array(
+    'label' => t('Special Offers'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function avis_all_block_info() {
+  $blocks = array();
+  //Login block for main page.
+  $blocks['user_login_block'] = array(
+    'info' => t('User login modern block'),
+  );
+
+  //Dashboard block for user.
+  $blocks['user_panel_block'] = array(
+    'info' => t('User panel modern block'),
+  );
+
+  //Five hotels block for landings.
+  $blocks['five_hotels'] = array(
+    'info' => t('Five hotels block'),
+  );
+
+  $blocks['new_year_rest'] = array(
+    'info' => t('Turkey new year text'),
+  );
+
+  $blocks['select_btns'] = array(
+    'info' => t('Select the flight, hotel room'),
+  );
+
+  $blocks['403'] = array(
+    'info' => t('Page 403'),
+  );
+
+  $blocks['404'] = array(
+    'info' => t('Page 404'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function avis_all_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'user_login_block' :
+      if (user_is_anonymous()) {
+        $output = '<a href="' . '/' . $GLOBALS['language']->language . '/user/login" class="user-not-logged-in">' . t('Log in') . '</a>';
+      }
+      else {
+        $output = theme('user_login_block', array());
+      }
+      $block['content'] = $output;
+      break;
+
+    case 'user_panel_block' :
+      $block['content'] = theme('user_panel_block', array());
+      break;
+
+    case 'five_hotels' :
+      $block['content'] = theme('five_hotels_block', array());
+      break;
+
+    case 'new_year_rest' :
+      $block['content'] = theme('new_year_rest_block', array());
+      break;
+
+    case 'select_btns' :
+      $block['content'] = theme('select_btns_block', array());
+      break;
+
+    case '403' :
+      $block['content'] = theme('popup_error', array(
+        'title' => 'Error 403',
+        'desc' => 'Sorry, but you are not authorized or this page will not for you.'
+      ));
+      break;
+
+    case '404' :
+      $block['content'] = theme('popup_error', array(
+        'title' => 'Error 404',
+        'desc' => 'Sorry, but that page does not exist.'
+      ));
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Function for speedtest to air search.
+ */
+function avis_search_speed_test($message = 'Start...', $clear = FALSE) {
+  if (empty($_SESSION['avis_search_speed_test']) || $clear) {
+    $_SESSION['avis_search_speed_test'] = array();
+  }
+
+  $_SESSION['avis_search_speed_test'][] = array(
+    'time' => microtime(TRUE),
+    'title' => $message,
+  );
+
+  $index_last = count($_SESSION['avis_search_speed_test']) - 1;
+
+  if ($index_last > 0) {
+    $_SESSION['avis_search_speed_test'][$index_last]['spend'] = (float) $_SESSION['avis_search_speed_test'][$index_last]['time'] - (float) $_SESSION['avis_search_speed_test'][$index_last - 1]['time'];
+  }
+
+  return $_SESSION['avis_search_speed_test'];
+}
+
+/**
+ * Implements hook_theme().
+ */
+function avis_all_theme($existing, $type, $theme, $path) {
+  $theme = array(
+    'user_login_block' => array(
+      'template' => 'user_login_block',
+      'variables' => array(),
+    ),
+    'user_panel_block' => array(
+      'template' => 'user_panel_block',
+      'variables' => array(),
+    ),
+    'five_hotels_block' => array(
+      'template' => 'hotels-top-five-list',
+      'variables' => array(),
+    ),
+    'new_year_rest_block' => array(
+      'template' => 'new-year-rest',
+      'variables' => array(),
+    ),
+    'user_login' => array(
+      'render element' => 'form',
+      'template' => 'user-login',
+    ),
+    'user_register_form' => array(
+      'render element' => 'form',
+      'template' => 'user-register',
+    ),
+    'user_pass' => array(
+      'render element' => 'form',
+      'template' => 'user-pass',
+    ),
+    'tickets_mail' => array(
+      'template' => 'ticket-letter',
+      'variables' => array(),
+      'path' => $path,
+    ),
+    'select_btns_block' => array(
+      'template' => 'select-btns',
+      'variables' => array(),
+    ),
+    'popup_error' => array(
+      'template' => 'popup-error',
+      'variables' => array(),
+    ),
+  );
+
+  return $theme;
+}
+
+/**
+ * Function return a full alias by node or taxonomy.
+ * For taxonomy: $term need to set TRUE
+ */
+function getPathAlias($nid, $term = FALSE) {
+  //Get alias by node id
+  $targetPath = $term == FALSE ? "node/" . $nid : "taxonomy/term/" . $nid;
+  $targetPath = 'http://' . $_SERVER['HTTP_HOST'] . base_path() . drupal_get_path_alias($targetPath, $path_language = '');
+
+  return $targetPath;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function avis_all_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  $user = user_load($user->uid);
+
+  switch ($form_id) {
+    case 'user_login':
+    case 'user_login_block':
+      $form['name']['#attributes']['placeholder'] = t('Name or e-mail');
+      $form['name']['#description'] = t('Enter your username or e-mail.');
+      $form['pass']['#description'] = t('Enter the password that accompanies your username.');
+      $form['pass']['#attributes']['placeholder'] = t('Password');
+      break;
+
+    case 'user_register_form':
+      if ($GLOBALS['theme'] == 'flight_modern') {
+        $form['field_user_name'][LANGUAGE_NONE][0]['value']['#attributes']['placeholder'] = t('Your name');
+        $form['field_user_surname'][LANGUAGE_NONE][0]['value']['#attributes']['placeholder'] = t('Your surname');
+        $form['account']['name']['#required'] = FALSE;
+        $form['#validate'] = array_merge(array('user_register_add_username'), $form['#validate']);
+        $form['account']['name']['#access'] = FALSE;
+        $form['account']['mail']['#attributes']['placeholder'] = t('Your E-Mail');
+        $form['account']['mail']['#description'] = t('A valid e-mail address.');
+        $form['actions']['submit']['#value'] = t('Register');
+      }
+      break;
+
+    case 'user_pass':
+      $form['name']['#attributes']['placeholder'] = t('Your E-Mail');
+      $form['name']['#description'] = t('On specified in the registration email will be sent instructions on how to reset your password .');
+      $form['actions']['submit']['#value'] = t('Send');
+      $form['#submit'] = array('reset_pass_please');
+      break;
+
+    case 'ticket_node_form':
+      $form['title']['#prefix'] = '<h2>' . t('New support case') . '</h2>';
+      $form['title']['#attributes']['placeholder'] = t('Subject');
+      $form['body']['#attributes']['placeholder'] = t('Text of the case');
+      $form['actions']['submit']['#value'] = t('Send');
+      break;
+
+    case 'comment_node_ticket_form':
+      if (arg(2) == 'edit') {
+        $form['author']['mail']['#access'] = FALSE;
+        $form['author']['homepage']['#access'] = FALSE;
+        $form['#prefix'] = '
+        <section id="ticket" class="clearfix">
+        <div class="left-column">
+        <h2>' . t('Edit your comment') . '</h2>';
+        $form['#suffix'] = '</div><div class="right-column">' . render(views_embed_view('faq', $display_id = 'block_1')) . '</div></section>';
+      }
+      break;
+
+    case 'user_profile_form':
+      drupal_add_js(drupal_get_path('module', 'jquery_update') . '/replace/jquery/1.10/jquery.min.js');
+      $form['#prefix'] = '<h2>' . t('My data') . '</h2>';
+      $form['field_user_name'][LANGUAGE_NONE][0]['value']['#title'] = t('Name');
+      $form['field_user_surname'][LANGUAGE_NONE][0]['value']['#title'] = t('Surname');
+      $form['account']['mail']['#weight'] = -9;
+      $form['account']['current_pass']['#prefix'] = '<h2 class="labelline">' . t('Change password') . '</h2>';
+      $form['account']['current_pass']['#weight'] = 0;
+      $form['account']['name']['#description'] = t('Punctuation is not allowed except for periods , hyphens , spaces , apostrophes , and underscores.');
+      $form['picture']['picture_upload']['#title'] = t('Photo');
+      $form['picture']['picture_upload']['#description'] = t('The image you want to use as your virtual face.');
+      $form['account']['mail']['#description'] = '';
+      $form['account']['current_pass']['#description'] = '';
+      $form['account']['pass']['#description'] = '';
+//      $form['actions']['submit']['#value'] = t('Save');
+      break;
+
+    case 'webform_client_form_76':
+      $form['submitted']['title']['#markup'] = '<h2>' . t('Contact Us') . '</h2>';
+      $form['submitted']['name']['#title'] = t('Name');
+      $form['submitted']['name']['#attributes']['placeholder'] = t('Your name');
+      $form['submitted']['email']['#title'] = t('E-Mail address');
+      $form['submitted']['email']['#attributes']['placeholder'] = t('Your contact E-Mail address');
+      $form['submitted']['text']['#title'] = t('Message');
+      $form['submitted']['text']['#attributes']['placeholder'] = t('Please, enter your message here');
+      $form['actions']['submit']['#value'] = t('Send a message');
+      break;
+
+    case 'views_exposed_form':
+      $form['transfer_flights']['#options']['All'] = t('Low-rate');
+      break;
+
+    case 'webform_client_form_319':
+    case 'webform_client_form_315':
+      $form_state['uid'] = $user->uid;
+      $form['submitted']['name']['#attributes']['placeholder'] = t('Name');
+      $form['submitted']['surname']['#attributes']['placeholder'] = t('Surname');
+      $form['submitted']['mail']['#attributes']['placeholder'] = t('E-mail');
+      $form['submitted']['phone']['#attributes']['placeholder'] = t('Your phone');
+      $form['submitted']['tip']['#default_value'] = 1;
+      $form['submitted']['tip']['#options'] = array(
+        1 => t('For one person'),
+        2 => t('For two persons'),
+      );
+      $form['#submit'] = array_merge($form['#submit'], array('on_akcia_submit'));
+      $form['actions']['submit']['#value'] = t('Order it');
+
+      if ($user->uid != 0) {
+        $form['submitted']['name']['#value'] = $user->field_user_name[LANGUAGE_NONE][0]['value'];
+        $form['submitted']['name']['#access'] = FALSE;
+        $form['submitted']['surname']['#value'] = $user->field_user_surname[LANGUAGE_NONE][0]['value'];
+        $form['submitted']['surname']['#access'] = FALSE;
+        $form['submitted']['mail']['#value'] = $user->mail;
+        $form['submitted']['mail']['#access'] = FALSE;
+
+        $new_form = generate_payment_form();
+        if (!empty($new_form)) {
+          $form = $new_form;
+        }
+
+      }
+      else {
+        $form['#validate'] = array_merge(array('user_register_valid_mail'), $form['#validate']);
+      }
+      break;
+  }
+
+  if (stripos($form_id, 'user_login') !== FALSE) {
+    $form['name']['#element_validate'][] = '_avis_all_user_login_validate';
+  }
+  return $form;
+}
+
+/**
+ * Alternative function for reset user password.
+ */
+function reset_pass_please($form, $form_state) {
+  $acc = user_load_by_mail($form_state['values']['name']);
+  if (!empty($acc)) {
+    //random password
+    $password = user_password(8);
+    $fields = array(
+      'pass' => $password,
+    );
+    user_save($acc, $fields);
+    // Send mail
+    drupal_mail('user', 'new_pass', $acc->mail, $GLOBALS['language']->language, array(
+      'account' => $acc,
+      'password' => $password
+    ), variable_get('site_mail'));
+
+    drupal_set_message(t('New password success send to your email, check it please.'));
+  }
+  else {
+    drupal_set_message(t('OOPS! User with this mail is not found.', 'error'));
+  }
+}
+
+/**
+ * Function generate payment form.
+ */
+function generate_payment_form() {
+  global $user;
+  $form = array();
+  $his_payment = db_select('unitailer_payment', 'up')
+    ->fields('up')
+    ->condition('up.entity_id', $user->uid)
+    ->condition('up.entity', 'new_year_sale_turkey')
+    ->execute()->fetchObject();
+
+  if ($his_payment && $his_payment->status == 0) {
+    $form = drupal_get_form('unitailer_form', $his_payment);
+    $form['submit']['#prefix'] = '<p style="margin-top: 10px;">' . t('Congratulations! Your trip at the promotional price has been successfully booked. You can pay for it now.') . '</p>';
+    $form['submit']['#value'] = t('Pay');
+  }
+  else {
+    if ($his_payment && $his_payment->status == 1) {
+      $form['q']['#markup'] = '<p style="border: 1px solid; padding: 5px;">' . t('Congratulations, your trip successfully paid. Wait for our call.') . '</p>';
+    }
+  }
+
+  return $form;
+}
+
+/**
+ * Function check unique of user email.
+ */
+function user_register_valid_mail($form, &$form_state) {
+  if (!empty($form_state['values']['submitted']['mail'])) {
+    $count = db_select('users', 'u')
+      ->condition('u.mail', trim($form_state['values']['submitted']['mail']))
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    if ($count > 0) {
+      form_set_error('submitted][mail', t('Sorry, but this post is already using. If you already registered, then before ordering please login to your account, or if you lost access to it - please use the form restore password.'));
+    }
+  }
+}
+
+/**
+ * Function convert the order values.
+ */
+function on_akcia_submit($form, &$form_state) {
+  $name = $form_state['values']['submitted'][1];
+  $surname = $form_state['values']['submitted'][5];
+  $email = $form_state['values']['submitted'][6];
+  $phone = $form_state['values']['submitted'][2];
+  $persons = $form_state['values']['submitted'][3];
+  $date = $form_state['values']['submitted'][4];
+
+  if ((int) $persons == 1) {
+    $price = 250;
+  }
+  else {
+    $price = 500;
+  }
+
+  $amount = Currency::init()->convert($price, 'eur', 'rub');
+
+  if ((int) $form_state['uid'] == 0) {
+    $uid = book_user_create($name, $surname, $email);
+  }
+  else {
+    $uid = $form_state['uid'];
+  }
+
+  $data = serialize(array(
+    'uid' => $uid,
+    'phone' => $phone,
+    'persons' => $persons,
+    'date' => $date,
+  ));
+
+  unitailer_write_payment($data, $amount, $uid, 'new_year_sale_turkey');
+//  drupal_mail('user', 'order_new_year_turkey', $email, $GLOBALS['language']->language, array(), variable_get('site_mail'));
+}
+
+/**
+ * Function process a success payment
+ */
+function avis_all_unitailer_payment($op, $payment, $status) {
+  if ($op == 'success' && $payment->entity == 'new_year_sale_turkey') {
+
+    db_update('unitailer_payment')
+      ->fields(array('status' => UNITAILER_PAID))
+      ->condition('id', $payment->id)
+      ->execute();
+
+    $account = user_load($payment->entity_id);
+    drupal_mail('user', 'new_year_paid', $account->mail, $GLOBALS['language']->language, array('account' => $account), variable_get('site_mail'));
+    drupal_goto('new-year');
+  }
+}
+
+/**
+ * Form element validation handler for the user login form.
+ * Allows users to authenticate by email.
+ */
+function _avis_all_user_login_validate($form, &$form_state) {
+  if (isset($form_state['values']['name'])) {
+    if ($name = db_query('SELECT name FROM {users} WHERE mail = :name', array(':name' => $form_state['values']['name']))->fetchField()) {
+      $form_state['values']['name'] = $name;
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function avis_all_preprocess_node(&$vars) {
+  $lang = $GLOBALS['language']->language;
+  drupal_add_js(array('lang' => $lang), 'setting');
+  $nid = $vars['node']->nid;
+  $clases = '';
+
+  if ($vars['node']->type == 'ticket') {
+    $status = i18n_taxonomy_localize_terms(taxonomy_term_load($vars['node']->field_ticket_status['und'][0]['tid']));
+    if ($status->tid == 7) {
+      $clases = ' closed';
+    }
+
+    $img = user_load($vars['uid'])->picture;
+    if (empty($img)) {
+      $ava = '/sites/all/themes/flight_modern/images/default_avatar.png';
+    }
+    else {
+      $ava = image_style_url('avatar', $img->uri);
+    }
+
+    $vars['header_for_tickets'] = '
+    <div class="head clearfix">
+        <a href="/' . $lang . '/tickets" class="back-to-list">' . t('Back to the list') . '</a>
+        <span class="status' . $clases . '">' . $status->name . '</span>
+        <span class="com-count">' . t('Answers: ') . $vars['node']->comment_count . '</span>
+    </div>
+    ';
+
+    $vars['author_for_tickets'] = '
+    <div class="author">
+        <img src="' . $ava . '">
+        <div class="name">' . $vars['node']->name . '</div>
+        <div class="date time">' . format_date($vars['node']->created, 'custom', 'd.m.Y в H:i') . '</div>
+    </div>
+    ';
+  }
+}
+
+/**
+ *  Implements hook_node_access().
+ *  Function create access rules to nodes from node type 'ticket'.
+ */
+function avis_all_node_access($node, $op, $account) {
+  if (is_object($node)) {
+    if (($node->type == 'ticket') && (($op == 'view') || ($op == 'update'))) {
+      if ($account->uid == $node->uid) {
+        return NODE_ACCESS_ALLOW;
+      }
+      else {
+        return NODE_ACCESS_DENY;
+      }
+    }
+  }
+
+  return NODE_ACCESS_IGNORE;
+}
+
+/**
+ *  Function return new contacts.
+ */
+function get_new_contacts() {
+  $data = variable_get('avis_contacts');
+
+  $contacts['address'] = '<p>' . t($data['items'][0]['text']) . '</p>';
+  $contacts['mobiles'][0] = t($data['items'][1]['text']);
+  $contacts['emails'][0] = t($data['items'][2]['text']);
+
+  return $contacts;
+}
+
+/**
+ *  Implements hook_comment_insert().
+ */
+function avis_all_comment_insert($comment) {
+  if ($comment->node_type == 'comment_node_ticket') {
+    mail_for_tickets($comment->uid, $comment->nid, 'answer');
+  }
+}
+
+/**
+ *  Implements hook_node_insert().
+ */
+function avis_all_node_insert($node) {
+  if ($node->type == 'ticket') {
+    mail_for_tickets($node->uid, $node->nid, 'create');
+  }
+}
+
+/**
+ *  Function send emails by tickets changes.
+ */
+function mail_for_tickets($uid, $nid, $type) {
+  $base_url = $GLOBALS['base_url'];
+  $lang = $GLOBALS['language']->language;
+  $user = user_load($uid);
+  $node = node_load($nid);
+  $site_mail = variable_get('site_mail');
+
+  $test = variable_get('testing_mail');
+  if ($test == TRUE) {
+    $site_mail = 'hi@avis.codes';
+    $user->mail = 'hi@avis.codes';
+  }
+
+  switch ($type) {
+    case 'answer':
+      if ($user->uid == $node->uid) {
+        $to = $site_mail;
+        $params['hello'] = '';
+        $params['subject'] = 'Новый ответ на тикет: "' . $node->title . '"';
+        $params['text'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">Пользователь ' . $user->name . ' оставил новый ответ в своём обращении в службу поддержки "' . $node->title . '".</p><a style="padding: 10px 20px; text-decoration: none; background: #E94D37; color: #ffffff;" href="' . $base_url . '/' . $lang . '/node/' . $node->nid . '">Перейти</a>';
+      }
+      else {
+        $user = user_load($node->uid);
+
+        if (!empty($user->field_user_name[LANGUAGE_NONE][0]['value']) && !empty($user->field_user_surname[LANGUAGE_NONE][0]['value'])) {
+          $name = $user->field_user_name[LANGUAGE_NONE][0]['value'] . ' ' . $user->field_user_surname[LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $name = $user->name;
+        }
+
+        $to = $user->mail;
+        $params['hello'] = '';
+        $params['subject'] = t('New answer on your ticket:') . ' "' . $node->title . '"';
+        $params['text'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . t(', your support case') . ' "' . $node->title . '" ' . t('have new answer from our experts. Follow the progress of your question, you can') . ' <a style="font-size: 20px; color: #313B43; font-family: Myriad Pro,sans-serif; text-decoration: underline;" href="' . $base_url . '/' . $lang . '/node/' . $node->nid . '">' . t('there') . '</a></p>';
+      }
+      send_ticket_letter($to, $params);
+      break;
+
+    case 'create':
+      $to = $site_mail;
+      $params['hello'] = '';
+      $params['subject'] = 'Создан новый тикет: "' . $node->title . '"';
+      $params['text'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">Пользователь ' . $user->name . ' создал новое обращение в службу поддержки с темой "' . $node->title . '".</p><a style="padding: 10px 20px; text-decoration: none; background: #E94D37; color: #ffffff;" href="' . $base_url . '/' . $lang . '/node/' . $node->nid . '">Перейти</a>';
+      send_ticket_letter($to, $params);
+
+      if (!empty($user->field_user_name[LANGUAGE_NONE][0]['value']) && !empty($user->field_user_surname[LANGUAGE_NONE][0]['value'])) {
+        $name = $user->field_user_name[LANGUAGE_NONE][0]['value'] . ' ' . $user->field_user_surname[LANGUAGE_NONE][0]['value'];
+      }
+      else {
+        $name = $user->name;
+      }
+
+      $to = $user->mail;
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = t('You create a new ticket:') . ' "' . $node->title . '"';
+      $params['text'] = '<p> ' . t('Our experts will consider Your ticket and send You an answer in the near time. You can follow the progress of your question') . ' <a style="font-size: 20px; color: #313B43; font-family: Myriad Pro,sans-serif; text-decoration: underline;" href="' . $base_url . '/' . $lang . '/node/' . $node->nid . '">' . t('here') . '</a></p><p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('You will get notifications at your E-mail') . '</p>';
+      send_ticket_letter($to, $params);
+      break;
+  }
+}
+
+/**
+ *  Function generate tickets letter.
+ */
+function send_ticket_letter($to, $params) {
+  global $theme_key;
+  /*GET LOGO*/
+  $params['logo'] = theme_image(array(
+    'path' => theme_get_setting('logo_path', $theme_key),
+    'attributes' => array('class' => array('logo'))
+  ));
+
+  /*GET CONTACTS*/
+  $params['contacts'] = get_new_contacts();
+
+  $body = theme('tickets_mail', $params);
+  $message = array(
+    'subject' => $params['subject'],
+    'body' => $body,
+  );
+
+  mailsystem_set(array('avis_all' => 'HTMLMailSystem__SmtpMailSystem'));
+  $rez = drupal_mail('avis_all', 'ticket', $to, $GLOBALS['language']->language, $message);
+  return;
+}
+
+/**
+ * Implements hook_mail().
+ */
+function avis_all_mail($key, &$message, $params) {
+  $message['module'] = 'avis_all';
+  $message['key'] = $key;
+  $message['subject'] = $params['subject'];
+  $message['body'] = explode(
+    MAIL_LINE_ENDINGS . MAIL_LINE_ENDINGS,
+    $params['body']
+  );
+  return $message;
+}
+
+/**
+ *  Function return some custom logo.
+ */
+function avis_all_get_logo($index) {
+  $path = 'sites/all/themes/flight_modern';
+  $logo = $path . '/images/air_logo/' . $index . '.png';
+
+  if (!file_exists(realpath($logo))) {
+    $logo = '/' . $path . '/images/air_logo/default.jpg';
+  }
+  else {
+    $logo = '/' . $logo;
+  }
+
+  return $logo;
+}
+
+/**
+ *  Implements hook_menu().
+ */
+function avis_all_menu() {
+  $items['control/testing'] = array(
+    'title' => 'Страничка для включения тестовой рассылки',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для включения тестовой рассылки на почту ar@avis.codes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_all_testing_mails'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['control/testing_unitailer/%'] = array(
+    'title' => 'Страничка для тестовой оплаты',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для тестовой оплаты',
+    'page callback' => 'test_pay_order',
+    'page arguments' => array(2),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['user/new_pass_please/%'] = array(
+    'page callback' => 'new_pass_please',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'delivery callback' => 'ajax_deliver'
+  );
+  return $items;
+}
+
+/**
+ *  Custom reset pass function.
+ */
+function new_pass_please($mail, $mode = NULL) {
+  // Если у посетителя отключён javascript, то показываем ему сообщение
+  if ($mode != 'ajax') {
+    drupal_set_message('Turn Javascript');
+    drupal_goto(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '<front>');
+  }
+
+  $acc = user_load_by_mail($mail);
+  if (!empty($acc)) {
+    //random password
+    $password = user_password(8);
+    $fields = array(
+      'pass' => $password,
+    );
+    user_save($acc, $fields);
+    // Send mail
+    drupal_mail('user', 'new_pass', $acc->mail, $GLOBALS['language']->language, array(
+      'account' => $acc,
+      'password' => $password
+    ), variable_get('site_mail'));
+
+    $commands[] = ajax_command_html('#restore-pass-wrap', '<p style="background: #10AED6; width: 85%; margin-top: 5px; padding: 5px; color: #fff;">' . t('New password success send to your email, check it please.') . '</p>');
+  }
+  else {
+    $commands[] = ajax_command_html('#restore-pass-wrap', '<p style="background: #E94E38; width: 85%; margin-top: 5px; padding: 5px; color: #fff;">' . t('OOPS! User with this mail is not find.') . $mail . '</p>');
+  }
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ *  Settings form for Testing mode.
+ */
+function avis_all_testing_mails($form, &$form_state) {
+  $form['testing_mail'] = array(
+    '#type' => 'radios',
+    '#title' => 'Testing mails',
+    '#default_value' => variable_get('testing_mail'),
+    '#options' => array(TRUE => 'on', FALSE => 'off'),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ *  Function process order for testing.
+ */
+function test_pay_order($order_id) {
+  if ($payment = unitailer_get_payment_by_id($order_id)) {
+    drupal_set_message('Оплачено');
+    module_invoke_all('unitailer_payment', 'success', $payment);
+//    drupal_goto('user-book-management');
+  }
+}
+
+/**
+ *  Function generate user login by first and last name.
+ */
+function generate_login($name, $surname) {
+  global $language;
+  $name = str_replace(" ", "_", strtolower(transliteration_get($name, '?', $language->language)));
+  $surname = str_replace(" ", "_", strtolower(transliteration_get($surname, '?', $language->language)));
+  $login = $name . '_' . $surname{0};
+  $count = db_select('users', 'u')
+    ->condition('u.name', '%' . $login . '%', 'LIKE')
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+
+  if ($count > 0) {
+    $login .= $count;
+  }
+  return $login;
+}
+
+/**
+ *  Function add to hidden field generated user login by first and last name.
+ */
+function user_register_add_username($form, &$form_state) {
+  $form_state['values']['name'] = generate_login($form_state['values']['field_user_name'][LANGUAGE_NONE][0]['value'], $form_state['values']['field_user_surname'][LANGUAGE_NONE][0]['value']);
+}
+
+/**
+ *  Implements hook_mail_alter().
+ */
+function avis_all_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
+  global $theme_key;
+  $user = user_load($mailkey['params']['account']->uid);
+
+  if (!empty($user->field_user_name[LANGUAGE_NONE][0]['value']) && !empty($user->field_user_surname[LANGUAGE_NONE][0]['value'])) {
+    $name = $user->field_user_name[LANGUAGE_NONE][0]['value'] . ' ' . $user->field_user_surname[LANGUAGE_NONE][0]['value'];
+  }
+  else {
+    $name = $user->name;
+  }
+
+  /*GET LOGO*/
+  $params['logo'] = theme_image(array(
+    'path' => theme_get_setting('logo_path', $theme_key),
+    'attributes' => array('class' => array('logo'))
+  ));
+
+  /*GET CONTACTS*/
+  $params['contacts'] = get_new_contacts();
+
+  switch ($mailkey['id']) {
+    case 'user_register_admin_created':
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = $mailkey['subject'];
+      $params['text'] = $mailkey['body'][0];
+
+      $body = theme('tickets_mail', $params);
+
+      $mailkey['subject'] = $params['subject'];
+      $mailkey['body'] = $body;
+      break;
+
+    case 'user_register_program':
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = t('Thank you for your order on the website') . ' «Mambo24travel.com»';
+      $params['text'] = '
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('To access it, you have been created account.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your data:') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Username') . ' - ' . $user->name . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('E-mail') . ' - ' . $user->mail . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Temporary password') . ' - ' . $mailkey['params']['password'] . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('You can change the password on any of your settings in the user profile.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your «Mambo24travel.com» team') . '</p>';
+
+      $body = theme('tickets_mail', $params);
+
+      $mailkey['subject'] = $params['subject'];
+      $mailkey['body'] = $body;
+      break;
+
+    case 'user_register_no_approval_required':
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = t('Thank you for registration on the website') . ' «Mambo24travel.com»';
+      $params['text'] = '
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your data:') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Username') . ' - ' . $user->name . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('E-mail') . ' - ' . $user->mail . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Temporary password') . ' - ' . $mailkey['params']['account']->password . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('You can change the password on any of your settings in the user profile.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your «Mambo24travel.com» team') . '</p>';
+
+      $body = theme('tickets_mail', $params);
+      $mailkey['subject'] = $params['subject'];
+      $mailkey['body'] = $body;
+      break;
+
+    case 'user_new_pass':
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = t('Your new password for ') . ' «Mambo24travel.com»';
+      $params['text'] = '
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('To restore access it, you have been use new password.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your data:') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Username') . ' - ' . $user->name . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('E-mail') . ' - ' . $user->mail . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Temporary password') . ' - ' . $mailkey['params']['password'] . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('You can change the password on any of your settings in the user profile.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your «Mambo24travel.com» team') . '</p>';
+
+      $body = theme('tickets_mail', $params);
+
+      $mailkey['subject'] = $params['subject'];
+      $mailkey['body'] = $body;
+      break;
+
+    case 'new_year_paid':
+      $params['hello'] = '<p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Hello, ') . $name . ',</p>';
+      $params['subject'] = t('Thank you for your pay on') . ' «Mambo24travel.com»';
+      $params['text'] = '
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('We have successfully received your payment.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your order will be processed as quickly as possible.') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Expect a call from our manager ') . '</p>
+            <p style="font-size: 18px; color: #313B43; font-family: Myriad Pro,sans-serif;">' . t('Your «Mambo24travel.com» team') . '</p>';
+      $body = theme('tickets_mail', $params);
+      $mailkey['subject'] = $params['subject'];
+      $mailkey['body'] = $body;
+      break;
+  }
+}
+
+/**
+ *  Sillent create user for order from anonim.
+ */
+function book_user_create($name, $surname, $email) {
+  //random password
+  $password = user_password(8);
+
+  //user fields
+  $fields = array(
+    'name' => generate_login($name, $surname),
+    'mail' => $email,
+    'pass' => $password,
+    'status' => 1,
+    'init' => 'email address',
+    'roles' => array(
+      DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+    ),
+    'field_user_name' => array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'value' => $name
+        )
+      )
+    ),
+    'field_user_surname' => array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'value' => $surname
+        )
+      )
+    ),
+  );
+
+  $account = user_save('', $fields);
+
+  // Send mail
+  drupal_mail('user', 'register_program', $email, $GLOBALS['language']->language, array(
+    'account' => $account,
+    'password' => $password
+  ), variable_get('site_mail'));
+  //login
+  if ($uid = user_authenticate($account->name, $password)) {
+    global $user;
+    $user = user_load($uid);
+
+    $login_array = array('name' => $account->name);
+    user_login_finalize($login_array);
+  }
+
+  if (module_exists('avis_service')) {
+    y_avisServiceCreateUser(
+      $name,
+      $surname,
+      $password,
+      $email
+    );
+  }
+  return $account->uid;
+}
+
+/**
+ *  Test of http request.
+ */
+function y_httpRequest($url, $userOptions, $adminToken) {
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+  curl_setopt($ch, CURLOPT_AUTOREFERER, 1);
+  curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0');
+  curl_setopt($ch, CURLOPT_USERPWD, $adminToken);
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_POST, TRUE);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $userOptions['data']);
+
+  $result = curl_exec($ch);
+  curl_close($ch);
+
+  return $result;
+}

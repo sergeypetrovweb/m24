@@ -1,0 +1,1245 @@
+<?php
+
+function bh_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['booking_hotels'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'booking_hotels') . $dir . $type . ".inc");
+        $used['booking_hotels'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+/**
+ * Implements hook_menu().
+ */
+
+function booking_hotels_menu()
+{
+    $items['hotels/booking/%/%/%/%/%/%'] = array(
+        'title' => t('Booking hotel'),
+        'page callback' => 'booking_hotels',
+        'page arguments' => array(2, 3, 4, 5, 6, 7),
+        'access callback' => TRUE,
+    );
+
+    $items['hotels/book/%'] = array(
+        'title' => t('Booked / purchased rooms'),
+        'page callback' => 'booking_hotels_book',
+        'page arguments' => array(2),
+//        'access callback' => TRUE,
+        'access callback' => 'booking_hotels_book_access',
+        'access arguments' => array(2),
+        'file' => 'booking_hotels_book.inc'
+    );
+
+    return $items;
+}
+
+
+/**
+ * Добавление приватности для информации
+ */
+function booking_hotels_book_access($bid) {
+  global $user;
+  $book = (object) hrk_bh_book($bid);
+  if ($book->uid == $user->uid || $user->uid == 1) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implement hook_theme()
+ */
+
+function booking_hotels_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'bh_booking' => array(
+            'template' => 'bh-booking',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'bh_booking_temp' => array(
+            'template' => 'bh-booking-temp',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'booking_hotels_form' => array(
+            'render element' => 'form',
+            'template' => 'booking-hotels-form',
+            'path' => drupal_get_path('theme', 'flight_modern') . '/templates/forms',
+        ),
+
+        'bh_book' => array(
+            'template' => 'bh-book',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'bh_popup' => array(
+            'template' => 'popups',
+            'variables' => array('title' => 'Error'),
+            'path' => $path . '/templates'
+        ),
+        'bh_header' => array(
+            'template' => 'header',
+            'variables' => array(),
+            'path' => $path . '/templates/booking'
+        ),
+        'bh_room_info' => array(
+            'template' => 'room-info',
+            'variables' => array(),
+            'path' => $path . '/templates/booking'
+        ),
+        'bh_price' => array(
+            'template' => 'price',
+            'variables' => array(),
+            'path' => $path . '/templates/booking'
+        ),
+        'bh_policy' => array(
+            'template' => 'conditions-and-limitations',
+            'variables' => array(),
+            'path' => $path . '/templates/booking'
+        ),
+        'bh_book_header' => array(
+            'template' => 'header',
+            'variables' => array(),
+            'path' => $path . '/templates/book'
+        ),
+        'bh_book_guests' => array(
+            'template' => 'guests',
+            'variables' => array(),
+            'path' => $path . '/templates/book'
+        ),
+        'bh_book_room' => array(
+            'template' => 'room-info',
+            'variables' => array(),
+            'path' => $path . '/templates/book'
+        ),
+        'bh_book_price' => array(
+            'template' => 'price',
+            'variables' => array(),
+            'path' => $path . '/templates/book'
+        ),
+        'bh_mail' => array(
+            'template' => 'mail',
+            'variables' => array(),
+            'path' => $path . '/templates/mail'
+        ),
+        'bh_book_modern' => array(
+            'template' => 'book-modern',
+            'variables' => array(),
+            'path' => $path . '/templates/book'
+        ),
+    );
+
+    return $theme;
+}
+
+function booking_hotels_image_default_styles()
+{
+    $styles = array();
+
+    $styles['bh_room_image'] = array(
+        'label' => 'Hotel booking page, image preview',
+        'effects' => array(
+            array(
+                'name' => 'image_scale_and_crop',
+                'data' => array(
+                    'width' => 265,
+                    'height' => 165,
+                    'upscale' => 1,
+                ),
+                'weight' => 0,
+            )
+        ),
+    );
+
+    return $styles;
+}
+
+function bh_popup($popup_name, $args = array())
+{
+    drupal_add_js(drupal_get_path('module', 'booking_hotels') . '/js/bh_popup.js');
+    return theme('bh_popup', array_merge(array('popup' => $popup_name), $args));
+}
+
+function hrk_bh_make_results_page_link($location_id, $date, $rooms, $nationality_id, $hotel_id, $package_id)
+{
+    return 'hotels/booking/' . $location_id . '/' . $date . '/' . $rooms . '/' . $nationality_id . '/' . $hotel_id . '/' . $package_id;
+}
+
+function __bh_get_nights($check_in, $check_out)
+{
+    $date_check_in = new \DateTime($check_in);
+    $date_check_out = new \DateTime($check_out);
+
+    return $date_check_out->diff($date_check_in)->format("%a");
+}
+
+function booking_hotels($location_id, $dates, $rooms, $nationality_id, $hotel_id, $package_id)
+{
+    /*GET SEARCH PARAMS*/
+    $sh_request_params = array('l' => $location_id, 'd' => $dates, 'r' => $rooms,'n'=>$nationality_id);
+
+    /*RETURN SEARCH_HOTELS ERROR_VALIDATING: IF INVALID SEARCH REQUEST PARAMS*/
+    $sh_request_params = hrk_sh_validate_request_param(hrk_sh_uncompress_request_param($sh_request_params));
+    if (!$sh_request_params) return hrk_sh_popup('validation');
+
+    /*CREATE HASH IDENTIFIER*/
+    $sh_request_params['currency'] = currency_get_active_currency();
+
+    $hash = hash('sha256', drupal_http_build_query($sh_request_params));
+
+    /*GET LOCAL SESSION*/
+    $session = hrk_system_session('search_hotels', 'result_sessions');
+    $session_hash = $session->getSession($hash);
+
+    /*BACK TO SEARCH RESULTS PAGE*/
+    $back_link = array(
+        'link' => array(
+            'title' => t('Try again'),
+            'path' => hrk_sh_make_results_page_link($sh_request_params)
+        )
+    );
+
+    /*RETURN ERROR_SESSION_EXPIRE: IF SESSION HASH EMPTY*/
+    if (!$session_hash) return cl_popup('session_expired', $back_link);
+
+    /*RETURN ERROR_HOTEL_DETAIL_NOT_FOUND: IF HOTEL ID NOT FOUND IN SESSION HASH HOTEL DETAIL*/
+    if (empty($session_hash['sh_hotel_detail'][$hotel_id])) return bh_popup('empty_hotel_detail', $back_link);
+
+    /*RETURN ERROR_SESSION_EXPIRE: IF DB_SESSION EXPIRED*/
+    $db_session = hrk_cl_get_session($session_hash['sid']);
+    if (!$db_session && cl_check_db_session_expire($db_session)) return cl_popup('session_expired', $back_link);
+
+    /*GET SEARCH RESULT*/
+    $result = hrk_sh_results($session_hash['rid']);
+
+    /*RETURN ERROR_SESSION_EXPIRE: IF RESULT IS EMPTY*/
+    if (!$result) return cl_popup('session_expired', $back_link);
+
+    /*RETURN ERROR_PACKAGE_DETAIL_NOT_FOUND:IF NO PACKAGE IN THE HOTEL*/
+    if (empty($result['sh_hotel_detail'][$hotel_id]['packages'][$package_id])) return bh_popup('package_not_found', $back_link);
+
+    $hotel = $result['sh_hotel_detail'][$hotel_id];
+
+    /*GET CANCELLATION POLICY AND ADD TO HOTEL*/
+    $cl = hrk_cl_engine();
+
+    /* CREATE CANCELLATION POLICY AND PAYMENT REFERENCE  REQUEST*/
+    $request = hrk_cl_hotel_payment_reference_request($db_session['session'], $hotel_id, $package_id, TRUE);
+    $request_xml = $request->getRequest();
+
+    /*DO CANCELLATION POLICY REQUEST*/
+    $response = $cl->doRequest($request_xml, $request::SOAP_ACTION);
+
+    if (!$response) {
+        return bh_popup('connection_failed', $back_link);
+    }
+
+    bh_include('BH_Helper');
+
+    /*GET POLICY*/
+    $policy = \includes\BH_Helper::parseCancellationPolicy($response);
+
+    /*GET PAYMENT REFERENCE*/
+    $payment_reference = \includes\BH_Helper::parsePaymentReference($response);
+
+    /*RETURN ERROR "SERVER_ERROR" AND SAVE ERRORS TO DB: IF HAVE ERRORS*/
+    if (!empty($policy['error'])) {
+        if ($policy['error']['code'] == 'E0300') {
+            hrk_cl_delete_session($db_session['sid']);
+            $session->destroy($hash);
+            return cl_popup('session_expired', $back_link);
+        } else {
+            hrk_cl_errors()->save($db_session['session'], array($policy['error']), \includes\CL_Errors::ERROR_BOOKING);
+        }
+
+        return bh_popup('show_error', array('text' => $policy['error']['text']));
+    }
+
+    /*RETURN ERROR "SERVER_ERROR" AND SAVE ERRORS TO DB: IF HAVE ERRORS*/
+    if (!empty($payment_reference['error'])) {
+        if ($payment_reference['error']['code'] == 'E0300') {
+            hrk_cl_delete_session($db_session['sid']);
+            $session->destroy($hash);
+            return cl_popup('session_expired', $back_link);
+        } else {
+            hrk_cl_errors()->save($db_session['session'], array($payment_reference['error']), \includes\CL_Errors::ERROR_BOOKING);
+        }
+
+        return bh_popup('show_error', array('text' => $payment_reference['error']['text']));
+    }
+
+    $hotel = array_merge($hotel, $policy, $payment_reference);
+
+    $addition_info = $sh_request_params;
+
+    /*GET ADDITIONAL INFORMATION*/
+    $addition_info['nights'] = __bh_get_nights($sh_request_params['check_in'], $sh_request_params['check_out']);
+    $addition_info['check_in'] = strtotime($sh_request_params['check_in']);
+    $addition_info['check_out'] = strtotime($sh_request_params['check_out']);
+    $hotel['_sh_params'] = $addition_info;
+
+    /*BUILD BOOKING FORM*/
+  //return theme('bh_booking_temp', array());
+  return drupal_get_form('booking_hotels_form', $location_id, $dates, $rooms,$nationality_id, $hotel_id, $package_id, $hotel, $db_session, hrk_sh_make_results_page_link($sh_request_params) . '/' . $hotel_id);
+}
+
+
+function booking_hotels_form($form, &$form_state, $location_id, $dates, $rooms, $nationality_id, $hotel_id, $package_id, $hotel, $db_session, $back_link_path)
+{
+    $form['#attributes']['data-typeform'] = 'book';
+
+    $form['package_id'] = array(
+        '#type' => 'hidden',
+        '#value' => $package_id,
+    );
+
+  $form['#theme'] = array('booking_hotels_form');
+
+    global $user;
+    global $language;
+    $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+
+    $form['#hotel'] = $hotel;
+
+    $values = isset($form_state['values']) ? $form_state['values'] : array();
+    $values = (object)$values;
+
+    /*RETURN SERVER_ERROR: IF CANT GET COUNTRIES*/
+    $phone_codes = array();
+    $nationality = array();
+    $countries = array();
+    $query = db_select('hrk_sh_countries', 'c')->fields('c', array())->orderBy('name_' . $l_prefix); //get countries phone codes
+    $result = $query->execute();
+
+    foreach ($result as $row) {
+        $name = 'name_' . $l_prefix;
+        if (!empty($row->$name)) {
+            $nationality[$row->three_letter_code] = $row->$name;
+            $countries[$row->code] = $row->$name;
+            $phone_codes[$row->phone_code] = $row->$name . '(' . $row->phone_code . ')';
+        }
+    }
+
+    if (!$phone_codes && !$nationality && $countries) return array('error' => array('#markup' => cl_popup('server_error')));
+
+    /*GET ADDITIONAL INFORMATION*/
+    $addition_info = $hotel['_sh_params'];
+
+    $form['#prefix'] = '<div class="hotel-container">';
+    $form['#suffix'] = '</div>';
+
+    /*GET FREE CANCELLATION DATE*/
+    $free_cancellation_date = strtotime('-1 days', strtotime($hotel['cancellation_policy'][0]['date_from']));
+
+    $time = '';
+    $left_time = '';
+
+    if (!hrk_bh_is_expire($free_cancellation_date)) {
+        $time_limit = new DateTime(date('Y-m-d H:i:s', $free_cancellation_date));
+        $user_time = new DateTime('now');
+
+        $diff_time = date_diff($time_limit, $user_time);
+        $left_time = format_interval(((($diff_time->y * 365.25 + $diff_time->m * 30 + $diff_time->d) * 24 + $diff_time->h) * 60 + $diff_time->i) * 60 + $diff_time->s);
+        $time = format_date($time_limit->getTimestamp(), 'medium', 'j F G:i \\G\\M\\T(O)');
+    }
+
+    /*GET HEADER BLOCK*/
+    $form['header'] = array(
+        '#markup' => theme('bh_header', array(
+            'hotel' => $hotel,
+            'addition_info' => $addition_info,
+            'back_path' => $back_link_path,
+            'time' => $time,
+            'left_time' => $left_time)),
+        '#prefix' => '<div class="hotel-block">',
+        '#suffix' => '</div>',
+    );
+
+    /*CONTACTS BLOCK*/
+    $form['contact'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Customer'),
+        '#tree' => TRUE,
+        '#prefix' => '<div class="hotel-block">',
+        '#suffix' => '</div>',
+        '#description' => t('Reservation information will be send to your e-mail'),
+        '#attributes' => array('id' => drupal_html_id('contacts'))
+    );
+
+    $form['contact']['email'] = array(
+        '#type' => 'textfield',
+        '#default_value' => isset($values->contact['email']) ? $values->contact['email'] : (isset($user->mail)) ? $user->mail : '',
+        '#title' => t('Email'),
+        '#required' => TRUE,
+        '#attributes' => array(
+            'placeholder' => t('Email'),
+            'data-error-title' => t('This field is required'),
+            'data-requiur' => 1,
+        ),
+        '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+//        '#suffix' => '</div>',
+    );
+
+    if(isset($form_state['input']) && !empty($form_state['input']['contact']['email'])) {
+        $form['contact']['pass'] = array(
+            '#type' => 'password',
+            '#default_value' => '',
+            '#title' => t('Password'),
+            '#attributes' => array(
+              'placeholder' =>  t('Password'),
+              'class' =>  array('hotels-pass')
+            ),
+//            '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">',
+            '#suffix' => '<div id="restore-pass-wrap"><a href="/user/new_pass_please/' . $form_state['input']['contact']['email'] . '/nojs" class="btn-restore-pass use-ajax">' . t('Request new password?') . '</a></div></div>',
+        );
+    } else {
+        $form['contact']['email']['#suffix'] = '</div>';
+    }
+
+    $form['contact']['code'] = array(
+        '#type' => 'select',
+        '#title' => t('Country code'),
+        '#options' => $phone_codes,
+        '#default_value' => '_none',
+        '#empty_value' => '_none',
+        '#empty_option' => t('Select a country'),
+        '#select2' => array(
+            'placeholder' => t('Select a country'),
+            'allowClear' => FALSE,
+            'minimumResultsForSearch' => 1,
+        ),
+        '#required' => TRUE,
+        '#attributes' => array(
+            'autocomplete' => 'off',
+            'data-error-title' => t('This field is required'),
+            'data-requiur' => 1,
+        ),
+        '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+        '#suffix' => '</div>',
+    );
+
+    $form['contact']['phone'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Phone'),
+        '#attributes' => array(
+            'placeholder' => t('Phone'),
+            'data-error-title' => t('This field is required'),
+            'data-requiur' => 1,
+        ),
+        '#default_value' => isset($values->contact['phone']) ? $values->contact['phone'] : '',
+        '#required' => TRUE,
+        '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+        '#suffix' => '</div>',
+    );
+
+    /*ROOM INFO BLOCK*/
+    $package = $hotel['packages'][$package_id];
+
+    $form['rooms'] = array(
+        '#type' => 'container',
+        '#prefix' => '<div class="hotel-block">',
+        '#suffix' => '</div>',
+        '#tree' => TRUE,
+        '#attributes' => array('id' => drupal_html_id('rooms'))
+    );
+
+    $index = 0;
+
+
+    foreach ($package['rooms'] as $id => $room) {
+        /*ROOM INFO BLOCK*/
+        if (!empty($hotel['images'])) {
+            $image_key = array_rand($hotel['images'], 1);
+            $room['image'] = $hotel['images'][$image_key];
+        }
+
+        $form['rooms'][$index] = array('#type' => 'fieldset');
+
+        $room['free_cancellation'] = $free_cancellation_date;
+        $room['cancellation_remarks'] = (!empty($hotel['cancellation_remarks'])) ? $hotel['cancellation_remarks'] : array();
+//        $form['rooms'][$index]['info'] = array('#markup' => theme('bh_room_info', array('room' => $room)));
+
+        $form['rooms'][$index]['id'] = array('#type' => 'value', '#value' => $room['id']);
+
+        $form['rooms'][$index]['guests'] = array('#type' => 'fieldset', '#title' => t('Guests'), '#attributes' => array('class' => array('hotel-guests-wrapper')));
+
+        /*ADULT*/
+        $count_adt = $room['adt'];
+
+        $form['rooms'][$index]['guests']['adt'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Adult')
+        );
+
+        if (!empty($room['kids'])) {
+            $form['rooms'][$index]['guests']['chd'] = array(
+                '#type' => 'fieldset',
+                '#title' => t('Child')
+            );
+        }
+
+        for ($i = 1; $i <= ($room['adt'] + $room['kids']); $i++) {
+            if ($count_adt) {
+                $form_guest_type = &$form['rooms'][$index]['guests']['adt'];
+            } else {
+                $form_guest_type = &$form['rooms'][$index]['guests']['chd'];
+            }
+
+            $form_guest_type[$i] = array('#type' => 'fieldset');
+
+            $form_guest = &$form_guest_type[$i];
+
+            $form_guest['index'] = array(
+                '#type' => 'item',
+                '#markup' => $i . '.',
+                '#prefix' => '<div class="guest-index">',
+                '#suffix' => '</div>'
+            );
+
+            $form_guest['type'] = array('#type' => 'value', '#value' => ($count_adt) ? 'Adult' : 'Child');
+
+            $form_guest['sex'] = array(
+                '#type' => 'radios',
+                '#title' => t('Sex'),
+                '#prefix' => '<div class="guest-row"><div class="guest-personal-info">',
+                '#required' => TRUE,
+                '#options' => array('MR' => t('MR.'), 'MRS' => t('MRS.')),
+                '#attributes' => array(
+                    'data-error-title' => t('This field is required'),
+                    'data-requiur' => 1,
+                ),
+            );
+
+            $form_guest['last_name'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Last name'),
+                '#required' => TRUE,
+                '#attributes' => array(
+                    'placeholder' => t('Last name'),
+                    'data-error-title' => t('This field is required'),
+                    'data-requiur' => 1,
+                    'class' => array('li-translit', 'data_type_name'),
+                    'title' => t('Enter the surname in latin, identically to the passport data'),
+                    'required' => TRUE
+                ),
+            );
+
+            $form_guest['first_name'] = array(
+                '#type' => 'textfield',
+                '#title' => t('First name'),
+                '#required' => TRUE,
+                '#attributes' => array(
+                    'placeholder' => t('First name'),
+                    'data-error-title' => t('This field is required'),
+                    'data-requiur' => 1,
+                    'class' => array('li-translit', 'data_type_name'),
+                    'title' => t('Enter the surname in latin, identically to the passport data'),
+                ),
+            );
+
+            $count_adt--;
+        }
+
+        $form['rooms'][$index]['remark'] = array(
+            '#type' => 'textarea',
+            '#attributes' => array('placeholder' => t('Requests (in English)')),
+        );
+
+        $index++;
+    }
+
+    /*CHECK IF WE CAN BOOK WITH CASH*/
+    $payment_cash = (($package['refund'] == 'Refundable' || !empty($hotel['payment_preferences']['Cash'])) && !hrk_bh_is_expire($free_cancellation_date));
+
+    $payment_cash = TRUE;
+
+    /*CASH TAXES AND FESS*/
+    $taxes_and_fees = 0;
+
+    if (!$payment_cash) {
+
+        /*GET CREDIT CARD INTERNAL*/
+        $credit_card_internal = !empty($hotel['payment_preferences']['CreditCardInternal']) ? $hotel['payment_preferences']['CreditCardInternal'] : array();
+
+        /*RETURN ERROR_BOOKING:BECAUSE WE CAN'T BOOKING IF CREDIT CARD INTERNAL IS EMPTY*/
+        if (!$credit_card_internal) return array('error' => array('#markup' => bh_popup('booking_error')));
+
+        /*GET CREDIT CARD TYPES*/
+        $credit_card_types = array();
+
+        foreach ($credit_card_internal['credit_cards'] as $credit_card) {
+            $credit_card_types[$credit_card['type']] = $credit_card['type'];
+        }
+
+        if (!$credit_card_types) $credit_card_types = array('Visa' => 'Visa', 'MasterCard' => 'MasterCard');
+
+        /*CREDIT CARD*/
+        $form['credit_card'] = array(
+            '#type' => 'fieldset',
+            '#prefix' => '<div class="hotel-block"><div class="credit-card-wrapper">',
+            '#suffix' => '</div>',
+            '#tree' => TRUE,
+            '#title' => t('Credit card'),
+        );
+
+        $form['credit_card']['address'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Address'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-personal-info "><div class="credit-card-personal-address col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('Address'), 'class' => array('li-translit')),
+        );
+
+        $form['credit_card']['city'] = array(
+            '#type' => 'textfield',
+            '#title' => t('City'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-personal-cuty col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('City'), 'class' => array('li-translit')),
+        );
+
+        $form['credit_card']['country'] = array(
+            '#type' => 'select',
+            '#title' => t('Country'),
+            '#required' => TRUE,
+            '#options' => $countries,
+            '#empty_value' => '_none',
+            '#empty_option' => t('Select a country'),
+            '#prefix' => '<div class="credit-card-personal-country col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#select2' => array(
+                'placeholder' => t('Select a country'),
+                'allowClear' => FALSE,
+                'minimumResultsForSearch' => 1
+            ),
+        );
+
+        $form['credit_card']['zip_code'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Zip code'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-personal-zip-code col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('Zip code')),
+        );
+
+        $form['credit_card']['first_name'] = array(
+            '#type' => 'textfield',
+            '#title' => t('First name'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-personal-first-name col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('Holder First name'), 'class' => array('li-translit')),
+        );
+
+        $form['credit_card']['second_name'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Second name'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-personal-second-name col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div></div>',
+            '#attributes' => array('placeholder' => t('Holder Second name'), 'class' => array('li-translit')),
+        );
+
+        $form['credit_card']['type'] = array(
+            '#type' => 'radios',
+            '#options' => $credit_card_types,
+            '#prefix' => '<div class="credit-card-card-info"><div class="credit-card-types">',
+            '#suffix' => '</div>',
+            '#title' => t('Card type'),
+            '#required' => TRUE,
+        );
+
+        $form['credit_card']['number'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Credit card number'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-number col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('Credit card number'), 'autocomplete' => 'off'),
+        );
+
+        $form['credit_card']['code'] = array(
+            '#type' => 'textfield',
+            '#title' => t('CVV2/CVC2'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-code col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div>',
+            '#attributes' => array('placeholder' => t('CVV2/CVC2'), 'autocomplete' => 'off'),
+        );
+
+        $form['credit_card']['expire'] = array(
+            '#type' => 'pickadate_date',
+            '#title' => t('Available until'),
+            '#required' => TRUE,
+            '#prefix' => '<div class="credit-card-expire col-lg-4 col-md-4 col-sm-6 col-xs-12">',
+            '#suffix' => '</div></div></div>',
+            '#attributes' => array('placeholder' => t('Available until'), 'autocomplete' => 'off'),
+            '#settings' => pickadate_date_default_settings(array(
+                'formatSubmit' => 'yyyy-mm-dd',
+                'firstDay' => 1,
+                'hiddenName' => false,
+                'selectYears' => TRUE,
+                'min' => date('[Y,n,j]', REQUEST_TIME),
+                'today' => '',
+                'close' => '',
+                'clear' => '')),
+        );
+    }
+
+    /*GET POLICY BLOCK*/
+    $form['policy'] = array(
+        '#markup' => theme('bh_policy', array('polices' => $hotel['cancellation_policy'], 'remarks' => $hotel['cancellation_remarks'])),
+    );
+
+    $form_state['build_info']['total'] = $package['package_price']['final_price'];
+
+    /*GET PRICE BLOCK*/
+    $form['price'] = array(
+        '#markup' => theme('bh_price', array('package' => $package, 'addition_info' => $addition_info, 'taxes_and_fees' => $taxes_and_fees)),
+    );
+
+  $form['agree_to_the_rules'] = array(
+    '#type' => 'checkbox',
+    '#required' => TRUE,
+    '#title' => t('I accept the terms, conditions and limitations'),
+    '#attributes' => array(
+        'autocomplete' => 'off',
+        'data-error-title' => t('This field is required'),
+        'data-requiur' => 1,
+    ),
+    '#default_value' => ''
+  );
+
+    $form['actions'] = array('#type' => 'actions');
+
+    $form['actions']['book'] = array(
+        '#type' => 'submit',
+        '#value' => ($payment_cash) ? t('Book / Buy') : t('Buy'),
+        '#submit' => ($payment_cash) ? array('booking_hotels_form_cash_payment_submit') : array('booking_hotels_form_credit_card_payment_submit')
+    );
+
+    libraries_load('translit');
+    libraries_load('tooltiper', 'shadow');
+    drupal_add_js(drupal_get_path('module', 'booking_hotels') . '/js/bh_form.js');
+    $form['#validate'] = array('booking_hotels_validation');
+    return $form;
+}
+
+function booking_hotels_validation ($form, &$form_state) {
+    global $user;
+    if ($user->uid == 0) {
+        $usr_data = db_select('users', 'u')
+            ->fields('u', array('uid', 'name'))
+            ->condition('u.mail', trim($form_state['values']['contact']['email']))
+            ->execute()
+            ->fetchObject();
+
+        if(!isset($form_state['values']['contact']['pass']) || empty($form_state['values']['contact']['pass'])) {
+            if (!empty($usr_data)) {
+                $form_state['rebuild'] = TRUE;
+
+                form_set_error('contact][email', t('Sorry, but this post is already using. If you already registered, then before ordering please login to your account, or if you lost access to it - please use the form restore password.'));
+            }
+        } else {
+//            $cur_ses = $_SESSION;
+            //login
+            if ($uid = user_authenticate($usr_data->name, $form_state['values']['contact']['pass'])) {
+                global $user;
+                $user = user_load($uid);
+
+                $login_array = array ('name' => $user->name);
+                user_login_finalize($login_array);
+            } else {
+                form_set_error('contact][pass', t('Wrong password. Try entering your password again or receive a new password to your email.'));
+            }
+        }
+    }
+}
+
+function booking_hotels_form_cash_payment_submit($form, &$form_state)
+{
+    global $user;
+
+    $args = $form_state['build_info']['args'];
+    $location_id = $args[0];
+    $dates = $args[1];
+    $rooms = $args[2];
+    $nationality_id = $args[3];
+    $hotel_id = $args[4];
+    $package_id = $args[5];
+    $hotel = $args[6];
+    $db_session = $args[7];
+
+    $values = (object)$form_state['values'];
+
+    $sh_request_params = array('l' => $location_id, 'd' => $dates, 'r' => $rooms);
+    $sh_request_params = hrk_sh_uncompress_request_param($sh_request_params);
+
+    /*BACK TO SEARCH RESULTS PAGE*/
+    $back_link = array(
+        'link' => array(
+            'title' => t('Try again'),
+            'path' => hrk_sh_make_results_page_link($sh_request_params)
+        )
+    );
+
+    if (!$db_session && cl_check_db_session_expire($db_session)) return $form_state['rebuild'] = TRUE;
+
+    $cl = hrk_cl_engine();
+
+    $package = $hotel['packages'][$package_id];
+    $request = hrk_cl_booking_cash($db_session['session'], $hotel_id, $package_id, $values->rooms, $package['package_price']['final_price']);
+    $request_xml = $request->getRequest();
+
+    /*DO CASH BOOKING REQUEST*/
+    $response = $cl->doRequest($request_xml, $request::SOAP_ACTION);
+
+    if (!$response) {
+        $form_state['values']['error'] = bh_popup('connection_failed', $back_link);
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+    }
+
+    bh_include('BH_Helper');
+
+    /*GET BOOKING RESULT*/
+    $booking_result = \includes\BH_Helper::parseBookingResponse($response);
+
+    /*RETURN ERROR "SERVER_ERROR" AND SAVE ERRORS TO DB: IF HAVE ERRORS*/
+    if (!empty($booking_result['error'])) {
+        if ($booking_result['error']['code'] == 'E0300') {
+            hrk_cl_delete_session($db_session['sid']);
+            $form_state['values']['error'] = cl_popup('session_expired', $back_link);
+            $form_state['rebuild'] = TRUE;
+            return TRUE;
+        } else {
+            hrk_cl_errors()->save($db_session['session'], array($booking_result['error']), \includes\CL_Errors::ERROR_BOOKING);
+        }
+
+        $form_state['values']['error'] = bh_popup('show_error', array('text' => $booking_result['error']['text']));
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+    }
+
+    $free_cancellation_date = strtotime('-1 days', strtotime($hotel['cancellation_policy'][0]['date_from']));
+
+    $booking_package = $package;
+
+    foreach ($values->rooms as $room) {
+        $room_id = $room['id'];
+        $booking_package['rooms'][$room_id]['guests'] = $room['guests'];
+    }
+
+    $booking_hotel = $hotel;
+    unset($booking_hotel['packages']);
+    $booking_hotel['package'] = $booking_package;
+    $booking_hotel['price'] = $booking_result['price'];
+
+    if ($values->pay_from_bonus && $values->summ_pay_from_bonus > 0) {
+      $booking_hotel['summ_pay_from_bonus'] = $values->summ_pay_from_bonus;
+    }
+
+    $guest = array('surname' => $values->rooms[0]['guests']['adt'][1]['last_name'],'name' => $values->rooms[0]['guests']['adt'][1]['first_name'], 'mail' => $values->contact['email']);
+
+    $bid = hrk_bh_save_book(
+        $booking_result['booking_id'],
+        $booking_result['order_id'],
+        $booking_result['segment_id'],
+        $booking_result['reference'],
+        $user->uid,
+        $free_cancellation_date,
+        $values->contact['email'],
+        $values->contact['code'] . $values->contact['phone'],
+        $db_session['session'],
+        $booking_hotel,
+        $guest
+    );
+
+    if ($bid) {
+        bh_mail_book($values->contact['email'], $bid);
+        hrk_cl_delete_session($db_session['sid']);
+        drupal_goto('hotels/book/' . $bid);
+    }
+
+    $form_state['rebuild'] = TRUE;
+}
+
+function booking_hotels_form_credit_card_payment_submit($form, &$form_state)
+{
+    global $user;
+
+    $args = $form_state['build_info']['args'];
+    $location_id = $args[0];
+    $dates = $args[1];
+    $rooms = $args[2];
+    $hotel_id = $args[3];
+    $package_id = $args[4];
+    $hotel = $args[5];
+    $db_session = $args[6];
+
+    $values = (object)$form_state['values'];
+
+    $sh_request_params = array('l' => $location_id, 'd' => $dates, 'r' => $rooms);
+    $sh_request_params = hrk_sh_uncompress_request_param($sh_request_params);
+
+    /*BACK TO SEARCH RESULTS PAGE*/
+    $back_link = array(
+        'link' => array(
+            'title' => t('Try again'),
+            'path' => hrk_sh_make_results_page_link($sh_request_params)
+        )
+    );
+
+    if (!$db_session && cl_check_db_session_expire($db_session)) return $form_state['rebuild'] = TRUE;
+
+    $cl = hrk_cl_engine();
+
+    //add email and phone to guests
+    foreach ($values->rooms as &$room) {
+        foreach ($room['guests'] as &$guests) {
+            foreach ($guests as &$guest) {
+                $guest['email'] = $values->contact['email'];
+                $guest['phone'] = $values->contact['code'] . $values->contact['phone'];
+            }
+        }
+    }
+
+    $package = $hotel['packages'][$package_id];
+    $request = hrk_cl_booking_credit_card($db_session['session'], $hotel_id, $package_id, $values->rooms, $package['package_price']['final_price'], $values->credit_card);
+    $request_xml = $request->getRequest();
+
+    /*DO CASH BOOKING REQUEST*/
+    $response = $cl->doRequest($request_xml, $request::SOAP_ACTION);
+
+    if (!$response) {
+        $form_state['values']['error'] = bh_popup('connection_failed', $back_link);
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+    }
+
+    bh_include('BH_Helper');
+
+    /*GET BOOKING RESULT*/
+    $booking_result = \includes\BH_Helper::parseBookingResponse($response);
+
+    /*RETURN ERROR "SERVER_ERROR" AND SAVE ERRORS TO DB: IF HAVE ERRORS*/
+    if (!empty($booking_result['error'])) {
+        if ($booking_result['error']['code'] == 'E0300') {
+            hrk_cl_delete_session($db_session['sid']);
+            $form_state['values']['error'] = cl_popup('session_expired', $back_link);
+            $form_state['rebuild'] = TRUE;
+            return TRUE;
+        } else {
+            hrk_cl_errors()->save($db_session['session'], array($booking_result['error']), \includes\CL_Errors::ERROR_BOOKING);
+        }
+
+        $form_state['values']['error'] = bh_popup('show_error', array('text' => $booking_result['error']['text']));
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+    }
+
+    $free_cancellation_date = strtotime('-1 days', strtotime($hotel['cancellation_policy'][0]['date_from']));
+
+    $booking_package = $package;
+
+    foreach ($values->rooms as $room) {
+        $room_id = $room['id'];
+        $booking_package['rooms'][$room_id]['guests'] = $room['guests'];
+    }
+
+    $booking_hotel = $hotel;
+    unset($booking_hotel['packages']);
+    $booking_hotel['package'] = $booking_package;
+    $booking_hotel['price'] = $booking_result['price'];
+
+    $guest = array('surname' => $values->rooms[0]['guests']['adt'][1]['last_name'],'name' => $values->rooms[0]['guests']['adt'][1]['first_name'], 'mail' => $values->contact['email']);
+
+    $bid = hrk_bh_save_book(
+        $booking_result['booking_id'],
+        $booking_result['order_id'],
+        $booking_result['segment_id'],
+        $booking_result['reference'],
+        $user->uid,
+        $free_cancellation_date,
+        $values->contact['email'],
+        $values->contact['code'] . $values->contact['phone'],
+        $db_session['session'],
+        $booking_hotel,
+        $guest,
+        1
+    );
+
+    if ($bid) {
+        bh_mail_book($values->contact['email'], $bid);
+        hrk_cl_delete_session($db_session['sid']);
+        drupal_goto('hotels/book/' . $bid);
+    }
+
+    $form_state['rebuild'] = TRUE;
+}
+
+function bh_mail_book($to, $bid)
+{
+    global $language;
+    global $theme_key;
+
+    $book = hrk_bh_book($bid);
+
+    if (!$book) return FALSE;
+
+    $book = (object)$book;
+    $book_info = $book->data;
+    $book_info = (object)$book_info;
+
+    $params['l_prefix'] = ($language->language == 'ru') ? 'ru' : 'en';
+
+    /*GET LOGO*/
+    $params['logo'] = theme_image(array('path' => theme_get_setting('logo_path', $theme_key), 'attributes' => array('class' => array('logo'))));
+
+    /*GET Hotel name*/
+    $params['name'] = $book_info->name;
+
+    /*GET TITLE*/
+    if ($book->is_cancel) {
+        $params['title'] = t('Your booking is canceled!');
+        $params['message_color'] = '#f32f00';
+    } else {
+        $params['title'] = (!$book->is_paid) ? t('Your rooms successfully booked!') : t('Your rooms have successfully purchased!');
+        $params['message_color'] = (!$book->is_paid) ? '#fffbdb' : '#dbffe3';
+//        $params['book_link'] = l((!$book->is_paid) ? t('Buy rooms') : t('See reservation'), 'hotels/book/' . $book->bid, array('absolute' => TRUE));
+      $params['book_link_title'] = (!$book->is_paid) ? t('Buy rooms') : t('See reservation');
+      $params['bid'] = $book->bid;
+    }
+
+    if (!$book->is_paid && !$book->is_cancel) {
+
+        $site_default_time_zone = new DateTimeZone(date_default_timezone(FALSE));
+        $time_limit = new DateTime(date('Y-m-d H:i:s', $book->expire), $site_default_time_zone);
+        $user_time = new DateTime('now', $site_default_time_zone);
+
+        $diff_time = date_diff($time_limit, $user_time);
+
+        $params['expire'] = format_date($time_limit->getTimestamp(), 'medium', 'j F G:i \\G\\M\\T(O)');
+        $params['left_time'] = format_interval(((($diff_time->y * 365.25 + $diff_time->m * 30 + $diff_time->d) * 24 + $diff_time->h) * 60 + $diff_time->i) * 60 + $diff_time->s);
+    }
+
+    /*GET CONTEXT TITLE AND BOOK ID;*/
+    $params['book_title'] = t('Reservation number:');
+    $params['book_id'] = $book->bkid;
+    $params['order_title'] = t('Order number:');
+    $params['order_id'] = $book->orid;
+    $params['segment_title'] = t('Segment number:');
+    $params['segment_id'] = $book->seid;
+
+    if ($book->cancel_id) {
+        $params['cancel_title'] = t('Cancel number:');
+        $params['cancel_id'] = $book->seid;
+    }
+
+    /*GET ROOMS*/
+    $params['rooms'] = $book_info->package['rooms'];
+    foreach ($params['rooms'] as &$room) {
+        if (!empty($book_info->images)) {
+            $image_key = array_rand($book_info->images, 1);
+            $room['image'] = $book_info->images[$image_key];
+        }
+    }
+
+    /*GET ADDITION INFO*/
+    $params['addition_info'] = $book_info->_sh_params;
+
+    /*GET CONTACTS*/
+//    $params['contacts'] = flight_az_contacts($language->language);
+    $params['contacts'] = get_new_contacts();
+
+    /*GET EMAIL BODY*/
+    $body = theme('bh_mail', $params);
+
+    $message = array(
+        'subject' => $params['book_title'] . $params['book_id'],
+        'body' => $body,
+    );
+    mailsystem_set(array('booking_hotels' => 'HTMLMailSystem'));
+
+    if ($book->is_paid && !$book->is_cancel && variable_get('site_mail', FALSE)) {
+        $to .= ',' . variable_get('site_mail');
+    }
+
+  //тестирование отправки писем
+  $test = variable_get('testing_mail');
+
+  variable_set('bh_bid_for_mail',$bid);
+  if ($test == TRUE) {
+    $to = 'ar@avis.codes';
+  }
+
+    drupal_mail('booking_hotels', 'book', $to, $language->language, $message);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function booking_hotels_mail($key, &$message, $params)
+{
+    $message['module'] = 'booking_hotels';
+    $message['key'] = $key;
+    $message['subject'] = $params['subject'];
+    $message['body'] = explode(
+        MAIL_LINE_ENDINGS . MAIL_LINE_ENDINGS,
+        $params['body']
+    );
+    return $message;
+}
+
+/**
+ * Implement hook_from_alter()
+ */
+
+function booking_hotels_form_alter(&$form, &$form_state, $form_id)
+{
+    switch ($form_id) {
+        case('booking_hotels_form'):
+            form_style_include();
+            form_style_form($form_id, $form['#id'], array('input[type=radio],input[type=checkbox]'));
+            drupal_add_js(array('booking_hotels' => array('forms' => array($form_id => $form['#id']))), 'setting');
+            drupal_add_js(drupal_get_path('module', 'booking_hotels') . '/js/booking-general.js');
+            break;
+    }
+}
+
+function hrk_bh_save_book($bkid, $orid, $seid, $reference, $uid = 0, $expire, $email, $phone, $session, $data, $guest, $is_paid = 0, $is_deleted = 0, $is_cancel = 0)
+{
+  $book = array(
+    'bkid' => $bkid,
+    'orid' => $orid,
+    'seid' => $seid,
+    'reference' => $reference,
+    'uid' => $uid,
+    'created' => REQUEST_TIME,
+    'expire' => $expire,
+    'email' => $email,
+    'phone' => $phone,
+    'session' => $session,
+    'data' => hrk_helper_result_encode($data),
+    'is_paid' => $is_paid,
+    'is_deleted' => $is_deleted,
+    'is_cancel' => $is_cancel,
+    //К текущей логике добавили uuid.
+    'uuid' => uuid_generate()
+  );
+
+  $bid = db_insert('hrk_bh_book')->fields($book)->execute();
+//    dsm($bid, '$bid');
+
+  //Добавили свой hook
+  if ($bid) {
+    $book['bid'] = $bid;
+    module_invoke_all('book_hotel', 'insert', $book, $data, $guest);
+  }
+
+  return $bid;
+}
+
+function booking_hotels_book_hotel ($op, $book, $data, $guest) {
+  if ($op == 'insert') {
+    $amount = &$data['price']['price'];
+    //dsm($amount);
+    //снятие бонусов
+    if (function_exists('bonus_dec')) {
+      if(!empty($data['summ_pay_from_bonus'])) {
+        $amount = bonus_dec($amount, $data['summ_pay_from_bonus'], $book['uid']);
+      }
+    }
+
+      if ($book['uid'] == 0) {
+          $uid = book_user_create($guest['name'], $guest['surname'], $guest['mail']);
+          hrk_bh_update_book($book['bid'], array('uid' => $uid));
+      }
+
+    unitailer_write_payment($book['uuid'], $amount, $book['bid'], 'hotel');
+  }
+}
+
+function hrk_bh_is_expire($expire)
+{
+    return ($expire < REQUEST_TIME);
+}
+
+
+function hrk_bh_update_book($bid, $fields) {
+    return db_update('hrk_bh_book')
+        ->fields($fields)
+        ->condition('bid', $bid)
+        ->execute();
+}
+
+function hrk_bh_book($bid)
+{
+    $book = array();
+    $query = db_select('hrk_bh_book', 'b')->fields('b', array())->condition('bid', $bid);
+    $result = $query->execute();
+
+    foreach ($result as $row) {
+        $book = $row;
+        $book->data = hrk_helper_result_decode($book->data);
+        break;
+    }
+    return (array)$book;
+}
+
+
+function booking_hotels_cronapi()
+{
+    $items = array();
+    $items['booking_hotels_check_expire'] = array(
+        'title' => t('Check book hotels expire'),
+        'file' => 'cron.inc',
+        'file path' => drupal_get_path('module', 'booking_hotels') . '/cron',
+        'callback' => 'booking_hotels_check_expire',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('*/30 * * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+function booking_hotels_unitailer_payment ($op, $payment, $status) {
+    if ($op == 'success' && $payment->entity == 'hotel') {
+        $book = db_select('hrk_bh_book', 'b')->fields('b', array())
+          ->fields('b', array())
+          ->condition('b.bid', $payment->entity_id)
+          ->condition('b.uuid', $payment->uuid)
+          ->execute()->fetchObject();
+
+      db_update('unitailer_payment')
+        ->fields(array('status' => UNITAILER_PAID))
+        ->condition('uuid', $payment->uuid)
+        ->execute();
+
+      //начисление бонусов
+      if (function_exists('bonus_add') && $book->uid != 0 ) {
+        bonus_add($payment->amount, $book->uid);
+      }
+
+        $book->data = hrk_helper_result_decode($book->data);
+        $book->sessions = unserialize($book->sessions);
+
+        db_update('hrk_bh_book')->fields(array('is_paid' => 1))->condition('bid', $book->bid)->execute();
+        bh_mail_book($book->email, $book->bid);
+    }
+}

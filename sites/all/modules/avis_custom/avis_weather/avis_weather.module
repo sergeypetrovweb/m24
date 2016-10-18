@@ -1,0 +1,81 @@
+<?php
+/**
+ * @file
+ * Weather from Yahoo API
+ */
+
+/**
+ * Function return the weather info from Yahoo API.
+ */
+function avis_weather_get($code) {
+  $query = db_select('hrk_sf_cities', 'i');
+  $query->innerJoin('hrk_sf_countries', 'o', 'o.cid = i.cid');
+  $query->fields('i', array('name_en', 'name_ru'));
+  $query->fields('o', array('code'));
+  $query->condition('i.code', strtoupper($code));
+  $data = $query->execute()->fetchObject();
+
+  $fix = Sklonyator::init()->get_fixed_name('city', $code, 'predlojniy');
+
+  if (!empty($fix)) {
+    $data->name_ru = 'в ' . $fix;
+  }
+
+  $base_url = "http://query.yahooapis.com/v1/public/yql";
+  $yql_query = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="' . strtolower($data->name_en) . ', ' . strtolower($data->code) . '")';
+  $yql_query_url = $base_url . "?q=" . urlencode($yql_query) . "&format=json";
+  // Make call with cURL.
+  $session = curl_init($yql_query_url);
+  curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
+  $json = curl_exec($session);
+  // Convert JSON to PHP object.
+  $phpobj = json_decode($json)->query;
+  $weather = $phpobj->results->channel->item->forecast;
+  $city = array('en' => $data->name_en, 'ru' => $data->name_ru);
+  return array('weather' => $weather, 'city' => $city);
+}
+
+/**
+ * Implements block_info ().
+ */
+function avis_weather_block_info() {
+  $blocks = array();
+  // Блок погоды.
+  $blocks['city_weather'] = array(
+    'info' => t('Block: City Weather'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements block_view ().
+ */
+function avis_weather_block_view($delta = '') {
+  $block = array();
+  $lang = $GLOBALS['language']->language;
+
+  switch ($delta) {
+    case 'city_weather':
+      // TODO заменить кастомный код города
+      $code = 'IEV';
+      $block['content'] = theme('avis_weather_block', array('code' => $code));
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements block_theme ().
+ */
+function avis_weather_theme($existing, $type, $theme, $path) {
+  $theme = array(
+    'avis_weather_block' => array(
+      'template' => 'avis_weather_block',
+      'variables' => array(),
+    ),
+  );
+
+  return $theme;
+}

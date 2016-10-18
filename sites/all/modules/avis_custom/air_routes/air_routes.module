@@ -1,0 +1,115 @@
+<?php
+/**
+ * @file
+ * Module add functionality for popular flights routes
+ */
+
+/**
+ * Implements hook_views_api()
+ */
+function air_routes_views_api() {
+  return array('api' => 3);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function air_routes_menu() {
+  $items = array();
+
+  $items['route/%/%'] = array(
+    'title' => 'Направление',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страница направления',
+    'page callback' => '_air_routes_route_page',
+    'page arguments' => array(1, 2),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function air_routes_theme() {
+  $return = array();
+
+  $return['route_page'] = array(
+    'template' => 'route_page',
+    'variables' => array(),
+  );
+
+  return $return;
+}
+
+/**
+ * Function generate route page.
+ */
+function _air_routes_route_page($from, $to) {
+  ctools_class_add(array('route-page', 'full-width'));
+  $scl = Sklonyator::init();
+
+  $price_obj = db_select('avis_parsing_directions', 'dir')
+    ->fields('dir', array('price', 'id'))
+    ->condition('dir.code_from', $from)
+    ->condition('dir.code_to', $to)
+    ->execute()
+    ->fetchAll();
+  //dsm($price_obj);
+
+  if (!empty($price_obj[0]->price)) {
+
+    $keywords = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'keywords',
+        'content' => 'авиабилеты дешево, цена авиабилетов, купить авиабилеты, ' . $scl->get_fixed_name('city', $from, 'imenitelniy') . ', ' . $scl->get_fixed_name('city', $to, 'imenitelniy'),
+      ),
+    );
+    drupal_add_html_head($keywords, 'keywords');
+
+    $arr_price = explode(' ', $price_obj[0]->price);
+    $price = number_format($arr_price[1], 0, "", " ");
+
+    drupal_set_title('Купить дешевые авиабилеты из '
+      . $scl->get_fixed_name('city', $from, 'roditelniy')
+      . ' в '
+      . $scl->get_fixed_name('city', $to, 'imenitelniy')
+      . ', цены на авиабилет ' . $scl->get_fixed_name('city', $from, 'imenitelniy')
+      . '('
+      . $from
+      . ') – '
+      . $scl->get_fixed_name('city', $to, 'imenitelniy')
+      . '('
+      . $to
+      . ') от ' . $price . ' руб.');
+
+    $keywords = array(
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'name' => 'description',
+        'content' => 'Купить дешевые авиабилеты '
+          . $scl->get_fixed_name('city', $from, 'imenitelniy')
+          . ' - '
+          . $scl->get_fixed_name('city', $to, 'imenitelniy')
+          . ' . Низкие цены на прямые авиабилеты '
+          . $scl->get_fixed_name('city', $from, 'imenitelniy')
+          . ' - ' . $scl->get_fixed_name('city', $to, 'imenitelniy')
+          . ', скидки, акции, сравнение цен от авиакомпаний.',
+      ),
+    );
+    drupal_add_html_head($keywords, 'description');
+
+    return theme('route_page', array(
+      'from' => $from,
+      'to' => $to,
+      'price' => $price,
+      'id_route' => $price_obj[0]->id,
+    ));
+
+  }
+  else {
+    drupal_not_found();
+  }
+}

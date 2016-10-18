@@ -1,0 +1,24 @@
+<?php
+
+function form_style_include()
+{
+    static $used = array();
+  if ($GLOBALS['theme'] == 'flight_modern') {
+    if (!isset($used['form_style'])) {
+        drupal_add_js(drupal_get_path('module', 'form_style') . '/js/jquery.formstyler.js');
+        drupal_add_css(drupal_get_path('module', 'form_style') . '/css/jquery.formstyler.css');
+        $used['form_style'] = TRUE;
+    }}
+}
+
+function form_style_form($form_id, $html_dorm_id, $selectors = array('input', 'select'))
+{
+    $data[$form_id] = array(
+        'html_form_id' => $html_dorm_id,
+        'selectors' => $selectors
+    );
+  if ($GLOBALS['theme'] == 'flight_modern') {
+    drupal_add_js(array('form_style' => $data), 'setting');
+    drupal_add_js(drupal_get_path('module', 'form_style') . '/js/form_style_init.js');
+  }
+}

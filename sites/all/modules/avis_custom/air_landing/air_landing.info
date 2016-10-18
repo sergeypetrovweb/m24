@@ -1,0 +1,7 @@
+name = Air Langing
+description = "Module add functionality for many landings by popular flights."
+package = Avis
+version = 1.0
+core = 7.x
+
+files[] = class/air_landing.calendar.inc

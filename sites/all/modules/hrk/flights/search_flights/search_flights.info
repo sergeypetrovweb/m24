@@ -1,0 +1,20 @@
+name = Flights Search
+description = "Adds search flights functionality"
+package = HRK
+
+dependencies[] = form_style
+dependencies[] = ctools
+dependencies[] = session_api
+dependencies[] = currency
+dependencies[] = fapi_validation
+dependencies[] = search_js_widgets
+dependencies[] = ultimate_cron
+dependencies[] = ep_api
+dependencies[] = helper
+dependencies[] = tooltiper
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-travel"
+datestamp = "1407427200"
+

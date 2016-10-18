@@ -1,0 +1,35 @@
+html body.toolbar, html body.admin-menu.logged-in {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+#admin-menu {
+    display: none;
+    position: fixed;
+}
+
+#admin-switch {
+    z-index: 100500;
+    position: fixed;
+    bottom: 2px;
+    left: 2px;
+    background: #000;
+    color: #fff;
+    font-size: 20px;
+    width: 22px;
+    border-radius: 50%;
+    height: 22px;
+    cursor: pointer;
+    line-height: 22px;
+    text-align: center;
+    font-family: "Times New Roman";
+}
+
+body:not(.admin-menu) #admin-switch
+{
+    display: none;
+}
+
+#admin-menu-wrapper ul {
+    font-size: 1em !important;
+}

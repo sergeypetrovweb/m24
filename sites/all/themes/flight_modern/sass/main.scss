@@ -1,0 +1,64 @@
+// Читаем sass/READ.ME
+
+// ---БАЗОВЫЕ БИБЛИОТЕКИ---
+
+// Видео: http://susy.oddbird.net/demos/
+// Документация: http://susydocs.oddbird.net/en/latest/
+@import "susy";
+
+// Документация: http://breakpoint-sass.com/
+@import "breakpoint";
+
+// ---НАСТРОЙКИ ПРОЕКТА---
+
+$container: 1170px;
+$desktop: 1024px;
+$desktopMid: 1024px 1599px;
+$desktopSmall: 1024px 1366px;
+$tablet: 641px 1023px;
+$tabletAir: 768px 1023px;
+$tabletSm: 641px 820px;
+$tabletMid: 820px 1023px;
+$tabletDesktop: 641px;
+$mobile: 0 640px;
+$mobileAir: 0 767px;
+$mobileTablet: 0 1023px;
+
+
+$susy: (
+        flow: ltr,
+        math: fluid,
+        output: float,
+        gutter-position: after,
+        container: 1024px,
+        container-position: center,
+        columns: 18.5,
+        gutters: .725,
+        column-width: false,
+        global-box-sizing: border-box,
+        last-flow: to,
+        debug: (
+                image: hide,
+                color: rgba(#66f, .25),
+                output: background,
+                toggle: top right,
+        ),
+        use-custom: (
+                background-image: true,
+                background-options: false,
+                box-sizing: true,
+                clearfix: false,
+                rem: true,
+        )
+);
+
+
+// ---РАБОЧИЕ ФАЙЛЫ ПРОЕКТА---
+
+@import "mixins";
+@import "common";
+@import "mmenu";
+@import "styles"; //Стили
+@import "new-year"; //Стили
+@import "new-search"; //Стили
+@import "new-tickets"; //Стили

@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for currency.
+ */
+/**
+ * Implement hook_install
+ */
+function currency_install()
+{
+    variable_set('currency', array('eur' => 'EUR', 'usd' => 'USD', 'rub' => 'RUB'));
+}
+
+/**
+ * Implement hook_uninstall
+ */
+function currency_uninstall()
+{
+    variable_del('currency');
+}

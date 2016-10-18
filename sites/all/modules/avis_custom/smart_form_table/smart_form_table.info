@@ -1,0 +1,6 @@
+name = Smart form table
+description = "Provide UI tables for control lists."
+package = Avis
+version = 1.0
+core = 7.x
+dependencies[] = ui_strings

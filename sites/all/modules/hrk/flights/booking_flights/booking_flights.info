@@ -1,0 +1,19 @@
+name = Booking Flights
+description = "Adds booking flights functionality"
+package = HRK
+
+dependencies[] = form_style
+dependencies[] = ctools
+dependencies[] = session_api
+dependencies[] = currency
+dependencies[] = fapi_validation
+dependencies[] = search_js_widgets
+dependencies[] = ep_api
+dependencies[] = tooltiper
+dependencies[] = search_flights
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-travel"
+datestamp = "1407427200"
+

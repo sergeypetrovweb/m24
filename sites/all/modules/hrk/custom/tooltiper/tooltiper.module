@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function tooltiper_libraries_info()
+{
+    $libraries['tooltiper'] = array(
+        'name' => 'Tooltiper',
+        'vendor url' => 'https://github.com/iamceege/tooltipster/blob/master/js/jquery.tooltipster.min.js',
+        'download url' => 'https://github.com/iamceege/tooltipster/blob/master/js/jquery.tooltipster.min.js',
+        'version arguments' => array(
+            'file' => 'js/jquery.tooltipster.js',
+            'pattern' => '@v([0-9]+.[0-9]+.[0-9])@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'js/jquery.tooltipster.js'
+            ),
+            'css' => array(
+                'css/tooltipster.css',
+                'css/themes/tooltipster-light.css',
+                'css/themes/tooltipster-noir.css',
+                'css/themes/tooltipster-punk.css',
+                'css/themes/tooltipster-shadow.css',
+            ),
+        ),
+        // Optional: Specify alternative variants of the library, if available.
+        'variants' => array(
+            'light' => array(
+                'files' => array(
+                    'js' => array(
+                        'js/jquery.tooltipster.min.js'
+                    ),
+                    'css' => array(
+                        'css/tooltipster.css',
+                        'css/themes/tooltipster-light.css',
+                    ),
+                ),
+            ),
+            'noir' => array(
+                'files' => array(
+                    'js' => array(
+                        'js/jquery.tooltipster.min.js'
+                    ),
+                    'css' => array(
+                        'css/tooltipster.css',
+                        'css/themes/tooltipster-noir.css',
+                    ),
+                ),
+            ),
+            'punk' => array(
+                'files' => array(
+                    'js' => array(
+                        'js/jquery.tooltipster.min.js'
+                    ),
+                    'css' => array(
+                        'css/tooltipster.css',
+                        'css/themes/tooltipster-punk.css',
+                    ),
+                ),
+            ),
+            'shadow' => array(
+                'files' => array(
+                    'js' => array(
+                        'js/jquery.tooltipster.min.js'
+                    ),
+                    'css' => array(
+                        'css/tooltipster.css',
+                        'css/themes/tooltipster-shadow.css',
+                    ),
+                ),
+            ),
+        )
+    );
+
+    return $libraries;
+}

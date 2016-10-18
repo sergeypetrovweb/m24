@@ -1,0 +1,10 @@
+name = Session API
+description = Adds easy way to work with sessions, now do not need that variable sessions changed or will conflict with another module of the system.Add session api for another module like "HRK-Flights","HRK-Hotels"
+core = 7.x
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-session-api"
+datestamp = "1407427200"
+

@@ -1,0 +1,221 @@
+<?php
+/**
+ * @file
+ * Cache for popular transfers
+ */
+
+/**
+ * Function prepare combinations to work
+ */
+function _air_combinations_prepare($result, $from, $to, $only_min = 0) {
+  $i = 0;
+
+  $combinations = &$result['combinations'];
+  $flights = &$result['flights'];
+  $codes = &$result['codes '];
+  $currency_help = Currency::init();
+  $combinations_index = array();
+  $price_sort = array();
+
+  if ($combinations) {
+    foreach ($combinations as $airline_combinations) {
+
+      foreach ($airline_combinations as $index => $combination) {
+        $price = ceil($combination['price'][$currency_help->get_base_currency()]);
+        $price_sort[$i] = $price;
+        $combinations_index[$i] = array(
+          'airline_code' => $combination['validating_airline_code'],
+          'price' => $price,
+          'flights' => array(),
+          'time_in_air' => 0,
+          'transfer_flights' => -count($combination['index_list']),
+        );
+
+        foreach ($combination['index_list'] as $dir => $ref) {
+          $comb_flights = $flights[$combination['sequence_number']][$ref][$dir];
+          $combinations_index[$i]['transfer_flights'] += count($comb_flights);
+
+          foreach ($comb_flights as $flight_index => $flight) {
+            $combinations_index[$i]['flights'][] = array(
+              'arrival' => $flight['arrival'],
+              'departure' => $flight['departure'],
+              'city_departure' => $codes['airports'][$flight['departure_airport']]['city'],
+              'city_arrival' => $codes['airports'][$flight['arrival_airport']]['city'],
+              'time' => format_interval($flight['arrival'] - $flight['departure']),
+              'plain' => $flight['marketing_airline'] . ' ' . $flight['flight_number'],
+              'design_quantity' => $flight['design_quantity'],
+            );
+            $combinations_index[$i]['time_in_air'] += ($flight['arrival'] - $flight['departure']);
+          }
+
+        }
+
+        $time_in_air_index[] = $combinations_index[$i]['time_in_air'];
+        $transfer_index[] = $combinations_index[$i]['transfer_flights'];
+        $i++;
+      }
+
+    }
+  }
+
+  array_multisort($combinations_index, SORT_ASC, SORT_NUMERIC, $price_sort);
+
+  if ($only_min > 0) {
+    return array_shift($combinations_index);
+  }
+
+  $not_transfers = 0;
+  $whis_transfers = 0;
+  $low_cost = 0;
+
+  $combinations_to_save = array();
+
+  foreach ($combinations_index as $combination) {
+    $need_to_save = FALSE;
+
+    if ($combination['transfer_flights'] > 0 && $whis_transfers < 5) {
+      $whis_transfers++;
+      $need_to_save = TRUE;
+    }
+
+    if ($combination['transfer_flights'] == 0 && $not_transfers < 5) {
+      $not_transfers++;
+      $need_to_save = TRUE;
+    }
+
+    if ($low_cost < 5) {
+      $low_cost++;
+      $need_to_save = TRUE;
+    }
+
+    if ($need_to_save) {
+      $combinations_to_save[] = array(
+        'airline_code' => $combination['airline_code'],
+        'price' => $combination['price'],
+        'time_in_air' => $combination['time_in_air'],
+        'transfer_flights' => $combination['transfer_flights'],
+        'arrival' => $combination['flights'][0]['arrival'],
+        'city_arrival' => $to,
+        'city_departure' => $from,
+        'plain' => $combination['flights'][0]['plain'],
+        'design_quantity' => $combination['flights'][0]['design_quantity'],
+      );
+    }
+
+    if ($low_cost >= 5 && $not_transfers >= 5 && $whis_transfers >= 5) {
+      break;
+    }
+  }
+
+  return $combinations_to_save;
+}
+
+/**
+ * Function get combinations
+ * $departure - departure date
+ */
+function _air_get_combinations($from, $to, $departure, $only_min = 0) {
+  $q_params = array(
+    'direction_type' => 'direction_type',
+    'trip' => array(
+      1 => array(
+        'departure' => $departure,
+        'direction_from' => array(
+          'code' => $from,
+          'type' => 'city'
+        ),
+        'direction_to' => array(
+          'code' => $to,
+          'type' => 'city'
+        ),
+      ),
+    ),
+    'passengers' => array(
+      'adt' => 1,
+    ),
+    'cabin_type ' => 'E',
+  );
+
+  $ep_session = hrk_ep_create_session();
+  $ep = hrk_ep_engine();
+
+  if (empty($ep_session) || !$ep->connect($ep_session['session'])) {
+    $ep->disconnect();
+    return FALSE;
+  }
+
+  $request = hrk_ep_make_search_request('flight')->setTrips($q_params['trip'])
+    ->setPassengers($q_params['passengers'])
+    ->setCabinType($q_params['cabin_type']);
+  $request_xml = $request->getRequest();
+  $response = $ep->doRequest($request_xml, $request::SOAP_ACTION);
+
+  if (!$response) {
+    if ($ep->disconnect()) {
+      hrk_ep_delete_session($ep_session['sid']);
+    }
+    return FALSE;
+  }
+  $result = hrk_sf_parse_response($response);
+  $combinations = _air_combinations_prepare($result, $from, $to, $only_min);
+  return $combinations;
+}
+
+;
+
+/**
+ * Function save date & price information to cache
+ */
+function _air_cache_date_save($price, $id) {
+  db_set_active('stage');
+  db_update('air_calendar')
+    ->fields(array
+      (
+        'price' => $price,
+        'time' => time(),
+      )
+    )
+    ->condition('id', $id)
+    ->execute();
+  db_set_active('default');
+}
+
+/**
+ * Function save flights information to cache
+ */
+function _air_cache_flights_save($combinations, $did) {
+  db_set_active('stage');
+  $transaction = db_transaction();
+  try {
+    if ($combinations) {
+      $air_combinations = db_insert('air_combinations')->fields(array(
+        'airline_code',
+        'price',
+        'time_in_air',
+        'transfer_flights',
+        'arrival',
+        'city_arrival',
+        'city_departure',
+        'plain',
+        'design_quantity',
+      ));
+
+      foreach ($combinations as $combination) {
+        $air_combinations->values($combination);
+      }
+      $air_combinations->execute();
+
+      db_insert('air_directions_time')
+        ->fields(array(
+          'did' => $did,
+          'time' => time(),
+        ))
+        ->execute();
+    }
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('Route parsing', $e);
+  }
+  db_set_active('default');
+}

@@ -1,0 +1,9 @@
+name = Test Carsolize
+description = "Test e-Carsolize API functionality"
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-test"
+datestamp = "1407427200"
+

@@ -1,0 +1,69 @@
+<?php
+/**
+ * Implements hook_schema()
+ */
+function avis_cities_name_schema() {
+  $schema['avis_fixed_cities_name'] = array(
+    'description' => 'Table for directions from Yandex Sklonyator',
+    'fields' => array(
+      'code' => array(
+        'description' => t('Code'),
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+      ),
+      'imenitelniy' => array(
+        'description' => 'Именительный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'roditelniy' => array(
+        'description' => 'Родительный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'datelniy' => array(
+        'description' => 'Дательный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'vinitelniy' => array(
+        'description' => 'Винительный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'tvoritelniy' => array(
+        'description' => 'Творительный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'predlojniy' => array(
+        'description' => 'Предложный',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('code'),
+  );
+  return $schema;
+}
+
+
+/**
+ * Implements hook_uninstall()
+ */
+function avis_cities_name_uninstall() {
+  drupal_uninstall_schema('avis_fixed_cities_name');
+}

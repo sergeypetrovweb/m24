@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function search_meme_libraries_info()
+{
+    $libraries['search_meme'] = array(
+        'name' => 'SearchMeme',
+        'version arguments' => array(
+            'file' => 'search_meme.js',
+            'pattern' => '@v([0-9]+.[0-9]+.[0-9])@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'search_meme.js'
+            ),
+            'css'=>array(
+                'css/search_meme.css'
+            )
+        )
+    );
+
+    return $libraries;
+}

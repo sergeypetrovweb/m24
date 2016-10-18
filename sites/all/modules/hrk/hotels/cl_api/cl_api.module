@@ -1,0 +1,154 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function cl_api_menu()
+{
+    $items['admin/config/system/carsolize'] = array(
+        'title' => t('Carsolize Configuration'),
+        'description' => t('Administer basic settings for the Carsolize module.'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('cl_configuration_form'),
+        'access callback' => TRUE,
+        'file' => 'cl_api_admin.inc'
+    );
+    return $items;
+}
+
+
+function cl_api_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['cl_api'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'cl_api') . $dir . $type . ".inc");
+        $used['cl_api'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+function cl_api_cronapi()
+{
+    $items = array();
+    $items['cl_api_close_sessions'] = array(
+        'title' => t('Delete carsolize session after 40 minutes'),
+        'file' => 'cron.inc',
+        'file path' => drupal_get_path('module', 'cl_api') . '/cron',
+        'callback' => 'cl_api_close_sessions',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('*/15 * * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+function cl_api_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'cl_popup' => array(
+            'template' => 'cl-popup',
+            'variables' => array('title' => 'Error'),
+            'path' => $path . '/templates'
+        )
+    );
+
+    return $theme;
+}
+
+function hrk_cl_engine($mode = '')
+{
+    cl_api_include('CL_Engine');
+    return new \includes\CL_Engine($mode = '');
+}
+
+function hrk_cl_create_session()
+{
+    cl_api_include('CL_Engine');
+    return \includes\CL_Engine::createSession();
+}
+
+function hrk_cl_get_session($sid)
+{
+    cl_api_include('CL_Engine');
+    return \includes\CL_Engine::getSession($sid);
+}
+
+function hrk_cl_delete_session($sid)
+{
+    cl_api_include('CL_Engine');
+    return \includes\CL_Engine::deleteSession($sid);
+}
+
+function hrk_cl_errors()
+{
+    cl_api_include('CL_Errors');
+    return new \includes\CL_Errors();
+}
+
+function hrk_cl_search_hotels_request($session, $details = 'Low')
+{
+    cl_api_include('CL_HotelsSearch', 'requests');
+    return \requests\CL_HotelsSearch::create($session, $details);
+}
+
+function hrk_cl_search_hotel_details_request($session, $include_details = FALSE)
+{
+    cl_api_include('CL_HotelsPackageDetails', 'requests');
+    return \requests\CL_HotelsPackageDetails::create($session, $include_details);
+}
+
+function hrk_cl_cancellation_policy_request($session, $hotel_id, $package_id)
+{
+    cl_api_include('CL_CancellationPolicy', 'requests');
+    return \requests\CL_CancellationPolicy::create($session, $hotel_id, $package_id);
+}
+
+function hrk_cl_hotel_payment_reference_request($session, $hotel_id, $package_id, $cancellation = FALSE)
+{
+    cl_api_include('CL_HotelPaymentReference', 'requests');
+    return \requests\CL_HotelPaymentReference::create($session, $hotel_id, $package_id, $cancellation);
+}
+
+function hrk_cl_booking_cash($session_id, $hotel_id, $package_id, $rooms, $price)
+{
+    cl_api_include('CL_BookingCash', 'requests');
+    return \requests\CL_BookingCash::create($session_id, $hotel_id, $package_id, $rooms, $price);
+}
+
+function hrk_cl_booking_credit_card($session_id, $hotel_id, $package_id, $rooms, $price, $credit_card)
+{
+    cl_api_include('CL_BookingCreditCard', 'requests');
+    return \requests\CL_BookingCreditCard::create($session_id, $hotel_id, $package_id, $rooms, $price, $credit_card);
+}
+
+function hrk_cl_cancel_book($session_id, $segment_id)
+{
+    cl_api_include('CL_BookingCancel', 'requests');
+    return \requests\CL_BookingCancel::create($session_id, $segment_id);
+}
+
+function hrk_cl_check_book_status($session_id, $segment_id)
+{
+    cl_api_include('CL_CheckBookingStatus', 'requests');
+    return \requests\CL_CheckBookingStatus::create($session_id, $segment_id);
+}
+
+
+function cl_check_db_session_expire($db_session)
+{
+    if (!empty($db_session) && $db_session['created'] <= strtotime('- 40 minutes', REQUEST_TIME)) return TRUE;
+
+    return FALSE;
+}
+
+function cl_popup($popup_name, $args = array())
+{
+    drupal_add_js(drupal_get_path('module', 'cl_api') . '/js/cl_popup.js');
+    return theme('cl_popup', array_merge(array('popup' => $popup_name), $args));
+}

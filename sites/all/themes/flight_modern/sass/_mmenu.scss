@@ -1,0 +1,263 @@
+@include breakpoint (0 769px) {
+  a.navbar-brand {
+    display: inline-block;
+    width: 50%;
+  }
+}
+
+@include breakpoint (0) {
+  .navbar-toggle {
+    margin: 11px 0;
+  }
+
+  .navbar-toggle .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: #888 !important;
+  }
+}
+
+html.mm-opened {
+  .mm-page {
+    &:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 100%;
+      background: rgba(0,0,0,.4);
+      z-index: 1000;
+    }
+  }
+}
+
+#off-menu {
+  width: 225px;
+  background: #fff;
+  overflow: visible;
+  -webkit-box-shadow: 1px 1px 15px rgba(50, 50, 50, 0.75);
+  -moz-box-shadow:    1px 1px 15px rgba(50, 50, 50, 0.75);
+  box-shadow:         1px 1px 15px rgba(50, 50, 50, 0.75);
+
+  #mm-close-button {
+    position: absolute;
+    font-size: 26px;
+    color: #fff;
+    opacity: .9;
+    text-decoration: none;
+    left: -46px;
+    top: 20px;
+    background: url('/sites/all/themes/flight_modern/images/glyph_close_button.png') center no-repeat;
+    height: 26px;
+    width: 26px;
+    cursor: pointer;
+    @include transitionAll(.2s);
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .ajax-progress-throbber {
+    display: none;
+  }
+
+  .mm-panel {
+    //background: none !important;
+    padding: 0 30px;
+  }
+
+  .mm-hidden {
+    display: block !important;
+    position: static;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  ul.dropdown-menu.mm-listview {
+    display: none;
+  }
+
+  .mm-listview > li {
+    &:after {
+      content: none;
+    }
+
+    a {
+      color: #666;
+      font: normal 16px/1.2 'Tahoma';
+      @include transitionAll(.15s);
+
+      &.active,
+      &:hover {
+        color: #E94C38;
+      }
+    }
+  }
+
+  .main_menu {
+    position: relative;
+    padding-bottom: 26px;
+
+    &:after {
+      content: '';
+      border-bottom: 1px solid #ccc;
+      display: inline-block;
+      position: absolute;
+      left: 21px;
+      bottom: 0;
+      width: 160px;
+    }
+  }
+
+  .user-menu {
+    padding-top: 3px;
+  }
+
+  .open > ul.dropdown-menu.mm-listview {
+    display: block;
+    z-index: 1999;
+    border: 1px solid #eee;
+    -webkit-box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 0;
+    background-color: #f9f9f9;
+    top: 57px;
+    min-width: 100px;
+    padding: 2px 0;
+    opacity: 1;
+    left: inherit;
+
+    &:before {
+      content: '';
+      width: 36px;
+      height: 16px;
+      display: inline-block;
+      position: absolute;
+      top: -8px;
+      right: 18px;
+      background: url("/sites/all/themes/flight_modern/images/arrow_ctools_dropdown.png") no-repeat center;
+    }
+
+    .active {
+      display: none;
+    }
+
+    li {
+      &:after {
+        content: none;
+      }
+    }
+
+    a {
+      padding: 10px;
+    }
+
+    img {
+      display: inline-block;
+    }
+  }
+
+  .top-mob {
+    overflow: visible !important;
+    position: relative;
+    z-index: 11;
+
+    .user-mob,
+    .currency-mob,
+    .language-mob {
+      position: static;
+      display: inline-block;
+      vertical-align: top;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    .user-mob {
+      float: right;
+      margin-top: -1px;
+      margin-right: -5px;
+
+      img {
+        border-radius: 50%;
+      }
+    }
+
+    .language-mob {
+      margin-top: 1px;
+
+      img {
+        display: block;
+        width: 19px;
+        height: auto;
+      }
+
+      > ul.dropdown-menu.mm-listview {
+
+        &:before {
+          right: 56px;
+        }
+      }
+    }
+
+    .currency-mob {
+      margin-top: 3px;
+      border-right: 1px solid #EBEBEC;
+      padding-right: 15px;
+      margin-right: -4px;
+
+      > ul.dropdown-menu.mm-listview {
+        min-width: 56px;
+        left: 26px;
+
+        &:before {
+          right: 16px;
+        }
+      }
+    }
+  }
+
+  .currency-title-active {
+    font: 17px "Myriad Pro";
+    color: #222;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  a.dropdown-toggle {
+    text-decoration: none;
+
+    &[aria-expanded="true"] {
+      .currency-title-active {
+        color: #444;
+      }
+    }
+  }
+
+  .language-mob {
+    .dropdown-toggle {
+      text-indent: -9999px;
+      font-size: -9999px;
+      color: transparent;
+      position: relative;
+      white-space: nowrap;
+
+      span {
+        text-indent: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 0 15px;
+        display: block;
+      }
+    }
+  }
+}

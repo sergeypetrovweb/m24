@@ -1,0 +1,808 @@
+<?php
+
+function search_hotels_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['search_hotels'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'search_hotels') . $dir . $type . ".inc");
+        $used['search_hotels'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+/**
+ * Implement hook_block_info()
+ */
+function search_hotels_block_info()
+{
+    $blocks['search'] = array(
+        'info' => t('Hotels search form'),
+        'cache' => DRUPAL_NO_CACHE, // default
+    );
+
+    $blocks['search_mini'] = array(
+      'info' => t('Hotels search form mini'),
+      'cache' => DRUPAL_NO_CACHE, // default
+    );
+
+    $blocks['search_hotels_result_query'] = array(
+        'info' => t('Block shows the parameters of the hotels search from url'),
+        'cache' => DRUPAL_NO_CACHE
+    );
+
+    return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function search_hotels_block_view($delta = '')
+{
+    $block = array();
+
+    switch ($delta) {
+        case('search'):
+            $block['subject'] = t('Hotels search form');
+            $block['content'] = drupal_get_form('search_hotels_search_form');
+            break;
+      case('search_mini'):
+        $block['subject'] = t('Hotels search form mimi');
+        $block['content'] = '<div id="simple_mini_filter"><div class="container">' . render(drupal_get_form('search_hotels_search_form', 'mini')) . '</div></div>';
+        break;
+        case('search_hotels_result_query'):
+            $block['subject'] = t('Block shows the parameters of the hotels search from url');
+            $block['content'] = search_hotels_result_query_block();
+            break;
+    }
+
+    return $block;
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+
+function search_hotels_menu()
+{
+    $items['hotels/results/%/%/%/%'] = array(
+        'title' => t('Hotels Results'),
+        'page callback' => 'search_hotels_results',
+        'page arguments' => array(2, 3, 4, 5),
+        'access callback' => TRUE,
+        'file' => 'search_hotels_results.inc'
+    );
+
+    $items['hotels/results/%/%/%/%/%'] = array(
+        'title' => t('Hotel Detail'),
+        'page callback' => 'search_hotels_hotel_detail',
+        'page arguments' => array(2, 3, 4, 5, 6),
+        'access callback' => TRUE,
+        'file' => 'search_hotels_results.inc'
+    );
+
+    $items['hotels/city/%'] = array(
+      'title' => t('Hotels Results'),
+      'page callback' => 'search_hotels_results_city',
+      'page arguments' => array(2),
+      'access callback' => TRUE,
+      'file' => 'search_hotels_results.inc'
+    );
+
+    $items['search/hotels/cities/autocomplete'] = array(
+        'page callback' => 'search_hotels_cities_autocomplete',
+        'access arguments' => array('access content'),
+    );
+
+    return $items;
+}
+
+/**
+ * Implement hook_theme()
+ */
+
+function search_hotels_theme($existing, $type, $theme, $path)
+{
+    $theme = array(
+        'simple_hotels_search' => array(
+          'render element' => 'form',
+          'template' => 'simple-hotels',
+          'path' => drupal_get_path('theme', 'flight_modern') . '/templates/forms',
+        ),
+        'search_hotels_result_filter' => array(
+          'render element' => 'form',
+          'template' => 'simple-hotels-filter',
+          'path' => drupal_get_path('theme', 'flight_modern') . '/templates/forms',
+        ),
+        'sh_results' => array(
+            'template' => 'results',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'sh_result_hotel' => array(
+            'template' => 'result-hotel',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'sh_popup' => array(
+            'template' => 'popups',
+            'variables' => array(),
+            'path' => $path . '/templates'
+        ),
+        'sh_result_query' => array(
+            'template' => 'result-query',
+            'variables' => array(),
+            'path' => $path . '/templates/blocks'
+        ),
+    );
+
+    return $theme;
+}
+
+function search_hotels_cronapi()
+{
+    $items = array();
+    $items['search_hotels_delete_results'] = array(
+        'title' => t('Delete hotels result after 40 minutes'),
+        'file' => 'cron.inc',
+        'file path' => drupal_get_path('module', 'search_hotels') . '/cron',
+        'callback' => 'search_hotels_delete_results',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('*/15 * * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+function search_hotels_search_form($form, &$form_state)
+{
+  $form['#theme'] = array('simple_hotels_search');
+  $form['#attributes']['data-typeform'] = 'search';
+  $form['#mini'] = FALSE;
+
+  if (isset($form_state['build_info']['args'][0])) {
+    if ($form_state['build_info']['args'][0] == 'mini') {
+      $form['#mini'] = TRUE;
+    }
+  }
+
+   global $language;
+    $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+  $path = drupal_get_path('module', 'search_hotels');
+    drupal_add_library('system', 'ui.dialog');
+    drupal_add_library('system', 'ui.autocomplete');
+    search_js_add_widget('autocomplete');
+
+    //check if library spinner install
+    $library_spinner = libraries_detect('jquery_ui_spinner');
+  if ($GLOBALS['theme'] == 'flight_modern') {
+    $form['#attached']['js'] = array(
+        drupal_get_path('module', 'search_hotels') . '/js/search_form.js',
+        drupal_get_path('module', 'search_hotels') . '/js/search_form_autocomplete.js'
+    );
+  }
+
+    if (!empty($library_spinner['installed'])) {
+        libraries_load('jquery_ui_spinner');
+        search_js_add_widget('spinner');
+        $form['#attached']['js'][] = drupal_get_path('module', 'search_hotels') . '/js/search_form_plus_minus.js';
+    }
+
+    $values = (object)search_hotels_form_values($form_state);
+
+    $form['city'] = array(
+        '#type' => 'textfield',
+        //'#title' => t('City'),
+        '#attributes' => array(
+          'autocomplete' => 'off',
+          'placeholder' => t('City'),
+          'data-error-title' => t('This field is required.'),
+          'data-requiur' => 1,
+          'class' => array('ui-autocomplete-fields', 'flight-point from', 'ui-autocomplete-fields-city')
+        ),
+        '#required' => TRUE,
+        '#default_value' => isset($values->city) ? $values->city : '',
+    );
+
+    $form['location_id'] = array(
+        '#type' => 'hidden',
+        '#default_value' => isset($values->location_id) ? $values->location_id : '',
+        '#attributes' => array('autocomplete' => 'off', 'class' => array('hidden-location-id')),
+    );
+
+    //added with new datepicker
+    $form['datepicker_date'] = array(
+      '#type' => 'textfield',
+      '#attributes' => array(
+        'placeholder' => t('Date'),
+        'class' => array(
+          'datepicker_date',
+          'calendar',
+        ),
+        'target-id' => 'datepicker_date_value_1',
+      ),
+    );
+
+    $form['datepicker_date_value'] = array(
+      '#type' => 'hidden',
+      '#attributes' => array(
+        'class' => array(
+          'datepicker_date_value',
+        ),
+        'id' => 'datepicker_date_value_1',
+      ),
+    );
+    //added with new datepicker
+
+    $form['check_in'] = array(
+        '#type' => 'pickadate_date',
+        '#default_value' => isset($values->check_in) ? $values->check_in : '',
+        //'#title' => t('Check-In Date'),
+//        '#required' => TRUE,
+        '#attributes' => array(
+          'placeholder' => t('Check-In Date'),
+          'autocomplete' => 'off',
+          'class' => array('calendar from'),
+          'data-error-title' => t('This field is required.'),
+          'data-requiur' => 1,
+          'data-select'=>($values->check_in)?strtotime($values->check_in):time()
+        ),
+        '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'min' => date('[Y,n,j]', strtotime('-1 month', ($values->check_in) ? strtotime($values->check_in) : REQUEST_TIME)),
+            'max' => date('[Y,n,j]', strtotime('+11 month', ($values->check_in) ? strtotime($values->check_in) : REQUEST_TIME)),
+            'hiddenName' => false,
+            'hiddenSuffix' => '',
+            'today' => '',
+            'close' => '',
+            'clear' => ''))
+    );
+
+    $form['check_out'] = array(
+        '#type' => 'pickadate_date',
+        '#default_value' => isset($values->check_out) ? $values->check_out : '',
+        //'#title' => t('Check-Out Date'),
+        '#attributes' => array(
+          'placeholder' => t('Check-Out Date'),
+          'autocomplete' => 'off', 'required' => true,
+          'class' => array('calendar to'),
+          'data-error-title' => t('This field is required.'),
+          'data-requiur' => 1,
+          'data-select'=>($values->check_out)?strtotime($values->check_out):time()
+        ),
+        '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'min' => date('[Y,n,j]', strtotime('-1 month', ($values->check_out) ? strtotime($values->check_out) : REQUEST_TIME)),
+            'hiddenName' => false,
+            'hiddenSuffix' => '',
+            'today' => '',
+            'close' => '',
+            'clear' => ''))
+    );
+
+    $nationality = array();
+    $query = db_select('hrk_sh_countries', 'c')->fields('c', array())->orderBy('name_' . $l_prefix); //get nationality
+    $result = $query->execute();
+
+
+    foreach ($result as $row) {
+        $name = 'name_' . $l_prefix;
+        if (!empty($row->$name)) {
+            $nationality[$row->cid] = $row->$name;
+        }
+    }
+
+    $form['nationality'] = array(
+        '#type' => 'select',
+        '#title' => t('Nationality'),
+        '#options' => $nationality,
+        '#empty_value' => '_none',
+        '#empty_option' => t('Select a Nationality'),
+        '#select2' => array(
+            'placeholder' => t('Select a Nationality'),
+            'allowClear' => FALSE,
+            'minimumResultsForSearch' => 1,
+            'maximumSelectionSize' => 5
+        ),
+        '#attributes' => array(
+          'autocomplete' => 'off',
+          'data-error-title' => t('This field is required.'),
+          'data-requiur' => 1,
+        ),
+    );
+
+    $form['rating'] = array(
+        '#title' => t('Rating'),
+        '#type' => 'select',
+        '#empty_value' => '0',
+        '#empty_option' => t('Any Rating'),
+        '#options' => array(5 => 5, 4 => 4, 3 => 3, 2 => 2, 1 => 1),
+        '#prefix' => '<div class="element-invisible">',
+        '#suffix' => '</div>',
+
+    );
+
+    $form['rooms_count'] = array(
+      '#type' => 'hidden',
+      '#default_value' => isset($values->rooms_count) ? $values->rooms_count : 1,
+      '#attributes' => array('autocomplete' => 'off')
+    );
+
+    /* rooms fields */
+    $form['rooms'] = array(
+        '#type' => 'fieldset',
+        '#tree' => TRUE
+    );
+
+    $rooms = &$form['rooms'];
+
+    /*CHILD AGE*/
+    for ($i = 0; $i < 4; $i++) {
+        $rooms[$i] = array(
+            '#type' => 'fieldset'
+        );
+
+        $states_values = array();
+
+        if ($i) {
+            for ($j = $i; $j < 4; $j++) {
+                $states_values[] = array('value' => $j + 1);
+            }
+
+            $rooms[$i]['#states'] = array(
+                'visible' => array(
+                    ':input[name="rooms_count"]' => $states_values,
+                )
+            );
+        }
+
+        $room = isset($values->rooms[$i]) ? $values->rooms[$i] : array();
+        $room = (object)$room;
+
+        $rooms[$i]['adt'] = array(
+          '#type' => 'textfield',
+//          '#title' => t('Adults'),
+          '#default_value' => isset($room->adt) ? $room->adt : 1,
+          '#attributes' => array(
+            'id' => 'adults',
+            'class' => array('number', 'guest-type', 'room-guest-type-adt'),
+            'data-room-guest-type' => 'adt',
+            'autocomplete' => 'off'
+          ),
+          '#size' => 2,
+          '#theme_wrappers' => array(),
+          //Add wrapper
+          '#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 people adults">
+            <div class="col-lg-7 col-md-7 col-sm-7 col-xs-12 text">' . t("Adults") . '</div>
+            <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12 counts_people">',
+          '#suffix' => '</div></div>',
+        );
+
+        $rooms[$i]['chd'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Child'),
+            '#default_value' => isset($room->chd) ? $room->chd : 0,
+            '#attributes' => array(
+              'id' => 'teens',
+              'class' => array('number', 'guest-type', 'room-guest-type-chd'),
+              'data-room-guest-type' => 'chd',
+              'data-chd-index' => $i,
+              'autocomplete' => 'off'
+            ),
+          '#size' => 2,
+          '#theme_wrappers' => array(),
+          //Add wrapper
+          '#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 people children">
+            <div class="col-lg-7 col-md-7 col-sm-7 col-xs-12 text">' . t("Children") . '</div>
+            <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12 counts_people">',
+          '#suffix' => '</div></div>',
+        );
+
+        $rooms[$i]['chd_hidden'] = array('#type' => 'hidden', '#value' => isset($room->chd) ? $room->chd : 0, '#attributes' => array('autocomplete' => 'off'));
+
+        $rooms[$i]['age'] = array(
+            '#type' => 'textfield',
+//            '#title' => t('Child Age'),
+            '#default_value' => isset($room->age) ? $room->age : 0,
+            '#attributes' => array(
+//              'id' => 'teens_age',
+              'class' => array('number_age', 'guest-type', 'room-guest-type-age'),
+              'data-room-guest-type' => 'age',
+              'autocomplete' => 'off'
+            ),
+            '#states' => array(
+              'visible' => array(':input[name="rooms[' . $i . '][chd_hidden]"]' => array(array('value' => 1), array('value' => 2)))
+            ),
+/*          '#size' => 2,
+          '#theme_wrappers' => array(),*/
+          //Add wrapper
+          '#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 people child_age">
+            <div class="col-lg-7 col-md-7 col-sm-7 col-xs-12 text">'.t('Child Age').'</div>
+            <div class="col-lg-5 col-md-5 col-sm-5 col-xs-12 counts_people">',
+          '#suffix' => '</div></div>',
+        );
+
+        if ($i) {
+            $rooms[$i]['remove_room'] = array(
+                '#type' => 'container',
+                '#attributes' => array('class' => array('search-hotels-form-remove-room')),
+                '#states' => array('visible' => array(':input[name="rooms_count"]' => array('value' => $i + 1)))
+            );
+
+            $rooms[$i]['remove_room']['icon'] = array(
+                '#markup' => theme_container(array(
+                    'element' => array(
+                        '#attributes' => array('class' => 'search-hotels-form-remove-room-icon'),
+                        '#children' => t('Delete')
+                    )
+                ))
+            );
+        }
+    }
+
+    /* end rooms fields*/
+
+    $form['add_room'] = array(
+        '#type' => 'container',
+        '#attributes' => array('class' => array('search-hotels-form-add-room'))
+    );
+
+    $form['add_room']['icon'] = array(
+        '#markup' => theme_container(array(
+            'element' => array(
+                '#attributes' => array('class' => 'search-hotels-form-add-room-icon'),
+                '#children' => ''
+            )
+        ))
+    );
+
+    $form['add_room']['title'] = array(
+        '#markup' => theme_container(array(
+            'element' => array(
+                '#attributes' => array('class' => 'search-hotels-form-add-room-title'),
+                '#children' => t('Add a new room')
+            )
+        ))
+    );
+
+    $form['add_room']['description'] = array(
+        '#markup' => theme_container(array(
+            'element' => array(
+                '#attributes' => array('class' => 'search-hotels-form-add-room-description'),
+                '#children' => t('(up to 4)')
+            )
+        ))
+    );
+
+    $form['actions'] = array('#type' => 'actions');
+
+    $form['actions']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Search'),
+        '#attributes' => array('class' => array('seacrh')),
+        '#submit' => array('search_hotels_search_form_submit'),
+    );
+
+    return $form;
+}
+
+function search_hotels_form_values($form_state)
+{
+    //set default array set
+
+    $default = array(
+        'city' => '',
+    );
+
+    for ($i = 0; $i < 4; $i++) {
+        $default['rooms'][$i] = array(
+            'adt' => 1,
+            'chd' => 0,
+            'age' => 0,
+        );
+    }
+
+    $values = (isset($form_state['values'])) ? $form_state['values'] : array();
+    $query_values = hrk_sh_validate_request_param(hrk_sh_uncompress_request_param($_GET));
+    if ($query_values) {
+
+        global $language;
+        $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+
+        $locations = hrk_sh_codes()->getCode('city', $query_values['location_id']);
+        $location = reset($locations);
+
+        $query_values['city'] = (empty($location['name_ru'])) ? $location['name_en'] : $location['name_' . $l_prefix];
+        $query_values['rooms_count'] = count($query_values['rooms']);
+    }
+    $get_values = ($query_values) ? $query_values : array();
+
+    return array_replace_recursive($default, $get_values, $values);
+}
+
+function _get_hotels_result_page($location_id, $check_in, $check_out,  $rooms, $nationality) {
+
+  $query_array = array();
+
+  $query_array['location_id'] = $location_id;
+  $query_array['check_in'] = $check_in;
+  $query_array['check_out'] = $check_out;
+  $query_array['nationality'] = $nationality;
+  $query_array['rooms'] = $rooms;
+
+  $params = hrk_sh_validate_request_param($query_array);
+
+  if ($params) {
+    $params['currency'] = 'eur';
+    $hash = hash('sha256', drupal_http_build_query($params));
+    $session = hrk_system_session('preloader', 'search_hotels');
+    $session->setSession(array($hash => TRUE));
+
+    drupal_goto(hrk_sh_make_results_page_link($params));
+  }
+}
+
+function search_hotels_search_form_submit($form, &$form_state)
+{
+
+  $values = (object)$form_state['values'];
+  $query_array = array();
+
+  $query_array['location_id'] = $values->location_id;
+  $query_array['check_in'] = $values->check_in;
+  $query_array['check_out'] = $values->check_out;
+  $query_array['nationality'] = $values->nationality;
+
+  //added with new datepicker
+  if (!empty($values->datepicker_date_value)) {
+    $dates = explode(' - ', $values->datepicker_date_value);
+
+    $query_array['check_in'] = $dates[0];
+    $query_array['check_out'] = $dates[1];
+  }
+
+  for ($i = 0; $i < $values->rooms_count; $i++) {
+    $query_array['rooms'][$i] = $values->rooms[$i];
+  }
+
+  $params = hrk_sh_validate_request_param($query_array);
+
+  if ($params) {
+    $params['currency'] = currency_get_active_currency();
+    $hash = hash('sha256', drupal_http_build_query($params));
+    $session = hrk_system_session('preloader', 'search_hotels');
+    $session->setSession(array($hash => TRUE));
+
+    $params['rating'] = $values->rating;
+    drupal_goto(hrk_sh_make_results_page_link($params));
+  }
+}
+
+function search_hotels_result_query_block()
+{
+    $location = array();
+    $params = (object)hrk_sh_validate_request_param(hrk_sh_get_params_from_results_page_link(current_path(), TRUE));
+
+    if (!empty($params->location_id)) {
+
+        $cities = hrk_sh_codes()->getCode('cities', $params->location_id);
+
+        $location = array(
+            'info' => reset($cities),
+            'check_in' => strtotime($params->check_in),
+            'check_out' => strtotime($params->check_out),
+        );
+
+    }
+    if (!empty($location)) {
+        $location['change_params_link'] = url('', array('query' => hrk_sh_compress_request_param((array)$params), 'fragment' => 'quicktabs-search_forms_tabs=1'));
+        drupal_add_js(drupal_get_path('module', 'search_hotels') . '/js/search_result_query.js', array('scope' => 'footer'));
+    }
+
+    return theme('sh_result_query', array('location' => $location));
+}
+
+//helper functions
+function hrk_sh_codes()
+{
+    search_hotels_include('SH_Codes');
+    return \includes\SH_Codes::getInstance();
+}
+
+function hrk_sh_validate_request_param($search_params, $default = false)
+{
+    search_hotels_include('HotelsHelper');
+    return \includes\HotelsHelper::create()->validate_request_param($search_params, $default);
+}
+
+function hrk_sh_parse_response($response)
+{
+    helper_include('SoapXmlReader');
+    search_hotels_include('HotelsHelper');
+
+    return \includes\HotelsHelper::create()->makeArrayFromSearchResponse(\includes\SoapXmlReader::create()->parse($response));
+}
+
+function hrk_sh_parse_hotel_package_response($response)
+{
+    helper_include('SoapXmlReader');
+    search_hotels_include('HotelsHelper');
+
+    return \includes\HotelsHelper::create()->getPackagesFromHotelDetailsResponse(\includes\SoapXmlReader::create()->parse($response));
+}
+
+function hrk_sh_parse_hotel_info_response($response)
+{
+    helper_include('SoapXmlReader');
+    search_hotels_include('HotelsHelper');
+
+    return \includes\HotelsHelper::create()->getHotelInfoFromHotelDetailsResponse(\includes\SoapXmlReader::create()->parse($response));
+}
+
+function hrk_sh_make_results_page_link($params)
+{
+    search_hotels_include('HotelsHelper');
+    return \includes\HotelsHelper::create()->make_results_page_link($params);
+}
+
+function hrk_sh_get_params_from_results_page_link($link, $full = FALSE)
+{
+    search_hotels_include('HotelsHelper');
+    return \includes\HotelsHelper::create()->get_results_params_from_results_page_link($link, $full);
+}
+
+function hrk_sh_compress_request_param($params)
+{
+    search_hotels_include('HotelsHelper');
+    return \includes\HotelsHelper::create()->compress_request_param($params);
+}
+
+function hrk_sh_uncompress_request_param($params)
+{
+    search_hotels_include('HotelsHelper');
+    return \includes\HotelsHelper::create()->uncompress_request_param($params);
+}
+
+function hrk_sh_results($rid)
+{
+    $result = array();
+
+    $query = db_select('hrk_sh_results', 'r')->fields('r', array('result'))->condition('rid', $rid)->execute();
+
+    foreach ($query as $row) {
+        $result = hrk_helper_result_decode($row->result);
+        break;
+    }
+
+    return $result;
+}
+
+function hrk_sh_popup($popup_name, $args = array())
+{
+    drupal_add_js(drupal_get_path('module', 'search_hotels') . '/js/search_popup.js');
+    return theme('sh_popup', array_merge(array('popup' => $popup_name), $args));
+}
+
+function search_hotels_cities_autocomplete()
+{
+    $matches = array();
+    $search = isset($_GET['term']) ? $_GET['term'] : '';
+
+    if ($search) {
+        $matches = _search_hotels_cities_autocomplete_make_search($search);
+
+        if (!$matches) {
+            text_correction_include();
+
+            //Correction mistakenly typed words in a different keyboard layout
+            $text_correction = new Text_LangCorrect();
+            $search_with_correction = $text_correction->parse($search, Text_LangCorrect::KEYBOARD_LAYOUT);
+
+            if ($search_with_correction) {
+                $matches = _search_hotels_cities_autocomplete_make_search($search_with_correction);
+            }
+        }
+    }
+    drupal_json_output($matches);
+}
+
+function _search_hotels_cities_autocomplete_make_search($search)
+{
+    global $language;
+
+    if ($search == 'getItemsWithoutSearch') {
+      $var = variable_get('avis_cities_list', '');
+      if (!empty($var)) {
+        $items_var = $var['hotels_list'];
+        $items = explode("\n", str_replace("\r", "", $items_var));
+      } else {
+        $items = array('Киев', 'Москва');
+      }
+    }
+
+    $matches = array();
+    $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+
+    //search cities
+    $query = db_select('hrk_sh_cities', 'ct');
+    $query->leftJoin('hrk_sh_countries', 'c', 'ct.cid = c.cid');
+    $query->fields('ct', array('name_en', 'name_ru', 'lid'));
+    $query->fields('c', array('name_en', 'name_ru', 'code'));
+
+    $condition_or = db_or();
+    if ($search == 'getItemsWithoutSearch') {
+      foreach ($items as $item) {
+        $condition_or->condition('ct.name_ru', db_like($item) . '%', 'LIKE');
+        $condition_or->condition('ct.name_en', db_like($item) . '%', 'LIKE');
+      }
+    } else {
+      $condition_or->condition('ct.name_ru', db_like($search) . '%', 'LIKE');
+      $condition_or->condition('ct.name_en', db_like($search) . '%', 'LIKE');
+    }
+    $query->condition($condition_or);
+    $query->orderBy('name_' . $l_prefix);
+    $query->range(0, 10);
+
+    $cities_rows = $query->execute();
+
+    foreach ($cities_rows as $row) {
+        $city_name = (empty($row->name_ru)) ? 'name_en' : 'name_' . $l_prefix;
+        $country_name = 'c_name_' . $l_prefix;
+        $matches[] = array(
+            'name' => $row->$city_name,
+            'lid' => $row->lid,
+            'code' => $row->code,
+            'country' => $row->$country_name,
+            'type' => 'city',
+            'category' => t('Cities')
+        );
+    }
+
+    return $matches;
+}
+
+
+/**
+ * Implement hook_from_alter()
+ */
+
+function search_hotels_form_alter(&$form, &$form_state, $form_id)
+{
+    switch ($form_id) {
+        case 'search_hotels_search_form':
+            form_style_include();
+            form_style_form($form_id, $form['#id'], array('input[type=radio]', 'select'));
+            drupal_add_js(array('search_hotels' => array('forms' => array($form_id => $form['#id']))), 'setting');
+            break;
+        case 'search_hotels_result_filter':
+            //form_style_include();
+            //form_style_form($form_id, $form['#id'], array('input[type=radio]', 'select'));
+            break;
+        case 'search_hotels_details_result_filter':
+//            form_style_include();
+//            form_style_form($form_id, $form['#id'], array('input[type=radio]', 'select'));
+            unset($form['filters_right']);
+            $prefix = '<div class="col-lg-2 col-md-2 col-sm-2 col-xs-6">';
+            $suffix = '</div>';
+            $form['filters_left']['basis']['#title'] = t('Service');
+            $form['filters_left']['class']['#title'] = t('Room Class');
+            $form['filters_left']['type']['#title'] = t('Room Type');
+            $form['filters_left']['basis']['#prefix'] = $prefix;
+            $form['filters_left']['basis']['#suffix'] = $suffix;
+            $form['filters_left']['class']['#prefix'] = $prefix;
+            $form['filters_left']['class']['#suffix'] = $suffix;
+            $form['filters_left']['type']['#prefix'] = $prefix;
+            $form['filters_left']['type']['#suffix'] = $suffix;
+            $form['filters_left']['price']['#prefix'] =  '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12"><div class="default_range"><span class="bg_irs"></span><div class="price">';
+            $form['filters_left']['price']['#suffix'] =  '</div></div></div>';
+            break;
+    }
+}

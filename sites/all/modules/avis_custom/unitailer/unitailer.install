@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function unitailer_schema() {
+  $schema = array();
+
+  $schema['unitailer_payment'] = array(
+    'description' => 'The base table for unitailer payment information.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uuid' => array(
+        'description' => 'Target uuid',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'entity_id' => array(
+        'description' => 'Target id',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'entity' => array(
+        'description' => 'entity',
+        'type' => 'varchar',
+        'length' => '64',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'STATUS',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'amount' => array(
+        'description' => 'Amount',
+        'type' => 'float',
+        'length' => '24',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+function unitailer_uninstall() {
+  drupal_uninstall_schema('unitailer');
+}
+

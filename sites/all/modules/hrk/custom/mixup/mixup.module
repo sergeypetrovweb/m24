@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function mixup_libraries_info()
+{
+    $libraries['mixup'] = array(
+        'name' => 'Mixup',
+        'vendor url' => 'https://github.com/patrickkunka/mixitup/blob/master/src/jquery.mixitup.js',
+        'download url' => 'https://github.com/patrickkunka/mixitup/blob/master/src/jquery.mixitup.js',
+        'version arguments' => array(
+            'file' => 'jquery.mixitup.js',
+            'pattern' => '@v([0-9]+.[0-9]+.[0-9])@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'jquery.mixitup.js'
+            )
+        ),
+        'variants' => array(
+            'min' => array(
+                'files' => array(
+                    'js' => array(
+                        'jquery.mixitup.min.js'
+                    )
+                ),
+            )
+        )
+    );
+
+    return $libraries;
+}

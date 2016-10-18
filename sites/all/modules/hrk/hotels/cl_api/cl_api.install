@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function cl_api_schema()
+{
+    $schema = array();
+
+    $schema['hrk_cl_sessions'] = array(
+        'description' => 'The base table for tmp session info about connection carsolize API.',
+        'fields' => array(
+            'sid' => array(
+                'description' => 'The primary identifier for a session.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'created' => array(
+                'description' => 'The timestamp when was created session.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'session' => array(
+                'description' => 'The session carsolize id.',
+                'type' => 'varchar',
+                'length'=>255,
+                'not null' => TRUE,
+            )
+        ),
+        'primary key' => array('sid'),
+    );
+
+    $schema['hrk_cl_errors'] = array(
+        'description' => 'The base table for errors carsolize API.',
+        'fields' => array(
+            'eid' => array(
+                'description' => 'The primary identifier for a error.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'session' => array(
+                'description' => 'The session different params in serialize.',
+                'type' => 'varchar',
+                'length'=>255,
+                'not null' => TRUE,
+            ),
+            'error' => array(
+                'description' => 'The response carsolize error body.',
+                'type' => 'text',
+                'serialize' => TRUE
+            ),
+            'created' => array(
+                'description' => 'The timestamp error.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'type' => array(
+                'description' => 'The type of error search/booking or other.',
+                'type' => 'int',
+                'length' => 2,
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            )
+        ),
+        'primary key' => array('eid'),
+    );
+
+    return $schema;
+}
+
+/**
+ * Implements hook_install()
+ */
+function cl_api_install()
+{
+
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+
+function cl_api_uninstall()
+{
+    drupal_uninstall_schema('cl_api');
+}

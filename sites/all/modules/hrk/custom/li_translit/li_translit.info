@@ -1,0 +1,9 @@
+name = li Translit
+description = Add li_Translit jQuery library
+core = 7.x
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-translit"
+datestamp = "1407427200"

@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function avis_parsing_schema() {
+  $schema['avis_parsing_directions'] = array(
+    'description' => 'Table for directions from parsing result',
+    'fields' => array(
+      // описание поля nid
+      'id' => array(
+        'description' => t('ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // описание поля sometext
+      'title' => array(
+        'description' => t('title'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'link' => array(
+        'description' => t('link'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'code_from' => array(
+        'description' => t('code_from'),
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'code_to' => array(
+        'description' => t('code_to'),
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'price' => array(
+        'description' => t('price'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['avis_parsing_cities'] = array(
+    'description' => 'Table for cities from parsing result',
+    'fields' => array(
+      // описание поля nid
+      'id' => array(
+        'description' => t('ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // описание поля sometext
+      'name' => array(
+        'description' => t('name'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'link' => array(
+        'description' => t('link'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'code' => array(
+        'description' => t('code'),
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Impements hook_uninstall()
+ */
+function avis_parsing_uninstall() {
+  drupal_uninstall_schema('avis_parsing');
+}

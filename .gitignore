@@ -1,0 +1,20 @@
+# Ignore configuration files that may contain sensitive information.ls
+sites/*/settings*.php
+
+# Ignore paths that contain user-generated content.
+sites/*/private
+sites/*/temp
+sites/*/themes/*/.sass-cache
+sites/*/files
+
+# Ignore paths contain PHPStorm IDE files
+.idea
+.idea/*
+
+# Ignore paths contain generated Awstats files
+webstat
+webstat/*
+
+sites/default/files/languages
+sites/default/files/languages/*
+plain

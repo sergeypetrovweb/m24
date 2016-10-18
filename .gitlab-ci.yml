@@ -1,0 +1,7 @@
+stages:
+  - sniffers
+
+drupal_code_sniffers:
+  stage: sniffers
+  script:
+    - ~/ci/avis_ci_gitlab_wrapper.sh

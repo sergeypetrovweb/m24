@@ -1,0 +1,76 @@
+.form-item-summ-pay-from-bonus {
+    display: none;
+    width: 200px;
+    float: left;
+    margin-top: 40px;
+    margin-left: 20px;
+}
+
+.form-item-summ-pay-from-bonus label {
+    display: none;
+}
+
+.form-item-pay-from-bonus {
+    margin-top: 40px;
+    display: inline-block;
+    float: left;
+}
+
+.form-item-pay-from-bonus label {
+    line-height: 26px;
+}
+
+.price-wrapper .after-price {
+    display: inline-block;
+}
+
+.price-wrapper .after-price-bonus {
+    display: none;
+}
+
+#booking-flights-book-form .after-price-bonus {
+    font-size: 16px;
+}
+
+.after-price-bonus .currency {
+    color: #777 !important;
+    position: relative;
+}
+
+.after-price-bonus .currency:after {
+    content: '';
+    height: 1px;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    background: #777;
+}
+
+.bonus-block {
+    float: right;
+    display: inline-block;
+    padding: 5px 10px;
+    min-width: 218px;
+    text-align: center;
+}
+
+.bonus-block .form-item-pay-from-bonus {
+    margin-top: 0;
+    float: none;
+    display: block;
+}
+
+.bonus-block .form-item-summ-pay-from-bonus {
+    margin: 0;
+    float: none;
+    width: 100%;
+}
+
+#booking-flights-book-form .filter_table table tr td:nth-child(6) {
+    width: 20%;
+}
+
+#booking-flights-book-form .filter_table table tr td:nth-child(7) {
+    width: 12%;
+}

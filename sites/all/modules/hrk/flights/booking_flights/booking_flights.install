@@ -1,0 +1,135 @@
+<?php
+
+function booking_flights_schema()
+{
+    $schema = array();
+
+    $schema['hrk_bf_book'] = array(
+        'description' => 'The base table for book information.',
+        'fields' => array(
+            'bid' => array(
+                'description' => 'The primary identifier for booking.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'cid' => array(
+                'description' => 'Booking Context ID',
+                'type' => 'varchar',
+                'length' => '16',
+                'not null' => FALSE,
+                'default' => '',
+            ),
+            'tid' => array(
+                'description' => 'Booking e-Ticket Context ID',
+                'type' => 'varchar',
+                'length' => '16',
+                'not null' => FALSE,
+                'default' => '',
+            ),
+          'uuid' => array(
+            'description' => 'Target uuid',
+            'type' => 'varchar',
+            'length' => '255',
+            'not null' => FALSE,
+            'default' => '',
+          ),
+          'pid' => array(
+            'description' => 'Payment record ID',
+            'type' => 'int',
+            'length' => 11,
+            'unsigned' => TRUE,
+            'not null' => FALSE,
+            'default' => 0,
+          ),
+            'azid' => array(
+                'description' => 'Azericard record ID',
+                'type' => 'int',
+                'length' => 11,
+                'unsigned' => TRUE,
+                'not null' => FALSE,
+                'default' => 0,
+            ),
+            'uid' => array(
+                'description' => 'The user ID.',
+                'type' => 'int',
+                'length' => 11,
+                'not null' => FALSE,
+                'unsigned' => TRUE,
+                'default' => 0,
+            ),
+            'created' => array(
+                'description' => 'The timestamp when was created book.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'expire' => array(
+                'description' => 'The timestamp when book expire.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'email' => array(
+                'type' => 'varchar',
+                'length' => 254,
+                'not null' => TRUE,
+                'description' => "Booking contact e-mail address.",
+            ),
+            'phone' => array(
+                'type' => 'varchar',
+                'length' => 254,
+                'not null' => TRUE,
+                'description' => "Booking contact phone.",
+            ),
+            'sessions' => array(
+                'description' => 'The sessions in serialize.',
+                'type' => 'text',
+                'serialize' => TRUE
+            ),
+            'data' => array(
+                'description' => 'The Search combination info and booking passengers information  array with gzcompress().',
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'provider' => array(
+                'description' => 'Provider 1 - Amadeus, 2 - TravelFusion',
+                'type' => 'int',
+                'length' => 1,
+                'not null' => TRUE,
+            ),
+            'is_ticket' => array(
+                'description' => 'Provider 1 - Ticket is issued, 0 - The ticket is not issued',
+                'type' => 'int',
+                'length' => 1,
+                'not null' => FALSE,
+                'default' => 0,
+            ),
+            'is_deleted' => array(
+                'description' => 'Provider 1 - Deleted from the user, 0 - Not removed from the user',
+                'type' => 'int',
+                'length' => 1,
+                'not null' => FALSE,
+                'default' => 0,
+            ),
+            'is_cancel' => array(
+                'description' => 'Provider 1 - Reservations canceled, 0 - Reservations not canceled',
+                'type' => 'int',
+                'length' => 1,
+                'not null' => FALSE,
+                'default' => 0,
+            )
+        ),
+        'primary key' => array('bid')
+    );
+    return $schema;
+}
+
+/**
+ * Реализация hook_uninstall()
+ */
+
+function booking_flights_uninstall()
+{
+    drupal_uninstall_schema('booking_flights');
+}

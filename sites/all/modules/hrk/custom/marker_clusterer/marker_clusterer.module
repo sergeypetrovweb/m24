@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function marker_clusterer_libraries_info()
+{
+    $libraries['marker_clusterer'] = array(
+        'name' => 'MarkerClusterer for Google Maps v3',
+        'version arguments' => array(
+            'file' => 'marker_clusterer.js',
+            'pattern' => '@v([0-9]+.[0-9]+.[0-9])@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'marker_clusterer.js',
+                'gmap.js',
+            )
+        ),
+        'variants' => array(
+            'min' => array(
+                'files' => array(
+                    'js' => array(
+                        'marker_clusterer.min.js',
+                        'gmap.js',
+                    )
+                ),
+            )
+        )
+    );
+
+    return $libraries;
+}

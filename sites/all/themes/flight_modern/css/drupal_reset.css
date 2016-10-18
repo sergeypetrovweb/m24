@@ -1,0 +1,42 @@
+ul, li, ul li, ul.menu, ul.menu li, ul li.leaf {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.products .product:nth-child(1) i.icon.plane {
+    background-color: #1BAF5D;
+}
+.products .product:nth-child(2) i.icon.plane {
+    background-color: #FFD816;
+}
+.products .product:nth-child(3) i.icon.plane {
+    background-color: #88499C;
+}
+.products .product:nth-child(4) i.icon.plane {
+    background-color: #1BAF5D;
+}
+.products .product:nth-child(5) i.icon.plane {
+    background-color: #E94E38;
+}
+
+.description span.name a {
+    color: #566375;
+}
+
+
+
+.ctools-dropdown-link-wrapper a {
+    color: #758687;
+    padding: 0 25px;
+    text-transform: inherit;
+    text-decoration: none;
+}
+
+.ctools-dropdown-link-wrapper a img {
+    vertical-align: baseline;
+}
+
+.dropdown.currency .dropdown-menu .ajax-progress {
+    display: none;
+}

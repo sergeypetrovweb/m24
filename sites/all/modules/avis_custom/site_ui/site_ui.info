@@ -1,0 +1,6 @@
+name = Site custom UI
+description = Admin blocks of site, on base UI Strings
+package = Avis
+version = 1.0
+core = 7.x
+dependencies[] = ui_strings

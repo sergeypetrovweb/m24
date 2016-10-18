@@ -1,0 +1,150 @@
+<?php
+/**
+ * @file
+ * Parsing from Aviasales.
+ */
+
+/**
+ * Impements hook_menu()
+ */
+function avis_parsing_menu() {
+  $items = array();
+  $items['control/parsing'] = array(
+    'title' => 'Парсер данных',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для начала парсинга',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_parsing_batch_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Provides batch form for parsing
+ */
+function avis_parsing_batch_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Начать',
+  );
+  return $form;
+}
+
+/**
+ * Provides submit batch form for parsing
+ */
+function avis_parsing_batch_form_submit($form, &$form_state) {
+  $operations = array();
+  $city = array();
+  // Create a DOM object.
+  $html_obj = new simple_html_dom('http://www.aviasales.ru/cities');
+  foreach ($html_obj->find('.index-list__table', 0)
+             ->find('li') as $key => $element) {
+    $city[$key] = array();
+    $city[$key]['link'] = $element->find('a', 0)->href;
+    $city[$key]['name'] = $element->find('a', 0)->plaintext;
+    $operations[] = array('avis_parsing_data', array($city[$key], $key));
+  }
+
+  $batch = array(
+    // Массив операций и их параметров
+    'operations' => $operations,
+    // Функция, которая будет выполнена после окончания всех операций
+    'finished' => 'avis_parsing_batch_finished',
+    // Заголовок страницы с прогресс баром.
+    // Опционально, по умолчанию t('Processing')
+    'title' => 'Идёт парсинг..',
+    // Сообщение, показываемое при инициализации.
+    // Опционально, по умолчанию t('Initializing.')
+    'init_message' => 'Подготовка данных',
+    // Сообщение, показывемое при выполнении операций.
+    // Опционально, по умолчанию t('Completed @current of @total.')
+    'progress_message' => 'Выполнено @current из @total.',
+    // Сообщение показываемое при ошибке выполнения операции.
+    // Опционально, по умолчанию t('An error has occurred.')
+    'error_message' => 'Произошла ошибка.',
+  );
+
+  batch_set($batch);
+  $html_obj->clear();
+  unset($html_obj);
+}
+
+/**
+ * Function for parsing
+ */
+function avis_parsing_data($info, $key, &$context) {
+  $info_obj = new simple_html_dom('http://www.aviasales.ru' . $info['link']);
+  $code = explode('(', $info_obj->find('#body h2', 0)->plaintext);
+  $code = explode(')', $code[1]);
+  $info['code'] = strtoupper($code[0]);
+  $prices = $info_obj->find('#prices .list-of-items', 0);
+  if (!empty($prices)) {
+    foreach ($info_obj->find('#prices .list-of-items', 0)
+               ->find('li') as $id => $element) {
+      $info['plains'][$id]['title'] = $element->find('a', 0)->plaintext;
+      $info['plains'][$id]['link'] = $element->find('a', 0)->href;
+      $codes = explode('/', $info['plains'][$id]['link']);
+      $info['plains'][$id]['code_from'] = strtoupper($codes[2]);
+      $info['plains'][$id]['code_to'] = strtoupper($codes[3]);
+      $info['plains'][$id]['price'] = str_replace('&nbsp;', '', $element->find('.list-of-items__price', 0)->plaintext);
+
+      if (empty($info['plains'][$id]['title'])) {
+        unset($info['plains'][$id]);
+      }
+    }
+  }
+  else {
+    $info['plains'] = NULL;
+  }
+
+  avis_parsing_white_write($info);
+
+  $context['results'][] = $info;
+  $context['message'] = 'Идёт парсинг страницы №' . ($key + 1);
+  $info_obj->clear();
+}
+
+/**
+ * Writing results in db
+ */
+function avis_parsing_white_write($info) {
+  db_truncate('avis_parsing_cities');
+  db_truncate('avis_parsing_directions');
+
+  if (!empty($info)) {
+    $avis_parsing_cities = array(
+      'name' => $info['name'],
+      'link' => $info['link'],
+      'code' => $info['code'],
+    );
+    drupal_write_record('avis_parsing_cities', $avis_parsing_cities);
+
+    if (!empty($info['plains'])) {
+      foreach ($info['plains'] as $direct) {
+        $avis_parsing_direct = array(
+          'title' => $direct['title'],
+          'link' => $direct['link'],
+          'code_from' => $direct['code_from'],
+          'code_to' => $direct['code_to'],
+          'price' => $direct['price'],
+        );
+        drupal_write_record('avis_parsing_directions', $avis_parsing_direct);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_batch_finished().
+ */
+function avis_parsing_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message('Успешно завершено!');
+  }
+  else {
+    drupal_set_message('Завершено с ошибками.', 'error');
+  }
+}

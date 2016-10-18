@@ -1,0 +1,9 @@
+name = JS Paginator
+description = Add jQuery Pagination plugin library
+core = 7.x
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-js-pagination"
+datestamp = "1407427200"

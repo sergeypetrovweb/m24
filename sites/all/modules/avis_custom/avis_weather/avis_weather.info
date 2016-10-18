@@ -1,0 +1,5 @@
+name = Avis weather
+description = "Weather from Yahoo API"
+package = Avis
+version = 1.0
+core = 7.x

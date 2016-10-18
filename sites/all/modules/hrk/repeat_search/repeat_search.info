@@ -1,0 +1,11 @@
+name = Repeat search
+description = "Adds block with saved users links form repeat search"
+package = HRK
+
+dependencies[] = session_api
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-travel"
+datestamp = "1407427200"
+

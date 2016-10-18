@@ -1,0 +1,271 @@
+<?php
+
+//По умолчанию в модуле берется валюта EUR.
+
+/**
+ * Implement hook_menu()
+ */
+function currency_menu()
+{
+    $items['currency/switch/%'] = array(
+        'title' => 'Switch Currency',
+        'page callback' => 'currency_switch',
+        'page arguments' => array(2),
+        'access callback' => TRUE,
+        'delivery callback' => 'ajax_deliver',
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['currency/test'] = array(
+      'title' => t('Currency test'),
+      'page callback' => 'currency_test_call',
+      'access callback' => array('user_access'),
+      'access arguments' => array('administer site configuration'),
+    );
+    return $items;
+}
+
+function currency_test_call() {
+    currency_update_rates();
+
+    $ounput = '<ul>';
+
+    $base = Currency::init()->get_base_currency();
+
+    foreach (Currency::init()->currency_list as $currency) {
+        $ounput .= '<li>100 ' . $base . ' = ' . Currency::init()->convert(100, $base, $currency) . ' ' . $currency .  '</li>';
+    }
+
+
+
+    $ounput .= '</ul>';
+
+    return $ounput;
+}
+
+
+/**
+ * Implement hook_block_info()
+ */
+function currency_block_info()
+{
+    $blocks['switch_currency'] = array(
+        'info' => t('Currency switcher block'),
+        'cache' => DRUPAL_NO_CACHE, // default
+    );
+    return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function currency_block_view($delta = '')
+{
+    $block = array();
+
+    switch ($delta) {
+
+
+        case('switch_currency'):
+            Currency::init();
+            $block['subject'] = t('Currency switcher block');
+            $block['content'] = currency_switcher_block();
+            break;
+    }
+
+    return $block;
+}
+
+function currency_switcher_block()
+{
+
+    session_api_include('system');
+    drupal_add_library('system', 'drupal.ajax');
+    ctools_include('ajax');
+
+    $session = SystemSessionApi::init('currency','active');
+
+    $links = array();
+    $currency_list = variable_get('currency', array());
+
+    if (!$currency_list) return '';
+
+    $currency_code_list = array_keys($currency_list);
+    if (!$session->getSession('currency')) $session->setSession(array('currency' => reset($currency_code_list)));
+
+    $active_currency = $session->getSession('currency');
+
+    foreach ($currency_list as $currency_code => $currency) {
+        //remove active currency from switcher list
+      $title = '<div class="currency-title currency-' . $currency_code . '">' . t($currency) . '</div>';
+      $links[] = array(
+          'title' => $title,
+          'html'=>TRUE,
+          'href' => 'currency/switch/' . $currency,
+          'attributes' => array('class' => array('currency-switcher-' . $currency_code, 'use-ajax', 'link-currency-switcher'))
+      );
+    }
+
+    $output_current = '<span class="currency-title-active">' . $active_currency . '</span>';
+
+    return theme('ctools_dropdown', array('title' => $output_current, 'links' => $links ,'image'=>TRUE));
+}
+
+function currency_switch($currency = null)
+{
+  //Если валюта успешно изменена в сессии, отправим команду на изменение на клиент.
+  if (Currency::init()->change($currency)) {
+    $commands = array();
+    $commands[] = array(
+      'command' => 'currency_convert',
+      'data' => strtolower($currency),
+    );
+    return array('#type' => 'ajax', '#commands' => $commands);
+  }
+}
+
+
+function currency_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['currency'][$dir][$type])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'currency') . $dir . $type . ".inc");
+        $used['currency'][$dir][$type] = TRUE;
+    }
+}
+
+function currency_cronapi() {
+    $items = array();
+    $items['currency_update_rates'] = array(
+        'title' => t('Update Currency Rates'),
+        'file path' => drupal_get_path('module', 'currency') . '/cron',
+        'callback' => 'currency_update_rates',
+        'enabled' => TRUE,
+        'scheduler' => array(
+            'name' => 'crontab',
+            'crontab' => array(
+                'rules' => array('10 0 * * *'),
+            ),
+        )
+    );
+    return $items;
+}
+
+//Получаем текущую валюту.
+function currency_get_active_currency($default = 'EUR'){
+    session_api_include('system');
+    $session = SystemSessionApi::init('currency', 'active');
+
+    return  $session->getSession('currency', $default);
+}
+
+function currency_get_base_currency() {
+  return Currency::init()->get_base_currency();
+}
+
+//Получаем префикс переданной в качестве аргумента валюты.
+function currency_get_prefix($currency = null)
+{
+    session_api_include('system');
+    $currency = strtolower($currency);
+
+    if (!$currency || !in_array($currency, array('eur', 'usd', 'rub'))) $currency = SystemSessionApi::init('currency', 'active')->getSession('currency');
+
+    switch ($currency) {
+        case 'eur':
+            return '<span class="eur-currency">€</span>';
+            break;
+        case 'usd':
+            return '<span class="usd-currency">$</span>';
+            break;
+        case 'rub':
+//            return '<span class="currency-prefix-rub">M</span>';
+            return '<span class="rub-currency"></span>';
+            break;
+    }
+}
+
+//Перенёс ф-ю из convert.inc. По неизвестным для меня причинам оттуда работать отказалась. files[] в info добавлял. Пока что ничего не отвалилось.
+function currency_convert($amount, $from, $to = null)
+{
+    $converting = $amount;
+
+    $currency_rates = variable_get('currency_rates', array());
+
+    if ($currency_rates) {
+
+        $from_cur_code = strtolower($from);
+        $to_cur_code = strtolower($to);
+
+        $from_rate = isset($currency_rates[$from_cur_code]['rate']) ? $currency_rates[$from_cur_code]['rate'] : 1;
+        $to_rate = isset($currency_rates[$to_cur_code]['rate']) ? $currency_rates[$to_cur_code]['rate'] : 1;
+
+        //at first convert to EUR
+        $eur = $amount / $from_rate;
+        $converting = $eur * $to_rate;
+
+    }
+    return $converting;
+}
+
+function currency_update_rates()
+{
+    ep_api_include('EPower');
+
+    $session = hrk_ep_create_session();
+    $ep = new \includes\EPower();
+
+    if ($session) {
+
+        if ($ep->connect($session['session'])) {
+            ep_api_include('EP_Currency', 'requests');
+            helper_include('SoapXmlReader');
+
+            $request = new \requests\EP_Currency();
+
+            $currency = array('eur' => 'EUR', 'usd' => 'USD', 'azn' => 'AZN', 'rub' => 'RUB');
+
+            //add EUR as a reference point for all currencies
+            $currency_rates = variable_get('currency_rates', array());
+
+            $currency_rates['eur'] = array(
+              'rate' => 1
+            );
+            $currency_rates['created'] = REQUEST_TIME;
+
+            foreach ($currency as $code => $name) {
+                if ($code == 'eur') continue;
+
+                $response = $ep->doRequest($request->getRequest('EUR', $name, 1),$request::SOAP_ACTION);
+
+                //dsm($response);
+
+                $response_array = \includes\SoapXmlReader::parse($response);
+
+
+                $response_array = $response_array;
+                //dsm($response_array);
+
+                if (!empty($response_array->soapBody->CurrencyConversionResponse->OTA_CurrencyConversionRS)) {
+                    $currency = (array)$response_array->soapBody->CurrencyConversionResponse->OTA_CurrencyConversionRS;
+                    $attributes = $currency['@attributes'];
+
+                    //`dsm($attributes, '!!!!!');
+
+                    //dsm($attributes, '!!!!!');
+                    if ($attributes) {
+                        $currency_rates[$code] = array(
+                          'rate' => $attributes['Amount'],
+                        );
+                    }
+                }
+            }
+            variable_set('currency_rates', $currency_rates);
+        }
+    }
+
+    $ep->disconnect();
+}

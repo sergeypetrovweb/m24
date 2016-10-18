@@ -1,0 +1,271 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function search_hotels_schema()
+{
+    $schema = array();
+    /* COUNTRY */
+    $schema['hrk_sh_countries'] = array(
+        'description' => 'The base table for countries.',
+        'fields' => array(
+            'cid' => array(
+                'description' => 'The primary identifier for a countries.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'code' => array(
+                'description' => 'The two-letter country code',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_en' => array(
+                'description' => 'The country en name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_ru' => array(
+                'description' => 'The country ru name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'phone_code' => array(
+                'description' => 'The country phone code.',
+                'type' => 'varchar',
+                'length' => 5,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'three_letter_code' => array(
+                'description' => 'The three-letter country code',
+                'type' => 'varchar',
+                'length' => 3,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+
+        ),
+        'primary key' => array('cid'),
+    );
+
+    /* City */
+    $schema['hrk_sh_cities'] = array(
+        'description' => 'The base table for cities.',
+        'fields' => array(
+            'ctid' => array(
+                'description' => 'The primary identifier for a city code.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'cid' => array(
+                'description' => 'The current {hrk_sh_countries}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'lid' => array(
+                'description' => 'The Location id.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'name_en' => array(
+                'description' => 'The city en name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'name_ru' => array(
+                'description' => 'The city ru name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'latitude' => array(
+                'description' => 'The latitude.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'longitude' => array(
+                'description' => 'The longitude.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            )
+        ),
+        'primary key' => array('ctid'),
+    );
+
+    /* Hotels */
+    $schema['hrk_sh_hotels'] = array(
+        'description' => 'The base table for hotels.',
+        'fields' => array(
+            'hid' => array(
+                'description' => 'The primary identifier for a hotels.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'hlid' => array(
+                'description' => 'HotelID.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'cid' => array(
+                'description' => 'The current {hrk_sh_countries}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'ctid' => array(
+                'description' => 'The current {hrk_sh_cities}.id identifier.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'name' => array(
+                'description' => 'The hotel name.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'rating' => array(
+                'description' => 'Star rating hotel.',
+                'type' => 'int',
+                'length' => 1,
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'address' => array(
+                'description' => 'The hotel address.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'latitude' => array(
+                'description' => 'The latitude.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'longitude' => array(
+                'description' => 'The longitude.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'phone' => array(
+                'description' => 'The hotel phone.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'fax' => array(
+                'description' => 'The hotel fax.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'email' => array(
+                'description' => 'The hotel email.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'site' => array(
+                'description' => 'The hotel site.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+        ),
+        'primary key' => array('hid'),
+        'unique keys' => array('hlid' => array('hlid')),
+    );
+
+    /* Results */
+    $schema['hrk_sh_results'] = array(
+        'description' => 'The table for search results.',
+        'fields' => array(
+            'rid' => array(
+                'description' => 'The primary identifier for result search.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'sid' => array(
+                'description' => 'Session identifier',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'hash' => array(
+                'description' => 'The hash from query string.',
+                'type' => 'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'default' => '',
+            ),
+            'created' => array(
+                'description' => 'The timestamp when was created search result.',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'result' => array(
+                'description' => 'The search result array with gzcompress().',
+                'type' => 'longtext'
+            )
+        ),
+        'primary key' => array('rid')
+    );
+
+    return $schema;
+}
+
+/**
+ * Implements hook_install()
+ */
+function search_hotels_install()
+{
+
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+
+function search_hotels_uninstall()
+{
+    drupal_uninstall_schema('search_hotels');
+}

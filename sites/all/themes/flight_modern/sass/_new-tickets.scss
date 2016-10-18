@@ -1,0 +1,285 @@
+.content-row-new {
+  background: #fff;
+  padding: 11px;
+  margin-bottom: 20px;
+
+  .ticket-table-new {
+    font-size: 16px;
+    background: #fff;
+
+    .ticket_left_block {
+      padding: 27px;
+
+      .ticket_logo {
+        max-width: 300px;
+        margin: 0 auto;
+
+        img {
+          width: 100%;
+        }
+      }
+      .ticket_price {
+        text-align: center;
+        margin-top: 15px;
+
+        .currency {
+          color: #0CACD6;
+          font-size: 28px;
+          font-weight: bold;
+
+          .currency__price {
+            &:after {
+              margin-left: 10px;
+            }
+          }
+        }
+      }
+      .ticket_buy {
+        margin-top: 7px;
+
+        .buy,
+        .buy:visited {
+          margin: 0;
+          float: none;
+          text-align: center;
+          display: block;
+          background: #E94E38;
+          border: 0;
+          -webkit-border-radius: 4px;
+          -moz-border-radius: 4px;
+          border-radius: 4px;
+          text-decoration: none;
+          color: #fff;
+          text-transform: capitalize;
+          @include transitionAll(0.3s);
+
+          &:hover,
+          &:active {
+            background: #943f29;
+            color: #fff;
+            text-decoration: none;
+          }
+        }
+      }
+      .ticket_left {
+        text-align: left;
+        margin-top: 16px;
+
+        span {
+          margin-right: 12px;
+        }
+      }
+    }
+    .ticket_right_block {
+      border-left: 1px solid #E3E3E3;
+      padding: 20px;
+
+      .details_avia_row {
+//        padding: 23px;
+        border-bottom: 1px solid #E3E3E3;
+        padding-bottom: 16px;
+        margin-bottom: 28px;
+
+        &:last-child {
+          border: 0;
+          padding: 0;
+          margin: 0;
+        }
+
+        .avia_from_to {
+          h4 {
+            font-size: 16px;
+            margin: 0 0 5px;
+            color: #0FABD3;
+          }
+          p {
+            margin: 0 0 5px;
+            line-height: 22px;
+
+            .glyphicon-time,
+            .glyphicon-calendar {
+              color: #0FABD3;
+              float: left;
+              margin-top: 2px;
+              width: 22px;
+            }
+          }
+
+          @include breakpoint($mobileAir) {
+            text-align: center;
+            p {
+              display: inline-block;
+
+              &.airport_code {
+                display: block;
+              }
+            }
+          }
+        }
+        .plain-info {
+          text-align: center;
+          margin-top: 40px;
+          @include breakpoint($mobileAir) {
+            margin-top: 0;
+          }
+
+          .glyphicon-plane {
+            margin-right: 2px;
+            top: 2px;
+          }
+        }
+
+        .fly-info {
+          padding: 10px 30px;
+
+          & > p.time-in-air {
+            margin-bottom: -7px;
+            text-align: center;
+          }
+
+          & > div {
+            @include clearfix();
+            position: relative;
+
+            &:before {
+              content: '';
+              width: 100%;
+              display: block;
+              border: 1px dashed;
+              position: absolute;
+              left: 0;
+              bottom: 7px;
+            }
+
+            & > span {
+              bottom: 0;
+              left: 50%;
+              margin-left: -5px;
+              position: absolute;
+              padding: 5px 2px;
+              background: #fff;
+
+              i {
+                -moz-transform: rotate(90deg);
+                -webkit-transform: rotate(90deg);
+                -o-transform: rotate(90deg);
+                -ms-transform: rotate(90deg);
+                transform: rotate(90deg);
+              }
+
+              &:after {
+                content: '';
+                display: block;
+                width: 7px;
+                height: 7px;
+                background: #595959;
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+                margin: 13px auto 0;
+                @include transitionAll(0.3s);
+              }
+
+              &:first-child {
+                float: left;
+                position: relative;
+                left: auto;
+                bottom: auto;
+
+                .colapsable-item {
+                  left: 10px;
+                }
+              }
+              &:last-child {
+                float: right;
+                position: relative;
+                left: auto;
+                bottom: auto;
+
+                .colapsable-item {
+                  left: auto;
+                  right: 10px;
+                }
+              }
+
+              &:hover {
+                cursor: pointer;
+
+                &:after {
+                  background: #0FABD3;
+                }
+
+                .colapsable-item {
+                  visibility: visible;
+                  opacity: 1;
+                }
+              }
+
+              .colapsable-item {
+                visibility: collapse;
+                opacity: 0;
+                width: auto;
+                height: auto;
+                position: absolute;
+                background: #DCF1F6;
+                padding: 5px;
+                left: -60px;
+                bottom: 20px;
+                z-index: 5;
+                @include transitionAll(0.3s);
+
+                span {
+                  display: block;
+                  white-space: nowrap;
+                }
+              }
+            }
+          }
+
+          &.transfers-2 > div > span {
+            &.transfer-point-1 {
+              left: 33.3%;
+            }
+            &.transfer-point-2 {
+              left: 66.6%;
+            }
+          }
+
+          &.transfers-3 > div > span {
+            &.transfer-point-1 {
+              left: 25%;
+            }
+            &.transfer-point-2 {
+              left: 50%;
+            }
+            &.transfer-point-3 {
+              left: 75%;
+            }
+          }
+
+          &.transfers-4 > div > span {
+            &.transfer-point-1 {
+              left: 20%;
+            }
+            &.transfer-point-2 {
+              left: 40%;
+            }
+            &.transfer-point-3 {
+              left: 60%;
+            }
+            &.transfer-point-4 {
+              left: 80%;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+@include breakpoint($tabletAir) {
+  .page-flights-results #filter .footer_filter {
+    padding: 15px 20px 0;
+  }
+}

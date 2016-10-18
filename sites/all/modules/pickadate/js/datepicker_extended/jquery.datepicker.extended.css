@@ -1,0 +1,315 @@
+.datepick-multi,
+.datepick-multi *:before,
+.datepick-multi *:after,
+.datepick-multi * {
+  box-sizing: border-box;
+  font: normal 14px Arial,Helvetica,sans-serif !important;
+}
+
+.datepick-cmd-prev, .datepick-cmd-prevJump, .datepick-cmd-clear,
+.datepick-cmd-current, .datepick-cmd-today,
+.datepick-rtl .datepick-cmd-prev, .datepick-rtl .datepick-cmd-prevJump,
+.datepick-rtl .datepick-cmd-clear,
+.datepick-month,
+.datepick-month-nav div,
+.datepick-month-nav,
+.datepick-rtl .datepick-cmd-next, .datepick-rtl .datepick-cmd-nextJump,
+.datepick-rtl .datepick-cmd-close,
+.datepick-rtl .datepick-cmd-current, .datepick-rtl .datepick-cmd-today {
+  float: none !important;
+}
+
+.datepick-multi {
+  max-width: 400px;
+  max-height: 384px;
+  overflow-y: scroll;
+}
+
+.datepick-month-row {
+  text-align: right;
+}
+
+.datepick-month-row .datepick-month {
+  display: inline-block;
+  width: 100% !important;
+  border: none;
+}
+
+.datepick-ctrl,
+.datepick-nav {
+  display: none;
+}
+
+.datepick-month-list {
+  float: left;
+  position: absolute;
+  top: 0;
+  width: 35%;
+  height: 100%;
+}
+
+.datepick-month-row {
+  width: 65%;
+  float: right;
+}
+
+.datepick-month-header.month-tall {
+  padding: 0 8px;
+  /*font-family: Arial,Helvetica,sans-serif;*/
+  /*font-size: 14px;*/
+  /*font-weight: normal;*/
+  position: relative;
+  display: block;
+  line-height: 32px !important;
+  height: 32px;
+  cursor: pointer;
+}
+
+.datepick-month-header.month-tall.selected {
+  background: gray;
+}
+
+.mCSB_scrollTools_vertical {
+  width: 5px !important;
+}
+
+.mCSB_dragger_bar {
+  margin: 0;
+}
+
+.datepick-multi table thead {
+  display: table-header-group;
+}
+
+.datepick-multi table td a:hover {
+  color: #000;
+  text-decoration: none;
+}
+
+/*#flight_search .form-item.form-type-textfield:before {*/
+  /*content: none;*/
+  /*display: none;*/
+/*}*/
+
+.datepick-month table td span {
+    opacity: 0.5;
+}
+
+.calendar_block .form-type-pickadate-date.col-datepicker_date {
+  width: 100%;
+}
+
+.real-inputs {
+  display: none;
+}
+
+
+
+/* search hotels form */
+#search-hotels-search-form .col-lg-10.adv_seacrh_block {
+  float: none;
+  margin: 0 auto;
+  display: block;
+}
+
+#search-hotels-search-form .col-lg-10.adv_seacrh_block .form-item-datepicker-date:before {
+  display: none;
+}
+
+
+
+.datepick.datepick-multi {
+  border: none;
+  margin-top: 6px;
+}
+
+.datepick.datepick-multi .datepick-month-list {
+  background-color: #E94E38;
+}
+
+.datepick.datepick-multi .datepick-month-header.month-tall {
+  background-color: transparent;
+  color: #fff;
+  padding-left: 20px;
+}
+
+.datepick.datepick-multi .datepick-month-header.month-tall.selected {
+  background-color: #fff;
+  color: #666;
+}
+
+.datepick.datepick-multi .datepick-month-header {
+  background-color: transparent;
+  color: #444;
+  /*text-align: left;*/
+}
+
+.datepick.datepick-multi .datepick-month-header:not(.month-tall) {
+  padding: 10px 0;
+  height: auto;
+}
+
+.datepick.datepick-multi .datepick-month th {
+  background-color: transparent;
+  color: #444;
+  border: none;
+  /*text-align: left;*/
+  /*padding: 10px 0;*/
+}
+
+.datepick.datepick-multi .datepick-month-row {
+  padding-left: 10px;
+  padding-right: 10px;
+  /*padding-top: 10px;*/
+  background-color: #fff;
+}
+
+.datepick.datepick-multi .datepick-month td {
+  border: none;
+  background-color: transparent;
+  /*text-align: left;*/
+  padding: 4px 0;
+}
+
+.datepick.datepick-multi .datepick-month thead {
+  border-bottom: none;
+}
+
+.datepick.datepick-multi .datepick-month td .datepick-weekend {
+  background-color: transparent;
+  color: #E94E38;
+}
+
+.datepick.datepick-multi .datepick-month a {
+  background-color: transparent;
+  color: #444;
+}
+
+.datepick.datepick-multi .datepick-month-row .datepick-month {
+  /*margin-bottom: 15px;*/
+}
+
+.datepick.datepick-multi .datepick-month td .datepick-selected {
+  position: relative;
+  color: #fff;
+  z-index: 10;
+  background-color: transparent;
+}
+
+.datepick.datepick-multi .datepick-month td .datepick-selected:before {
+  content: "";
+  background-color: #11ADD5;
+  width: 26px;
+  height: 26px;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -13px;
+  margin-left: -13px;
+  z-index: -1;
+}
+
+.datepick.datepick-multi .datepick-month td .datepick-today {
+   background-color: transparent;
+   position: relative;
+   z-index: 10;
+}
+
+.datepick.datepick-multi .datepick-month td .datepick-today:before {
+    content: "";
+    background-color: #eee;
+    width: 26px;
+    height: 26px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    border-radius: 50%;
+    border: 1px solid #aaa;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -13px;
+    margin-left: -12px;
+    z-index: -1;
+}
+
+.month-tall .datepick-year {
+  margin-left: 2px;
+  font-size: 10px !important;
+  position: relative;
+  top: -4px;
+}
+
+.datepick-month-row .datepick-month-header .datepick-year {
+  display: none;
+}
+
+.col-datepicker_date {
+  background-color: #fff;
+}
+
+.col-datepicker_date .form-type-textfield {
+  z-index: 1;
+  position: relative;
+}
+
+#search-hotels-search-form .col-datepicker_date input.datepicker_date,
+.round_trip .col-datepicker_date input.datepicker_date {
+  color: transparent !important;
+  background-color: transparent !important;
+}
+
+.col-datepicker_date {
+  position: relative;
+}
+
+.col-datepicker_date .datepicker_labels {
+  position: absolute;
+  top: 15px;
+  left: 13px;
+  z-index: -1;
+}
+
+.page-flights-results .col-datepicker_date .datepicker_labels {
+  top: 9px;
+  left: 12px;
+}
+
+.col-datepicker_date .datepicker_labels .datepicker_label.datepicker_del {
+  padding: 0 3px;
+}
+
+.col-datepicker_date .datepicker_labels .datepicker_label {
+  color: #444;
+}
+
+.col-datepicker_date .datepicker_labels .datepicker_label.datepicker_current {
+  color: #D5A500;
+}
+
+.col-datepicker_date .form-type-textfield:before {
+  content: none !important;
+  display: none !important;
+}
+
+.datepicker_clear {
+  position: absolute;
+  z-index: 10;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  -moz-transition: all .2s;
+  -webkit-transition: all .2s;
+  transition: all .2s;
+  opacity: .5;
+  background: url("button-close.svg") 0 0 no-repeat;
+}
+
+.datepicker_clear:hover {
+  opacity: 1;
+}

@@ -1,0 +1,9 @@
+name = Avis bonus
+description = "Bonus system"
+package = Avis
+version = 1.0
+core = 7.x
+
+stylesheets[all][] = css/bonus.css
+scripts[] = js/bonus.js
+scripts[] = js/numeric.js

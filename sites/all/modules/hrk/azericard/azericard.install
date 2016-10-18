@@ -1,0 +1,69 @@
+<?php
+
+/**
+ * Implements hook_schema()
+ */
+function azericard_schema()
+{
+    $schema = array();
+
+    $schema['hrk_az_payment'] = array(
+        'description' => 'The base table for azericard payment information.',
+        'fields' => array(
+            'azid' => array(
+                'description' => 'The primary identifier.',
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'oid' => array(
+                'description' => 'ORDER ID',
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => '',
+            ),
+            'amount' => array(
+                'description' => 'Amount',
+                'type' => 'float',
+                'length' => '24',
+                'not null' => TRUE,
+            ),
+            'currency' => array(
+                'description' => 'Currency',
+                'type' => 'varchar',
+                'length' => '16',
+                'not null' => TRUE,
+            ),
+            'rrn' => array(
+                'description' => 'Bank`s reference number',
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+            ),
+            'intref' => array(
+                'description' => 'Bank`s int reference number',
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+            ),
+            'mode' => array(
+                'description' => 'Mode 1 - TEST, 2 - REAL',
+                'type' => 'int',
+                'length' => 1,
+                'not null' => TRUE,
+            ),
+        ),
+        'primary key' => array('azid'),
+    );
+
+    return $schema;
+}
+/**
+ * Implements hook_uninstall()
+ */
+
+function azericard_uninstall()
+{
+    drupal_uninstall_schema('azericard');
+}

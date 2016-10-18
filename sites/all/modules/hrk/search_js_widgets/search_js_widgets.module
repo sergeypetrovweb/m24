@@ -1,0 +1,46 @@
+<?php
+
+function search_js_init(){
+    drupal_add_js(drupal_get_path('module','search_js_widgets').'/widgets/spinner_wg.js',array('scope'=>'footer'));
+    drupal_add_js(drupal_get_path('module','search_js_widgets').'/widgets/autocomplete_wg.js',array('scope'=>'footer'));
+}
+
+function search_js_add_widget($type){
+    switch($type){
+        case 'spinner':
+            drupal_add_js(drupal_get_path('module','search_js_widgets').'/widgets/spinner_wg.js',array('scope'=>'footer'));
+            break;
+        case 'autocomplete':
+            drupal_add_js(drupal_get_path('module','search_js_widgets').'/widgets/autocomplete_wg.js',array('scope'=>'footer'));
+            break;
+    }
+}
+
+
+/**
+ * Implements hook_libraries_info().
+ */
+function search_js_widgets_libraries_info()
+{
+    // Подключаем jQuery UI Spinner
+    $libraries['jquery_ui_spinner'] = array(
+        'name' => 'jQuery UI Spinner',
+        'vendor url' => 'https://github.com/btburnett3/jquery.ui.spinner',
+        'download url' => 'https://github.com/btburnett3/jquery.ui.spinner',
+        'version arguments' => array(
+            'file' => 'ui.spinner.js',
+            'pattern' => '@(?i:jQuery UI Spinner) ([0-9\.a-z]+)@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'ui.spinner.min.js',
+            ),
+            'css' => array(
+                'ui.spinner.css'
+            ),
+        ),
+    );
+
+    return $libraries;
+}

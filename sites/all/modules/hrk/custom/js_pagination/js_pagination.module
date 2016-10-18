@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implements hook_libraries_info().
+ * @return array
+ */
+function js_pagination_libraries_info()
+{
+    $libraries['pagination'] = array(
+        'name' => 'JS Pagination',
+        'vendor url' => 'https://github.com/esimakin/twbs-pagination/blob/master/jquery.twbsPagination.js',
+        'download url' => 'https://github.com/esimakin/twbs-pagination/blob/master/jquery.twbsPagination.js',
+        'version arguments' => array(
+            'file' => 'jquery.twbsPagination.js',
+            'pattern' => '@v([0-9]+.[0-9]+.[0-9])@',
+            'lines' => 5,
+        ),
+        'files' => array(
+            'js' => array(
+                'jquery.twbsPagination.js'
+            )
+        ),
+        'variants' => array(
+            'min' => array(
+                'files' => array(
+                    'js' => array(
+                        'jquery.twbsPagination.min.js'
+                    )
+                ),
+            )
+        )
+    );
+
+    return $libraries;
+}

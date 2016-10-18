@@ -1,0 +1,5 @@
+name = UI Stings
+description = "List of global user-defined variables"
+package = Avis
+version = 1.0
+core = 7.x

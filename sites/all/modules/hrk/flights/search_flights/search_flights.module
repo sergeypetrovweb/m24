@@ -1,0 +1,1308 @@
+<?php
+
+define('SEARCH_FLIGHTS_MODULE_MAX_TRIPS_COUNT', 6);
+
+/**
+ * TODO: Скорее всего костыль. Поискать Drupal API аналог.
+ */
+function search_flights_include($type, $dir = 'includes') {
+  static $used = array();
+
+  $dir = '/' . ($dir ? $dir . '/' : '');
+
+  if (!isset($used['search_flights'][$dir][strtolower($type)])) {
+    require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'search_flights') . $dir . $type . ".inc");
+    $used['search_flights'][$dir][strtolower($type)] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function search_flights_menu() {
+  $items['flights/results/%/%/%/%/%'] = array(
+    'title' => t('Flight Results'),
+    'page callback' => 'search_flights_results',
+    'page arguments' => array(2, 3, 4, 5, 6),
+    'access callback' => TRUE,
+    'file' => 'search_flights_results.inc'
+  );
+
+  $items['search/flights/cities_and_airports/autocomplete'] = array(
+    'page callback' => 'search_flights_cities_and_airports_autocomplete',
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implement hook_block_info()
+ */
+function search_flights_block_info() {
+  $blocks['simple_air_search'] = array(
+    'info' => t('The best variants of airtickets here and now'),
+    'cache' => DRUPAL_NO_CACHE, // default
+  );
+  $blocks['search_flights_result_query'] = array(
+    'info' => t('Block shows the parameters of the flights search from url'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function search_flights_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case('simple_air_search'):
+      $block['subject'] = t('Cheap air tickets - the best options are here and now');
+      $block['content'] = drupal_get_form('simple_air_search');
+      break;
+    case('search_flights_result_query'):
+      $block['subject'] = t('Block shows the parameters of the flight search from url');
+      $block['content'] = search_flights_result_query_block();
+      break;
+  }
+  return $block;
+}
+
+function simple_air_search($form, &$form_state) {
+  $form = array();
+  $form['#theme'] = array('simple_air_search');
+  $inline = FALSE;
+
+  if (isset($form_state['build_info']['args'][0])) {
+    if ($form_state['build_info']['args'][0] == 'inline') {
+      $inline = TRUE;
+      $params = hrk_sf_validate_request_param(hrk_sf_get_params_from_results_page_link(current_path(), TRUE));
+//      dsm($params, '$params');
+      $form_state['params'] = $params;
+    }
+    // Есть передан масиив данных.
+    elseif (is_array($form_state['build_info']['args'][0])) {
+      $form_state['direction_from']['q'] = $form_state['build_info']['args'][0]['from']['q'];
+      $form_state['direction_from']['code'] = $form_state['build_info']['args'][0]['from']['code'];
+      $form_state['direction_from']['type'] = 'city';
+
+      $form_state['direction_to']['q'] = $form_state['build_info']['args'][0]['to']['q'];
+      $form_state['direction_to']['code'] = $form_state['build_info']['args'][0]['to']['code'];
+      $form_state['direction_to']['type'] = 'city';
+    }
+  }
+
+  $form_class = isset($form_state['direction_type']) ? $form_state['direction_type'] : 'round-trip';
+
+  $form['#attributes']['class'] = array($form_class);
+  $form['#attributes']['data-typeform'] = 'search';
+  $form['#attributes']['id'] = $inline? array('flight_search_inline') : array('flight_search');
+
+  //Добавим необходимые скрипты
+  drupal_add_library('system', 'ui.dialog');
+  drupal_add_library('system', 'ui.autocomplete');
+  search_js_add_widget('autocomplete');
+  if ($GLOBALS['theme'] == 'flight_modern') {
+    drupal_add_js(
+      drupal_get_path('module', 'search_flights') . '/js/search_form.js',
+      array('scope' => 'footer')
+    );
+  }
+
+  //Перелеты
+  $form['trip'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#theme_wrappers' => array(),
+  );
+
+  $rows_count = NULL;
+
+  if ($form_state['values']['direction_type'] == 'multi_stop' || $form_state['params']['direction_type'] == 'multi_stop') {
+    $rows_count = SEARCH_FLIGHTS_MODULE_MAX_TRIPS_COUNT;
+  }
+  else {
+    $rows_count = 1;
+  }
+
+  for ($i = 1; $i <= $rows_count; $i++) {
+    //Перелет номер 1. Для всех кроме "сложного перелета" иначе не бывает.
+    $form['trip'][$i] = array(
+      '#type' => 'container',
+      '#theme_wrappers' => array(),
+      '#tree' => TRUE,
+    );
+
+    $trip = &$form['trip'][$i];
+
+    //Поля "Откуда" -> "Куда"
+    $trip['direction_from'] = array(
+      '#type' => 'fieldset',
+      '#theme_wrappers' => array(),
+      '#tree' => TRUE,
+    );
+
+    $trip['direction_to'] = $form['direction_from'];
+
+    $trip['direction_from']['q'] = array(
+      '#type' => 'textfield',
+      '#default_value' => $inline? $params['trip'][$i]['direction_from']['q'] : $form_state['direction_from']['q'],
+      //'#title' => t('From'),
+      '#attributes' => array(
+        'placeholder' => t('Moscow'),
+        'autocomplete' => 'off',
+        'data-error-title' => t('This field is required.'),
+        'data-requiur' => 1,
+        'class' => array(
+          'ui-autocomplete-fields',
+          'flight-point from',
+          'ui-autocomplete-fields-city'
+        )
+      ),
+      //'#theme_wrappers' => array(),
+      //client side validation don't show label error when radio direction time changed
+      '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE)))
+    );
+
+
+
+    $trip['direction_from']['code'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $inline? $params['trip'][$i]['direction_from']['code'] : $form_state['direction_from']['code'],
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'class' => array('hide-code')
+      ),
+    );
+
+    $trip['direction_from']['type'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $inline? $params['trip'][$i]['direction_from']['type'] : $form_state['direction_from']['type'],
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'class' => array('hide-type')
+      ),
+    );
+
+    $trip['direction_to']['q'] = array(
+      '#type' => 'textfield',
+      '#default_value' => $inline? $params['trip'][$i]['direction_to']['q'] : $form_state['direction_to']['q'],
+      //'#title' => t('To'),
+      //'#theme_wrappers' => array(),
+      '#attributes' => array(
+        'placeholder' => t('London'),
+        'autocomplete' => 'off',
+        'data-error-title' => t('This field is required.'),
+        'data-requiur' => 1,
+        'class' => array(
+          'ui-autocomplete-fields',
+          'flight-point to',
+          'ui-autocomplete-fields-city'
+        )
+      ),
+      //client side validation don't show label error when radio direction time changed
+      '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE)))
+    );
+
+    $trip['direction_to']['code'] = array(
+      '#type' => 'hidden',
+      '#default_value' =>  $inline? $params['trip'][$i]['direction_to']['code'] : $form_state['direction_to']['code'],
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'class' => array('hide-code')
+      ),
+    );
+
+    $trip['direction_to']['type'] = array(
+      '#type' => 'hidden',
+      '#default_value' =>  $inline? $params['trip'][$i]['direction_to']['type'] : $form_state['direction_to']['type'],
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'class' => array('hide-type')
+      ),
+    );
+
+    //added with new datepicker
+    $trip['datepicker_date'] = array(
+      '#type' => 'textfield',
+      '#attributes' => array(
+        'placeholder' => t('Date'),
+        'data-error-title' => t('This field is required.'),
+        'data-requiur' => 1,
+        'class' => array(
+          'datepicker_date',
+          'calendar',
+        ),
+        'target-id' => 'datepicker_date_value_' . $i,
+      ),
+    );
+
+    $trip['datepicker_date_value'] = array(
+      '#type' => 'hidden',
+      '#attributes' => array(
+        'class' => array(
+          'datepicker_date_value',
+        ),
+        'id' => 'datepicker_date_value_' . $i,
+      ),
+    );
+    //added with new datepicker
+
+
+    if ($inline) {
+      $trip['departure'] = array(
+        '#type' => 'pickadate_date',
+        '#title' => t('Departure'),
+        '#theme_wrappers' => array(),
+        '#default_value' => ($params['trip'][$i]['departure']) ? format_date(
+            strtotime($params['trip'][$i]['departure']),
+            $type = 'medium',
+            $format = 'd F, Y'
+          ) : '',
+        '#attributes' => array(
+          'class' => array('datepicker_from', 'calendar', 'from'),
+          /*'placeholder' => t('Departure'),*/
+          'autocomplete' => 'off',
+          'data-error-title' => t('This field is required.'),
+          'data-select' => ($params['trip'][$i]['departure']) ? strtotime(
+              $params['trip'][$i]['departure']
+            ) : time()
+        ),
+        //Add wrapper
+        //client side validation don't show label error when radio direction time changed
+        '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE))),
+        '#settings' => pickadate_date_default_settings(
+          array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'hiddenName' => FALSE,
+            'min' => date('[Y,n,j]', strtotime('-1 month', REQUEST_TIME)),
+            'max' => date(
+              '[Y,n,j]',
+              strtotime('+11 month',($params['trip'][$i]['departure']) ? strtotime($params['trip'][$i]['departure']) : REQUEST_TIME)
+            ),
+            'today' => '',
+            'close' => '',
+            'clear' => ''
+          )
+        )
+      );
+
+      if (!isset($form_state['params']['direction_type']) || $form_state['params']['direction_type'] == 'round_trip') {
+        $trip['return'] = array(
+          '#type' => 'pickadate_date',
+          '#theme_wrappers' => array(),
+          '#default_value' => ($params['trip'][$i]['return']) ? format_date(
+              strtotime($params['trip'][$i]['return']),
+              $type = 'medium',
+              $format = 'd F, Y'
+            ) : '',
+          '#title' => t('Arrival'),
+          //Add wrapper
+          '#attributes' => array(
+            /*          'placeholder' => t('Return'),*/
+            'autocomplete' => 'off',
+            'data-select' => ($params['trip'][$i]['return']) ? strtotime(
+                $params['trip'][$i]['return']
+              ) : time(),
+            'class' => array('datepicker_to', 'calendar', 'to'),
+          ),
+          '#states' => array(
+            'visible' => array(':input[name="direction_type"]' => array('value' => 'round_trip')),
+            //client side validation don't show label error when radio direction time changed
+          ),
+          '#settings' => pickadate_date_default_settings(
+            array(
+              'formatSubmit' => 'yyyy-mm-dd',
+              'firstDay' => 1,
+              'min' => date(
+                '[Y,n,j]',
+                strtotime(
+                  '-2 month',
+                  ($params['trip'][$i]['return']) ? strtotime(
+                    $params['trip'][$i]['return']
+                  ) : REQUEST_TIME
+                )
+              ),
+              'hiddenName' => FALSE,
+              'today' => '',
+              'close' => '',
+              'clear' => ''
+            )
+          )
+        );
+      }
+    } else {
+      $trip['departure'] = array(
+        '#type' => 'pickadate_date',
+        '#title' => t('Departure'),
+        '#theme_wrappers' => array(),
+        '#default_value' => ($form_state['departure']) ? format_date(
+            strtotime($form_state['departure']),
+            $type = 'medium',
+            $format = 'd F, Y'
+          ) : '',
+        '#attributes' => array(
+          'class' => array('datepicker_from', 'calendar', 'from'),
+          'placeholder' => t('Departure'),
+          'autocomplete' => 'off',
+          'data-error-title' => t('This field is required.'),
+          'data-requiur' => 1,
+          'data-select' => ($form_state['departure']) ? strtotime(
+              $form_state['departure']
+            ) : time()
+        ),
+        //client side validation don't show label error when radio direction time changed
+        '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE))),
+        '#settings' => pickadate_date_default_settings(
+          array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'hiddenName' => FALSE,
+            'min' => date('[Y,n,j]', strtotime('-1 month', REQUEST_TIME)),
+            'max' => date(
+              '[Y,n,j]',
+              strtotime('+11 month', ($form_state['departure']) ? strtotime($form_state['departure']) : REQUEST_TIME)
+            ),
+            'today' => '',
+            'close' => '',
+            'clear' => ''
+          )
+        )
+      );
+
+      if (!isset($form_state['values']['direction_type']) || $form_state['values']['direction_type'] == 'round_trip') {
+        $trip['return'] = array(
+          '#type' => 'pickadate_date',
+          '#theme_wrappers' => array(),
+          '#default_value' => ($form_state['return']) ? format_date(
+              strtotime($form_state['return']),
+              $type = 'medium',
+              $format = 'd F, Y'
+            ) : '',
+          '#title' => t('Arrival'),
+          //Add wrapper
+          '#attributes' => array(
+            'placeholder' => t('Arrival'),
+            'autocomplete' => 'off',
+//        'required' => TRUE,
+            'data-error-title' => t('This field is required.'),
+            'data-requiur' => 1,
+            'data-select' => ($form_state['return']) ? strtotime(
+                $form_state['return']
+              ) : time(),
+            'class' => array('datepicker_to', 'calendar', 'to'),
+          ),
+          '#states' => array(
+            'visible' => array(':input[name="direction_type"]' => array('value' => 'round_trip')),
+            //client side validation don't show label error when radio direction time changed
+            'required' => array(
+              ':input[name="direction_type"]' => array('empty' => FALSE)
+            )
+          ),
+          '#settings' => pickadate_date_default_settings(
+            array(
+              'formatSubmit' => 'yyyy-mm-dd',
+              'firstDay' => 1,
+              'min' => date(
+                '[Y,n,j]',
+                strtotime(
+                  '-2 month',
+                  ($form_state['return']) ? strtotime(
+                    $form_state['return']
+                  ) : REQUEST_TIME
+                )
+              ),
+              'hiddenName' => FALSE,
+              'today' => '',
+              'close' => '',
+              'clear' => ''
+            )
+          )
+        );
+      }
+    }
+    }
+
+  /* passengers fields */
+  $form['passengers'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+  $form['passengers']['adt'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Adults'),
+//    '#default_value' => isset($form_state['passengers']['adt']) ? $form_state['passengers']['adt'] : 1,
+    '#attributes' => array(
+      'id' => 'adults',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+
+  );
+
+  $form['passengers']['chd'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Childrens (%age)', array('%age' => '<12')),
+//    '#default_value' => isset($form_state['passengers']['chd']) ? $form_state['passengers']['chd'] : 0,
+    '#attributes' => array(
+      'id' => 'teens',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+  );
+
+  $form['passengers']['inf'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Infants (%age)', array('%age' => '<2')),
+//    '#default_value' => isset($form_state['passengers']['inf']) ? $form_state['passengers']['inf'] : 0,
+    '#attributes' => array(
+      'id' => 'children',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+  );
+
+  $form['cabin_type'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'E' => t('Economy'),
+      'F' => t('First'),
+      'B' => t('Business')
+    ),
+    //'#default_value' => $values->cabin_type,
+    '#attributes' => array('autocomplete' => 'off'),
+    '#theme_wrappers' => array(),
+    '#select2' => array(),
+  );
+
+  $form['direction_type'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'round_trip' => t('Round trip'),
+      'one_way' => t('One way'),
+      'multi_stop' => t('Multi stop')
+    ),
+//    '#default_value' => isset($form_state['direction_type']) ? $form_state['direction_type'] : 'round_trip',
+    '#attributes' => array(
+      'autocomplete' => 'off',
+      'class' => array('direction_type')
+    ),
+    '#select2' => array(),
+    '#theme_wrappers' => array(),
+    '#ajax' => array(
+      'wrapper' => 'search-direction',
+      'callback' => 'simple_air_search_ajax_callback',
+      'method' => 'replace',
+    ),
+  );
+
+  if ($inline) {
+    $form['passengers']['adt']['#default_value'] = isset($params['passengers']['adt']) ? $params['passengers']['adt'] : 1;
+    $form['passengers']['chd']['#default_value'] = isset($params['passengers']['chd']) ? $params['passengers']['chd'] : 0;
+    $form['passengers']['inf']['#default_value'] = isset($params['passengers']['inf']) ? $params['passengers']['inf'] : 0;
+    $form['direction_type']['#default_value'] = isset($params['direction_type']) ? $params['direction_type'] : 'round_trip';
+  } else {
+    $form['passengers']['adt']['#default_value'] = isset($form_state['passengers']['adt']) ? $form_state['passengers']['adt'] : 1;
+    $form['passengers']['chd']['#default_value'] = isset($form_state['passengers']['chd']) ? $form_state['passengers']['chd'] : 0;
+    $form['passengers']['inf']['#default_value'] = isset($form_state['passengers']['inf']) ? $form_state['passengers']['inf'] : 0;
+    $form['direction_type']['#default_value'] = isset($form_state['direction_type']) ? $form_state['direction_type'] : 'round_trip';
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#attributes' => array('class' => array('seacrh')),
+    '#value' => t('Search'),
+    '#submit' => array('simple_search_flights_submit'),
+  );
+
+  $form['update_direction'] = array(
+    '#type' => 'submit',
+    '#name' => 'update_direction',
+    '#value' => 'update direction',
+    '#submit' => array('simple_air_search_button'),
+
+  );
+
+  $form['trips_count'] = array(
+    '#type' => 'hidden',
+    '#default_value' => isset($form_state['trips_count']) ? $form_state['trips_count'] : 1,
+    '#attributes' => array('autocomplete' => 'off')
+  );
+
+  $form['#prefix'] = '<div id="search-direction">';
+  $form['#suffix'] = '</div>';
+  $form['#attributes']['class'] = array(str_replace('_', '-', $form_state['values']['direction_type']?$form_state['values']['direction_type']: $form_state['params']['direction_type']));
+  return $form;
+}
+
+function simple_air_search_button($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+  return $form;
+}
+
+function simple_air_search_ajax_callback($form, &$form_state) {
+  return $form;
+}
+
+function simple_air_search_direction_callback(&$form, &$form_state) {
+  return $form;
+}
+
+function search_flights_theme($existing, $type, $theme, $path) {
+  $theme = array(
+    'simple_air_search' => array(
+      'render element' => 'form',
+      'template' => 'simple-air',
+      'path' => drupal_get_path('theme', 'flight_modern') . '/templates/forms',
+    ),
+    'sf_results' => array(
+      'template' => 'results',
+      'variables' => array(),
+      'path' => $path . '/templates'
+    ),
+    'sf_result_query' => array(
+      'template' => 'result-query',
+      'variables' => array(),
+      'path' => $path . '/templates/blocks'
+    ),
+    'sf_popup' => array(
+      'template' => 'popups',
+      'variables' => array(),
+      'path' => $path . '/templates'
+    )
+  );
+  return $theme;
+}
+
+
+function search_flights_search_inline_form($form, &$form_state) {
+  $form = array();
+
+  drupal_add_library('system', 'ui.dialog');
+  drupal_add_library('system', 'ui.autocomplete');
+  search_js_add_widget('autocomplete');
+  if ($GLOBALS['theme'] == 'flight_modern') {
+    drupal_add_js(
+      drupal_get_path('module', 'search_flights') . '/js/search_form.js',
+      array('scope' => 'footer')
+    );
+  }
+
+  $params = hrk_sf_validate_request_param(hrk_sf_get_params_from_results_page_link(current_path(), TRUE));
+
+  //dsm($params, '$params');
+  $form_state['params'] = $params;
+//  dsm($params);
+
+  $form['direction_from'] = array(
+    '#type' => 'fieldset',
+    '#theme_wrappers' => array(),
+    '#tree' => TRUE,
+    //Add wrapper
+    '#prefix' => '<div class="flight from">',
+    '#suffix' => '</div>',
+  );
+
+  $form['direction_from']['q'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $params['trip'][1]['direction_from']['q'],
+    //'#title' => t('From'),
+    '#attributes' => array(
+      'placeholder' => t('Moscow'),
+      'autocomplete' => 'off',
+      'data-error-title' => t('This field is required.'),
+      'class' => array(
+        'ui-autocomplete-fields',
+        'flight_from',
+        'ui-autocomplete-fields-city'
+      )
+    ),
+    //'#theme_wrappers' => array(),
+    //client side validation don't show label error when radio direction time changed
+    '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE)))
+  );
+
+  $form['direction_from']['code'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $params['trip'][1]['direction_from']['code'],
+    '#attributes' => array(
+      'autocomplete' => 'off',
+      'class' => array('hide-code')
+    ),
+  );
+
+  $form['direction_from']['type'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $params['trip'][1]['direction_from']['type'],
+    '#attributes' => array(
+      'autocomplete' => 'off',
+      'class' => array('hide-type')
+    ),
+  );
+
+  $form['direction_to'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    //Add wrapper
+    '#theme_wrappers' => array(),
+    '#prefix' => '<div class="flight where">',
+    '#suffix' => '</div>',
+  );
+
+  $form['direction_to']['q'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $params['trip'][1]['direction_to']['q'],
+    //'#title' => t('To'),
+    //'#theme_wrappers' => array(),
+    '#attributes' => array(
+      'placeholder' => t('London'),
+      'autocomplete' => 'off',
+      'data-error-title' => t('This field is required.'),
+      'class' => array(
+        'ui-autocomplete-fields',
+        'flight_where',
+        'ui-autocomplete-fields-city'
+      )
+    ),
+    //client side validation don't show label error when radio direction time changed
+    '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE)))
+  );
+
+  $form['direction_to']['code'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $params['trip'][1]['direction_to']['code'],
+    '#attributes' => array(
+      'autocomplete' => 'off',
+      'class' => array('hide-code')
+    ),
+  );
+
+  $form['direction_to']['type'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $params['trip'][1]['direction_to']['type'],
+    '#attributes' => array(
+      'autocomplete' => 'off',
+      'class' => array('hide-type')
+    ),
+  );
+
+  $form['departure'] = array(
+    '#type' => 'pickadate_date',
+    '#title' => t('Departure'),
+    '#theme_wrappers' => array(),
+    '#default_value' => ($params['trip'][1]['departure']) ? format_date(
+      strtotime($params['trip'][1]['departure']),
+      $type = 'medium',
+      $format = 'd F, Y'
+    ) : '',
+    '#attributes' => array(
+      'class' => array('date_with'),
+      /*'placeholder' => t('Departure'),*/
+      'autocomplete' => 'off',
+      'data-error-title' => t('This field is required.'),
+      'data-select' => ($params['trip'][1]['departure']) ? strtotime(
+        $params['trip'][1]['departure']
+      ) : time()
+    ),
+    //Add wrapper
+    '#prefix' => '<div class="date with flight with">',
+    '#suffix' => '</div>',
+    //client side validation don't show label error when radio direction time changed
+    '#states' => array('required' => array(':input[name="direction_type"]' => array('empty' => FALSE))),
+    '#settings' => pickadate_date_default_settings(
+      array(
+        'formatSubmit' => 'yyyy-mm-dd',
+        'firstDay' => 1,
+        'hiddenName' => FALSE,
+        'min' => date('[Y,n,j]', strtotime('-1 month', REQUEST_TIME)),
+        'max' => date(
+          '[Y,n,j]',
+          strtotime(
+            '+11 month',
+            ($params['trip'][1]['departure']) ? strtotime(
+              $params['trip'][1]['departure']
+            ) : REQUEST_TIME
+          )
+        ),
+        'today' => '',
+        'close' => '',
+        'clear' => ''
+      )
+    )
+  );
+
+  $form['return'] = array(
+    '#type' => 'pickadate_date',
+    '#theme_wrappers' => array(),
+    '#default_value' => ($params['trip'][1]['return']) ? format_date(
+      strtotime($params['trip'][1]['return']),
+      $type = 'medium',
+      $format = 'd F, Y'
+    ) : '',
+    '#title' => t('Arrival'),
+    //Add wrapper
+    '#prefix' => '<div class="date on">',
+    '#suffix' => '</div>',
+    '#attributes' => array(
+      /*          'placeholder' => t('Return'),*/
+      'autocomplete' => 'off',
+      'required' => TRUE,
+      'data-error-title' => t('This field is required.'),
+      'data-select' => ($params['trip'][1]['return']) ? strtotime(
+        $params['trip'][1]['return']
+      ) : time(),
+      'class' => array('date_on'),
+    ),
+    '#states' => array(
+      'visible' => array(':input[name="direction_type"]' => array('value' => 'round_trip')),
+      //client side validation don't show label error when radio direction time changed
+      'required' => array(
+        ':input[name="direction_type"]' => array('empty' => FALSE)
+      )
+    ),
+    '#settings' => pickadate_date_default_settings(
+      array(
+        'formatSubmit' => 'yyyy-mm-dd',
+        'firstDay' => 1,
+        'min' => date(
+          '[Y,n,j]',
+          strtotime(
+            '-2 month',
+            ($params['trip'][1]['return']) ? strtotime(
+              $params['trip'][1]['return']
+            ) : REQUEST_TIME
+          )
+        ),
+        'hiddenName' => FALSE,
+        'today' => '',
+        'close' => '',
+        'clear' => ''
+      )
+    )
+  );
+
+
+  /* passengers fields */
+  $form['passengers'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+  $form['passengers']['adt'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Adults'),
+    '#default_value' => isset($form_state['passengers']['adt']) ? $form_state['passengers']['adt'] : 1,
+    '#attributes' => array(
+      'id' => 'adults',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+
+  );
+
+  $form['passengers']['chd'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Childrens (%age)', array('%age' => '<12')),
+    '#default_value' => isset($form_state['passengers']['chd']) ? $form_state['passengers']['chd'] : 0,
+    '#attributes' => array(
+      'id' => 'teens',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+  );
+
+  $form['passengers']['inf'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Infants (%age)', array('%age' => '<2')),
+    '#default_value' => isset($form_state['passengers']['inf']) ? $form_state['passengers']['inf'] : 0,
+    '#attributes' => array(
+      'id' => 'children',
+      'class' => array('number'),
+      'autocomplete' => 'off'
+    ),
+    '#size' => 2,
+    '#theme_wrappers' => array(),
+  );
+
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+    //'#attributes' => array('class' => array('bilet_axtar')),
+    '#submit' => array('search_flights_search_inline_form_submit'),
+    //Add wrapper
+    //'#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">',
+    //'#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Implement hook_from_alter()
+ */
+function search_flights_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case('search_flights_search_form'):
+    case('simple_air_search'):
+      //TODO: Убедиться что этот модуль вообще нужно использовать. Не Drupal WAY. Это все темится на Form API.
+      //form_style_include();
+      //form_style_form($form_id, $form['#id'], array('input[type=radio]', 'select'));
+      drupal_add_js(array('search_flights' => array('forms' => array($form_id => $form['#id']))), 'setting');
+      break;
+    case('search_flights_result_filter'):
+      form_style_include();
+      form_style_form($form_id, $form['#id'], array(
+        'input[type=radio]',
+        'select'
+      ));
+      break;
+  }
+}
+
+function search_flights_search_inline_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $input = $form_state['input'];
+  $query_array = $form_state['params'];
+  //dsm($input, '$input');
+  //Назначим новые даты
+  if (!empty($input['departure_submit'])) {
+    $query_array['trip'][1]['departure'] = $input['departure_submit'];
+  }
+  //Если заполнена дата возврата, то меняем тип путешевствия.
+  if (!empty($input['return_submit'])) {
+    $query_array['trip'][1]['return'] = $input['return_submit'];
+    $query_array['direction_type'] = 'round_trip';
+  }
+  else {
+    unset($query_array['trip'][1]['return']);
+    $query_array['direction_type'] = 'one_way';
+  }
+  //Новые города
+  $query_array['trip'][1]['direction_to'] = $values['direction_to'];
+  $query_array['trip'][1]['direction_from'] = $values['direction_from'];
+
+  $params = hrk_sf_validate_request_param($query_array);
+
+  if ($params) {
+    $query = hrk_sf_compress_request_param($params);
+    $hash = hash('sha256', drupal_http_build_query($query));
+    $session = hrk_system_session('preloader', 'search_flights');
+    $session->setSession(array($hash => TRUE));
+    drupal_goto(hrk_sf_make_results_page_link($query));
+  }
+}
+
+function simple_search_flights_submit($form, &$form_state) {
+  $values = (object) $form_state['values'];
+  $query_array = array();
+
+  if ($values->direction_type) {
+    //Если заполнена дата возврата, то меняем тип путешевствия.
+//    if ($values->direction_type == 'round_trip') {
+//      if (!empty($form_state['values']['trip'][1]['datepicker_date_value'])) {
+//        $dates = explode(' - ', $form_state['values']['trip'][1]['datepicker_date_value']);
+//        if ($dates[0] == $dates[1]) {
+//          $values->direction_type = 'one_way';
+//        }
+//      }
+//    }
+
+    $query_array['direction_type'] = $values->direction_type;
+    $query_array['passengers'] = $values->passengers;
+    $query_array['cabin_type'] = $values->cabin_type;
+
+    switch ($values->direction_type) {
+      case 'round_trip':
+        $query_array['trip'][1] = reset($values->trip);
+
+        //added with new datepicker
+        if (!empty($form_state['values']['trip'][1]['datepicker_date_value'])) {
+          $dates = explode(' - ', $form_state['values']['trip'][1]['datepicker_date_value']);
+
+          $query_array['trip'][1]['departure'] = $dates[0];
+          $query_array['trip'][1]['return'] = $dates[1];
+        }
+        break;
+      case 'one_way':
+        $query_array['trip'][1] = reset($values->trip);
+        unset($query_array['trip'][1]['return']);
+
+        //added with new datepicker
+        if (!empty($form_state['values']['trip'][1]['datepicker_date_value'])) {
+          $dates = explode(' - ', $form_state['values']['trip'][1]['datepicker_date_value']);
+
+          $query_array['trip'][1]['departure'] = $dates[0];
+        }
+        break;
+      case 'multi_stop':
+        foreach ($values->trip as $index => $tripinfo) {
+//          if ($index > $values->trips_count) {
+//            break;
+//          }
+          if (empty($tripinfo['direction_to']['code']) || empty($tripinfo['direction_from']['code'])) {
+            break;
+          }
+          $query_array['trip'][$index] = $tripinfo;
+
+          //added with new datepicker
+          if (!empty($form_state['values']['trip'][$index]['datepicker_date_value'])) {
+            $dates = explode(' - ', $form_state['values']['trip'][$index]['datepicker_date_value']);
+
+            $query_array['trip'][$index]['departure'] = $dates[0];
+          }
+
+          unset($query_array['trip'][$index]['return']);
+        }
+        break;
+    }
+    $params = hrk_sf_validate_request_param($query_array);
+    if ($params) {
+      $query = hrk_sf_compress_request_param($params);
+      $hash = hash('sha256', drupal_http_build_query($query));
+
+      $session = hrk_system_session('preloader', 'search_flights');
+      $session->setSession(array($hash => TRUE));
+
+      drupal_goto(hrk_sf_make_results_page_link($query));
+    }
+  }
+}
+
+function search_flights_search_form_submit($form, &$form_state) {
+  //$form_state['values'] - значения формы в виде массива.
+  $values = (object) $form_state['values'];
+  //Дебаг информация.
+  //dsm($values, 'Переменная: $values');
+
+  $query_array = array();
+
+  if ($values->direction_type && $values->trips_count) {
+    $query_array['direction_type'] = $values->direction_type;
+    $query_array['passengers'] = $values->passengers;
+    $query_array['cabin_type'] = $values->cabin_type;
+
+    switch ($values->direction_type) {
+      case 'round_trip':
+        $query_array['trip'][1] = reset($values->trip);
+        break;
+      case 'one_way':
+        $query_array['trip'][1] = reset($values->trip);
+        unset($query_array['trip'][1]['return']);
+        break;
+      case 'multi_stop':
+        foreach ($values->trip as $index => $trip) {
+          if ($index > $values->trips_count) {
+            break;
+          }
+          $query_array['trip'][$index] = $trip;
+          unset($query_array['trip'][$index]['return']);
+        }
+        break;
+    }
+
+    $params = hrk_sf_validate_request_param($query_array);
+    if ($params) {
+      $query = hrk_sf_compress_request_param($params);
+      $hash = hash('sha256', drupal_http_build_query($query));
+
+      $session = hrk_system_session('preloader', 'search_flights');
+      $session->setSession(array($hash => TRUE));
+
+      drupal_goto(hrk_sf_make_results_page_link($query));
+    }
+  }
+}
+
+
+function hrk_sf_make_results_page_link($params) {
+  search_flights_include('FlightHelper');
+  return \includes\FlightHelper::create()->make_results_page_link($params);
+}
+
+function hrk_sf_get_params_from_results_page_link($link, $full = FALSE) {
+  search_flights_include('FlightHelper');
+  return \includes\FlightHelper::create()
+    ->get_results_params_from_results_page_link($link, $full);
+}
+
+function search_flights_form_values($form_state) {
+  //set default array set
+
+  $default = array(
+    'direction_type' => 'round_trip',
+    'trips_count' => 2,
+    'cabin_type' => 'economy',
+    'passengers' => array(
+      'adt' => 1,
+      'chd' => 0,
+      'inf' => 0
+    )
+  );
+
+  for ($i = 1; $i <= SEARCH_FLIGHTS_MODULE_MAX_TRIPS_COUNT; $i++) {
+    $default['trip'][$i] = array(
+      'direction_from' => array(
+        'q' => '',
+        'code' => '',
+        'type' => ''
+      ),
+      'direction_to' => array(
+        'q' => '',
+        'code' => '',
+        'type' => ''
+      ),
+      'departure' => '',
+      'return' => ''
+    );
+  }
+
+  $values = (isset($form_state['values'])) ? $form_state['values'] : array();
+  $query_values = hrk_sf_validate_request_param(hrk_sf_uncompress_request_param($_GET));
+
+  $get_values = ($query_values) ? $query_values : array();
+  return array_replace_recursive($default, $get_values, $values);
+}
+
+function search_flights_cities_and_airports_autocomplete() {
+  $matches = array();
+  $search = isset($_GET['term']) ? $_GET['term'] : '';
+
+  if ($search) {
+    $matches = _search_flights_cities_and_airports_autocomplete_make_search($search);
+
+    if (!$matches) {
+      text_correction_include();
+
+      //Correction mistakenly typed words in a different keyboard layout
+      $text_correction = new Text_LangCorrect();
+      $search_with_correction = $text_correction->parse($search, Text_LangCorrect::KEYBOARD_LAYOUT);
+
+      if ($search_with_correction) {
+        $matches = _search_flights_cities_and_airports_autocomplete_make_search($search_with_correction);
+      }
+    }
+  }
+  drupal_json_output($matches);
+}
+
+function _search_flights_cities_and_airports_autocomplete_make_search($search) {
+
+  global $language;
+
+  if ($search == 'getItemsWithoutSearch') {
+    $var = variable_get('avis_cities_list', '');
+    if (!empty($var)) {
+      $items_var = $var['flights_list'];
+      $items = explode("\n", str_replace("\r", "", $items_var));
+    } else {
+      $items = array('Киев', 'Москва');
+    }
+  }
+
+  $matches = array();
+  $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+
+  //search cities
+  $query = db_select('hrk_sf_cities', 'ct');
+  $query->leftJoin('hrk_sf_countries', 'c', 'ct.cid = c.cid');
+  $query->fields('ct', array('name_' . $l_prefix, 'code'));
+  $query->fields('c', array('name_' . $l_prefix));
+
+  $condition_or = db_or();
+  if ($search == 'getItemsWithoutSearch') {
+    foreach ($items as $item) {
+      $condition_or->condition('ct.name_ru', db_like($item) . '%', 'LIKE');
+      $condition_or->condition('ct.name_en', db_like($item) . '%', 'LIKE');
+    }
+  } else {
+    $condition_or->condition('ct.name_ru', db_like($search) . '%', 'LIKE');
+    $condition_or->condition('ct.name_en', db_like($search) . '%', 'LIKE');
+  }
+  $condition_or->condition('ct.code', $search);
+
+  $query->condition($condition_or);
+  $query->orderBy('name_' . $l_prefix);
+  $query->range(0, 10);
+
+  $cities_rows = $query->execute();
+
+  foreach ($cities_rows as $row) {
+    $city_name = 'name_' . $l_prefix;
+    $country_name = 'c_name_' . $l_prefix;
+    $matches[] = array(
+      'name' => $row->$city_name,
+      'code' => $row->code,
+      'country' => $row->$country_name,
+      'type' => 'city',
+      'category' => t('Cities')
+    );
+  }
+
+  if ($search == 'getItemsWithoutSearch') {
+    //search airports
+    $query = db_select('hrk_sf_airports', 'a');
+    $query->leftJoin('hrk_sf_countries', 'c', 'a.cid = c.cid');
+    $query->leftJoin('hrk_sf_cities', 'ct', 'a.ctid = ct.ctid');
+    $query->fields('a', array('name_' . $l_prefix, 'code'));
+    $query->fields('c', array('name_' . $l_prefix));
+    $query->fields('ct', array('name_' . $l_prefix));
+
+    $condition_or = db_or();
+    $condition_or->condition('a.name_ru', '%' . db_like($search) . '%', 'LIKE');
+    $condition_or->condition('a.name_en', '%' . db_like($search) . '%', 'LIKE');
+    $condition_or->condition('a.code', $search);
+
+    $query->condition($condition_or);
+    $query->orderBy('name_' . $l_prefix);
+    $query->range(0, 5);
+
+    $airports_rows = $query->execute();
+
+    foreach ($airports_rows as $row) {
+      $airport_name = 'name_' . $l_prefix;
+      $country_name = 'c_name_' . $l_prefix;
+      $city_name = 'ct_name_' . $l_prefix;
+      $matches[] = array(
+        'name' => $row->$airport_name,
+        'code' => $row->code,
+        'country' => $row->$country_name,
+        'city' => $row->$city_name,
+        'type' => 'airport',
+        'category' => t('Airports')
+      );
+    }
+  }
+
+  return $matches;
+}
+
+function search_flights_result_query_block() {
+  $trips = array();
+  $params = (object) hrk_sf_validate_request_param(hrk_sf_get_params_from_results_page_link(current_path(), TRUE));
+
+  if (!empty($params->trip)) {
+
+    //get trip codes and change their types
+    foreach ($params->trip as &$trip) {
+      $trip = (object) $trip;
+      //save codes
+      hrk_sf_codes()->delayCode($trip->direction_from['type'], $trip->direction_from['code']);
+      hrk_sf_codes()->delayCode($trip->direction_to['type'], $trip->direction_to['code']);
+    }
+    //make query ro db
+    hrk_sf_codes()->delayStart();
+    //prepare trips array
+    foreach ($params->trip as $sometrip) {
+      $code_from = hrk_sf_codes()->getCode($sometrip->direction_from['type'], $sometrip->direction_from['code']);
+      //from trip
+      $code = reset($code_from);
+
+      $trips[] = array(
+        'info' => $code,
+        'transit' => strtotime($sometrip->departure)
+      );
+
+      $code_to = hrk_sf_codes()->getCode($sometrip->direction_to['type'], $sometrip->direction_to['code']);
+      //to trip
+      $trips[] = array(
+        'info' => reset($code_to),
+        'transit' => (!empty($sometrip->return)) ? strtotime($sometrip->return) : '',
+      );
+
+      if (!empty($trip->return)) {
+        //to trip
+        $trips[] = array(
+          'info' => reset($code_from),
+          'transit' => ''
+        );
+      }
+    }
+  }
+
+  if (!empty($trips)) {
+    $trips['change_params_link'] = url('', array(
+      'query' => hrk_sf_compress_request_param((array) $params),
+      'fragment' => 'quicktabs-search_forms_tabs=0'
+    ));
+    drupal_add_js(drupal_get_path('module', 'search_flights') . '/js/search_result_query.js', array('scope' => 'footer'));
+  }
+
+  return theme('sf_result_query', array('trips' => $trips));
+}
+
+//helper functions
+function hrk_sf_validate_request_param($search_params, $default = FALSE) {
+  search_flights_include('FlightHelper');
+  return \includes\FlightHelper::create()
+    ->validate_request_param($search_params, $default);
+}
+
+function hrk_sf_compress_request_param($params) {
+  search_flights_include('FlightHelper');
+  return \includes\FlightHelper::create()->compress_request_param($params);
+}
+
+function hrk_sf_uncompress_request_param($query) {
+  search_flights_include('FlightHelper');
+  return \includes\FlightHelper::create()->uncompress_request_param($query);
+}
+
+function hrk_sf_parse_response($response) {
+  helper_include('SoapXmlReader');
+  search_flights_include('FlightHelper');
+
+  return \includes\FlightHelper::create()
+    ->makeArrayFromSearchResponse(\includes\SoapXmlReader::create()
+      ->parse($response));
+}
+
+// AI: FUNCTION FOR CALENDAR +/-3days PARSE
+function hrk_sf_parse_calendar($response, $direction_type) {
+  helper_include('SoapXmlReader');
+  search_flights_include('FlightHelper');
+
+  return \includes\FlightHelper::create()
+    ->makeArrayFromCalendarResponse(\includes\SoapXmlReader::create()
+      ->parse($response), $direction_type);
+}
+
+
+function hrk_sf_codes() {
+  search_flights_include('SF_Codes');
+  return \includes\SF_Codes::getInstance();
+}
+
+function hrk_sf_results($rid) {
+  $result = array();
+
+  $query = db_select('hrk_sf_results', 'r')
+    ->fields('r', array('result'))
+    ->condition('rid', $rid)
+    ->execute();
+
+  foreach ($query as $row) {
+    $result = hrk_helper_result_decode($row->result);
+    break;
+  }
+
+  return $result;
+}
+
+function hrk_sf_popup($popup_name, $args = array()) {
+  drupal_add_js(drupal_get_path('module', 'search_flights') . '/js/search_popup.js');
+  return theme('sf_popup', array_merge(array('popup' => $popup_name), $args));
+}

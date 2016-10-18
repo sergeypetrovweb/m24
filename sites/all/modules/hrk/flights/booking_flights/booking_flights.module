@@ -1,0 +1,2020 @@
+<?php
+
+function bf_include($type, $dir = 'includes') {
+  static $used = array();
+
+  $dir = '/' . ($dir ? $dir . '/' : '');
+
+  if (!isset($used['booking_flights'][$dir][strtolower($type)])) {
+    require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'booking_flights') . $dir . $type . ".inc");
+    $used['booking_flights'][$dir][strtolower($type)] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function booking_flights_menu() {
+  $items['flights/booking/%/%/%/%'] = array(
+    'title' => t('Booking flight'),
+    'page callback' => 'booking_flights',
+    'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+  );
+
+  $items['flights/booking'] = array(
+    'title' => t('Booking flight'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('booking_flights_form'),
+    'access callback' => TRUE,
+  );
+
+  $items['flights/book/%'] = array(
+    'title' => t('Booked / purchased tickets'),
+    'page callback' => 'booking_flights_book',
+    'page arguments' => array(2),
+//    'access callback' => TRUE,
+    'access callback' => 'booking_flights_book_access',
+    'access arguments' => array(2),
+    'file' => 'booking_flights_book.inc'
+  );
+  return $items;
+}
+
+/**
+ * Добавление приватности для информации
+ */
+function booking_flights_book_access($bid) {
+  global $user;
+  $book = (object) hrk_bf_book($bid);
+  if ($book->uid == $user->uid || $user->uid == 1) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implement hook_block_info()
+ */
+function booking_flights_block_info() {
+
+  $blocks['booking_history_back'] = array(
+    'info' => t('Booking history back'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function booking_flights_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case('booking_history_back'):
+      $block['subject'] = t('Back to search results');
+      $block['content'] = booking_flights_history_back();
+      break;
+  }
+
+  return $block;
+}
+
+function booking_flights_cronapi() {
+  $items = array();
+  $items['booking_flight_check_expire'] = array(
+    'title' => t('Check book expire'),
+    'file' => 'cron.inc',
+    'file path' => drupal_get_path('module', 'booking_flights') . '/cron',
+    'callback' => 'booking_flights_check_expire',
+    'enabled' => TRUE,
+    'scheduler' => array(
+      'name' => 'crontab',
+      'crontab' => array(
+        'rules' => array('*/30 * * * *'),
+      ),
+    )
+  );
+  return $items;
+}
+
+/**
+ * Implement hook_theme()
+ */
+function booking_flights_theme($existing, $type, $theme, $path) {
+  $theme = array(
+    'booking_history_back' => array(
+      'template' => 'booking-history-back',
+      'variables' => array(),
+      'path' => $path . '/templates/blocks'
+    ),
+    'sf_results_temp' => array(
+      'template' => 'results-temp',
+      'variables' => array(),
+      'path' => $path . '/templates'
+    ),
+    'bf_booking_header' => array(
+      'template' => 'header',
+      'variables' => array(),
+      'path' => $path . '/templates/booking'
+    ),
+    'bf_booking_message' => array(
+      'template' => 'message',
+      'variables' => array(),
+      'path' => $path . '/templates/booking'
+    ),
+    'bf_booking_trip_info' => array(
+      'template' => 'trip-info',
+      'variables' => array(),
+      'path' => $path . '/templates/booking'
+    ),
+    'bf_booking_price' => array(
+      'template' => 'price',
+      'variables' => array(),
+      'path' => $path . '/templates/booking'
+    ),
+    'bf_booking_conditions_and_limitations' => array(
+      'template' => 'conditions-and-limitations',
+      'variables' => array(),
+      'path' => $path . '/templates/booking'
+    ),
+    'bf_book_header' => array(
+      'template' => 'header',
+      'variables' => array(),
+      'path' => $path . '/templates/book'
+    ),
+    'bf_book_message' => array(
+      'template' => 'message',
+      'variables' => array(),
+      'path' => $path . '/templates/book'
+    ),
+    'bf_book_trip_info' => array(
+      'template' => 'trip-info',
+      'variables' => array(),
+      'path' => $path . '/templates/book'
+    ),
+    'bf_book_passengers' => array(
+      'template' => 'passengers',
+      'variables' => array(),
+      'path' => $path . '/templates/book'
+    ),
+    'bf_book_price' => array(
+      'template' => 'price',
+      'variables' => array(),
+      'path' => $path . '/templates/book'
+    ),
+    'booking_popup' => array(
+      'template' => 'popups',
+      'variables' => array('title' => 'Error'),
+      'path' => $path . '/templates'
+    ),
+    'bf_mail' => array(
+      'template' => 'mail',
+      'variables' => array(),
+      'path' => $path . '/templates/mail'
+    ),
+  );
+
+  return $theme;
+}
+
+function booking_flights_history_back() {
+  $hash = arg(5);
+
+  if (!$hash) {
+    return '';
+  }
+
+  $sf_session = hrk_system_session('search_flights', 'result_sessions');
+  $sf_session_hash = $sf_session->getSession($hash);
+
+  if (!$sf_session_hash) {
+    return '';
+  }
+
+  return theme('booking_history_back', array('path' => hrk_sf_make_results_page_link(drupal_get_query_array($sf_session_hash['query']))));
+}
+
+function booking_flights_get_rules($rec_id, $comb_id, $sid, $hash) {
+  $sf_session = hrk_system_session('search_flights', 'result_sessions');
+  $sf_session_hash = $sf_session->getSession($hash);
+
+  if ($sf_session_hash) {
+    $back_to_search = array(
+      'title' => t('Repeat search'),
+      'path' => hrk_sf_make_results_page_link(drupal_get_query_array($sf_session_hash['query'])),
+    );
+  }
+
+  /*RETURN ERROR_SESSION_EXPIRE: IF NO DB SESSION*/
+  $db_session = hrk_ep_get_session($sid);
+  if (!$db_session || ep_check_db_session_expire($db_session)) {
+    return ep_popup('session_expired', isset($back_to_search) ? array('link' => $back_to_search) : array());
+  }
+
+  $ep = hrk_ep_engine();
+  $ep->connect($db_session['session']);
+
+  /*PREPARE REQUEST*/
+  ep_api_include('EP_FlightRules', 'requests');
+  $flight_rules = new \requests\EP_FlightRules();
+  $request = $flight_rules->setCombinationID($comb_id)
+    ->setRecommendationID($rec_id)
+    ->getRequest();
+
+  if (module_exists('dump')) {
+    dump($request, 'Запрос правил перелета');
+  }
+
+  $rule_hash = $sid . $hash;
+  $rules_session = hrk_system_session('booking_flights', 'rules_session');
+  $rules = $rules_session->getSession($rule_hash);
+
+  if ($rules) {
+    return hrk_bf_popup(
+      'flight_rules',
+      array(
+        'rules' => $rules['penalties'],
+        'close' => TRUE,
+        'title' => t('Penalties')
+      )
+    );
+  }
+
+  $response = $ep->doRequest($request, $flight_rules::SOAP_ACTION);
+
+  if (module_exists('dump')) {
+    dump($response, 'Ответ Amadeus на запрос правил перелета');
+  }
+
+  /*RETURN ERROR_CONNECTION_FAILED:IS*/
+  if (!$response) {
+    return array(
+      '#type' => 'ajax',
+      '#commands' => array(ajax_command_replace('.booking-rules-popup .popup-loading', ep_popup('connection_failed', array('close' => TRUE))))
+    );
+  }
+
+  $result = hrk_bf_parse($response)->flightRules();
+
+  if (!empty($result['errors'])) {
+    hrk_ep_errors()->save($db_session['session'], $result['errors'], \includes\EP_Errors::ERROR_RULES);
+    return hrk_bf_popup('rules_empty', array('close' => TRUE));
+  }
+
+  if (empty($result['penalties'])) {
+    return hrk_bf_popup('rules_empty', array('close' => TRUE));
+  }
+
+  $rules_session->setSession(array($rule_hash => array('penalties' => $result['penalties'])));
+
+  return hrk_bf_popup(
+    'flight_rules',
+    array(
+      'rules' => $result['penalties'],
+      'close' => TRUE,
+      'title' => t('Penalties')
+    )
+  );
+}
+
+function _booking_flights_find_combination($sequence_combination_index, $search_result) {
+  $booking_combination = array();
+
+  foreach ($search_result['combinations'] as $airline => $airline_combinations) {
+
+    foreach ($airline_combinations as $index => $combination) {
+
+      /*FIND COMBINATION BY INDEX*/
+      if ($sequence_combination_index === (string) $index) {
+
+        $booking_combination['combination'] = $combination;
+        $booking_combination['combination']['airline'] = $airline;
+        $booking_combination['codes']['airlines'][$airline] = $search_result['codes']['airlines'][$airline];
+
+        foreach ($combination['index_list'] as $dir => $ref) {
+          foreach ($search_result['flights'][$combination['sequence_number']][$ref][$dir] as $flight_unit) {
+            $flight = (object) $flight_unit;
+            /* GET CODES*/
+            $booking_combination['codes']['airports'][$flight->departure_airport] = $search_result['codes']['airports'][$flight->departure_airport];
+            $booking_combination['codes']['airports'][$flight->arrival_airport] = $search_result['codes']['airports'][$flight->arrival_airport];
+            $booking_combination['codes']['airlines'][$flight->operating_airline] = $search_result['codes']['airlines'][$flight->operating_airline];
+            $booking_combination['codes']['airlines'][$flight->marketing_airline] = $search_result['codes']['airlines'][$flight->marketing_airline];
+            $booking_combination['codes']['airplanes'][$flight->equipment] = $search_result['codes']['airplanes'][$flight->equipment];
+          }
+          $booking_combination['flights'][$ref][$dir] = $search_result['flights'][$combination['sequence_number']][$ref][$dir];
+        }
+
+        break;
+      }
+    }
+    if ($booking_combination) {
+      break;
+    }
+  }
+
+  return $booking_combination;
+}
+
+function booking_flights($rec_id, $comb_id, $sid, $hash) {
+  /*REDIRECT TO BOOK PAGE:IF BF SESSION EXIST AND BID EXIST*/
+  $booking_session = hrk_system_session('booking_flights', 'booking');
+  $booking_session_hash = $booking_session->getSession($sid . $hash);
+
+  if ($booking_session_hash && !empty($booking_session_hash)) {
+    drupal_goto('flights/book/' . $booking_session_hash['bid']);
+    return '';
+  }
+
+  /*RETURN ERROR_BOOKING_DISABLE:IF DEFAULT SERVER TIME IN RANGE 22.00 - 00.00*/
+  $site_default_time_zone = new DateTimeZone(date_default_timezone(FALSE));
+  $server_time = new DateTime('now', $site_default_time_zone);
+  $low_range_time = new DateTime(date('Y-m-d 22:00:00'), $site_default_time_zone);
+  $high_range_time = new DateTime(date('Y-m-d 23:59:59'), $site_default_time_zone);
+  $diff_time = date_diff($server_time, $high_range_time);
+  $left_time = format_interval(($diff_time->h * 3600) + ($diff_time->s * 60) + $diff_time->i);
+/*  if ($server_time->getTimestamp() >= $low_range_time->getTimestamp() && $server_time->getTimestamp() <= $high_range_time->getTimestamp()) {
+    return hrk_bf_popup('disable_booking', array('left_time' => $left_time));
+  }*/
+
+  /* GET SEARCH SESSION BY HASH*/
+  $sf_session = hrk_system_session('search_flights', 'result_sessions');
+  $sf_session_hash = $sf_session->getSession($hash);
+
+  /*RETURN ERROR_SESSION_EXPIRE: IF NO LOCAL SESSION SEARCH*/
+  if (!$sf_session_hash) {
+    return ep_popup('session_expired');
+  }
+
+  /* PREPARE ARRAY FOR BACK TO SEARCH LINK*/
+  $back_to_search = array(
+    'title' => t('Repeat search'),
+    'path' => hrk_sf_make_results_page_link(drupal_get_query_array($sf_session_hash['query']))
+  );
+
+  /*RETURN ERROR_SESSION_EXPIRE WITH TRY AGAIN LINK: IF SESSION ID DOESN'T MATCH LOCAL SESSION ID*/
+  if ($sid !== $sf_session_hash['sid']) {
+    return ep_popup('session_expired', array('link' => $back_to_search));
+  }
+
+  /*RETURN ERROR_SESSION_EXPIRE: IF DB SESSION DOESN't EXIST OR DB SEARCH RESULTS EMPTY**/
+  $db_session = hrk_ep_get_session($sf_session_hash['sid']);
+  $result = hrk_sf_results($sf_session_hash['rid']);
+  if (!$db_session || ep_check_db_session_expire($db_session) || !$result) {
+    return ep_popup('session_expired', array('link' => $back_to_search));
+  }
+
+  /* FILTER SEARCH RESULT AND CREATE ARRAY BOOKING COMBINATION*/
+  $booking_combination = _booking_flights_find_combination($rec_id . $comb_id, $result);
+
+  /*RETURN ERROR_BAD_BOOKING_REQUEST: IF BOOKING_COMBINATION EMPTY*/
+  if (!$booking_combination) {
+    return hrk_bf_popup('bad_request', array('link' => $back_to_search));
+  }
+
+  $booking_combination['search_params'] = hrk_sf_uncompress_request_param(drupal_get_query_array($sf_session_hash['query']));
+
+
+  //return theme('sf_results_temp', array());
+
+  return drupal_get_form('booking_flights_form', $rec_id, $comb_id, $sid, $hash, $booking_combination);
+}
+
+function booking_flights_form($form, &$form_state, $rec_id, $comb_id, $sid, $hash, $combination) {
+
+  /*RETURN ERROR: IF THE PREVIOUS STEP ERROR OCCURRED*/
+  $error = isset($form_state['values']['error']) ? $form_state['values']['error'] : NULL;
+  if ($error) {
+    return array('error' => array('#markup' => hrk_bf_popup($error['name'], isset($error['args']) ? $error['args'] : array())));
+  }
+
+  $values = isset($form_state['values']) ? $form_state['values'] : array();
+  $values = (object) $values;
+
+  /* RETURN FIRST BOOKING FORM: IF IT IS A NEW BOOKING*/
+  if (empty($values->step)) {
+    return booking_flights_start_form($form, $form_state, $rec_id, $comb_id, $sid, $hash, $combination);
+  }
+
+  /* RETURN PRICE CHANGED*/
+  if ($values->step == 'BOOK_WITH_PRICECHANGE') {
+    return booking_flights_price_changed_form($form, $form_state, $rec_id, $comb_id, $sid, $hash, $combination);
+  }
+
+  /* RETURN CREDIT VERIFICATION*/
+  if ($values->step == 'BOOK_WITH_CARDVERIFICATION') {
+    return booking_flights_card_verification_form($form, $form_state, $rec_id, $comb_id, $sid, $hash, $combination);
+  }
+}
+
+/* START BOOKING FORM*/
+function booking_flights_start_form($form, &$form_state, $rec_id, $comb_id, $sid, $hash, $combination) {
+  ctools_class_add('booking_flights');
+  global $user;
+  global $language;
+  $site_currency = strtoupper(Currency::init()->get_currency());
+
+  $path = drupal_get_path('theme', 'flight_modern');
+    $form['#attributes']['data-typeform'] = 'book';
+
+    $form['breadcrumbs']['#markup'] = '
+    <div id="breadcrumbs">
+        <div class="container">
+            <img src="/' . $path . '/images/breadcrumbs_home.png"> <a href="#">' . t('Booking flights') . '</a>
+        </div>
+    </div>';
+
+  $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+  $provider = $combination['combination']['provider'];
+
+
+  /*RETURN SERVER_ERROR: IF CANT GET COUNTRIES*/
+  $phone_codes = array();
+  $nationality = array();
+  $countries = array();
+  $query = db_select('hrk_sf_countries', 'c')
+    ->fields('c', array())
+    ->orderBy('name_' . $l_prefix); //get countries phone codes
+  $result = $query->execute();
+
+  foreach ($result as $row) {
+    $name = 'name_' . $l_prefix;
+    if (!empty($row->$name)) {
+      $nationality[$row->three_letter_code] = $row->$name;
+      $countries[$row->code] = $row->$name;
+      $phone_codes[$row->phone_code] = $row->$name . '(' . $row->phone_code . ')';
+    }
+  }
+    $sng = array(
+        'RUS' => t('Russia'),
+        'AZE' => t('Azerbaijan'),
+        'KAZ' => t('Kazakhstan'),
+        'UKR' => t('Ukraine'),
+        'BLR' => t('Belarus'),
+        'GEO' => t('Georgia'),
+        'KGZ' => t('Kyrgyzstan'),
+        'UZB' => t('Uzbekistan'),
+        'TJK' => t('Tajikistan'),
+        'TKM' => t('Turkmenistan'),
+    );
+
+    foreach($sng as $nat_code=>$nat_title) {
+        unset($nationality[$nat_code]);
+    }
+    $nationality = array_merge($sng,$nationality);
+
+  if (!$phone_codes && !$nationality && $countries) {
+    return array('error' => array('#markup' => ep_popup('server_error')));
+  }
+
+  $values = isset($form_state['values']) ? $form_state['values'] : array();
+  $values = (object) $values;
+
+  $airline = $combination['codes']['airlines'][$combination['combination']['airline']];
+
+  $form['#attributes']['class'] = array('booking-form-step-one');
+
+  /*TRIP THEME*/
+  $form['trip_info'] = array('#markup' => theme('bf_booking_trip_info', $combination));
+
+  $form['open_content']['#markup'] = '<div id="content"><div class="container">';
+
+
+  /*CONTACTS BLOCK*/
+  $form['contact'] = array(
+    '#type' => 'fieldset',
+    //'#title' => t('Customer'),
+    '#tree' => TRUE,
+    //'#description' => t('Reservation information will be send to your e-mail'),
+    '#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 header_reservation reservation">',
+    '#suffix' => '</div>',
+  );
+
+  $form['contact']['email'] = array(
+    '#type' => 'textfield',
+    '#default_value' => isset($values->contact['email']) ? $values->contact['email'] : (isset($user->mail)) ? $user->mail : '',
+    '#title' => t('Email'),
+    '#required' => TRUE,
+    '#attributes' => array(
+      /*'placeholder' => t('Email'),*/
+        'data-error-title' => t('This field is required'),
+        'data-requiur' => 1,
+    ),
+    '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">',
+    '#suffix' => '</div>',
+  );
+
+  if(isset($form_state['input']) && !empty($form_state['input']['contact']['email'])) {
+      $form['contact']['pass'] = array(
+          '#type' => 'password',
+          '#default_value' => '',
+          '#title' => t('Password'),
+          '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">',
+          '#suffix' => '<div id="restore-pass-wrap"><a href="/user/new_pass_please/' . $form_state['input']['contact']['email'] . '/nojs" class="btn-restore-pass use-ajax">' . t('Request new password?') . '</a></div></div>',
+      );
+  }
+
+
+  $form['contact']['phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone'),
+    '#attributes' => array(
+      /*'placeholder' => t('Phone'),*/
+        'data-error-title' => t('This field is required'),
+        'data-requiur' => 1,
+    ),
+    '#default_value' => isset($values->contact['phone']) ? $values->contact['phone'] : '',
+    '#required' => TRUE,
+    '#prefix' => '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">',
+    '#suffix' => '</div>',
+  );
+
+//  $form['contact']['text']['#markup'] = '
+//    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+//        <p>' . t('Email need to send you e-mail ticket. Phone number to contact in case of change of flight.') . '</p>
+//    </div>';
+
+  /*CHECK PROVIDER: IF NOT AMADEUS GET LCC PARAMS*/
+  if ($provider != 'amadeus') {
+    $db_session = hrk_ep_get_session($sid);
+
+    if (!$db_session && ep_check_db_session_expire($db_session)) {
+      return array('error' => array('#markup' => ep_popup('session_expired')));
+    }
+
+    $ep = hrk_ep_engine();
+    if (!$ep->connect($db_session['session'])) {
+      return array('error' => array('#markup' => hrk_bf_popup('connection_failed')));
+    }
+
+    $request = hrk_ep_booking_request('lcc')
+      ->setRecommendationID($rec_id)
+      ->setCombinationID($comb_id);
+    $response = $ep->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+    $lcc = hrk_bf_parse($response)->lcc();
+    drupal_add_js(drupal_get_path('module', 'booking_flights') . '/js/booking-lcc.js');
+  }
+
+  /*PASSENGERS FILL FORM*/
+  $passengers = $combination['search_params']['passengers'];
+
+  $form['passengers'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    //'#title' => t('Passengers'),
+    '#prefix' => '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 filling_date"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 title_content">' . t('Сomplete data passengers') .
+    '</div><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 data">',
+    '#suffix' => '</div></div>',
+  );
+
+  foreach ($passengers as $type => $count) {
+    if ($count) {
+      $passenger_type = '';
+
+
+      $birthday = array('min' => REQUEST_TIME, 'max' => REQUEST_TIME);
+      $return_date = isset($combination['search_params']['trip'][1]['return']) ? $combination['search_params']['trip'][1]['return'] : NULL;
+
+      switch ($type) {
+        case 'adt':
+          $passenger_type = t('Adults');
+          $birthday['max'] = strtotime('-12 years');
+          $birthday['min'] = strtotime('-100 years');
+          break;
+        case 'chd':
+          $passenger_type = t('Children');
+          $birthday['max'] = strtotime('-2 year');
+          $birthday['min'] = isset($return_date) ? strtotime('-12 year', strtotime($return_date)) + (24 * 60 * 60) : strtotime('-12 years');;
+          break;
+        case 'inf':
+          $passenger_type = t('Infants');
+          $birthday['max'] = REQUEST_TIME;
+          $birthday['min'] = isset($return_date) ? strtotime('-2 year', strtotime($return_date)) + (24 * 60 * 60) : strtotime('-2 years');
+          break;
+      }
+
+      $form['passengers'][$type] = array(
+        '#type' => 'fieldset',
+        '#prefix' => '<div class="passengers-wrapper passengers-' . $type . '">',
+        '#title' => $passenger_type,
+        '#suffix' => '</div>'
+      );
+
+      $form_passengers = &$form['passengers'][$type];
+
+      for ($i = 1; $i <= $count; $i++) {
+        $pas_value = isset($values->passengers[$type][$i]) ? $values->passengers[$type][$i] : array();
+        $pas_value = (object) $pas_value;
+
+        $form_passengers[$i] = array(
+          '#type' => 'fieldset',
+          '#prefix' => '<div class="passenger-unit-wrapper passengers-unit-' . $type . ' passenger-unit-index-' . $i . '">',
+          '#suffix' => '</div>'
+        );
+
+        $form_passenger = &$form_passengers[$i];
+
+        /*                $form_passenger['index'] = array(
+                            '#type' => 'item',
+                            '#markup' => $i . '.',
+                            '#prefix' => '<div class="passenger-index">',
+                            '#suffix' => '</div>'
+                        );*/
+
+        $form_passenger['last_name'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Last name'),
+          '#prefix' => '<div class="seven_col_row">',
+          '#suffix' => '</div>',
+          '#required' => TRUE,
+          '#attributes' => array(
+            /*'placeholder' => t('Last name'),*/
+            'class' => array('li-translit', 'data_type_name'),
+            'data-error-title' => t('This field is required'),
+            'title' => t('Enter the surname in latin, identically to the passport data'),
+            'data-requiur' => 1,
+          ),
+          '#default_value' => isset($pas_value->last_name) ? $pas_value->last_name : '',
+        );
+
+        $form_passenger['first_name'] = array(
+          '#type' => 'textfield',
+          '#title' => t('First name'),
+          '#required' => TRUE,
+          '#prefix' => '<div class="seven_col_row">',
+          '#suffix' => '</div>',
+          '#attributes' => array(
+            /*'placeholder' => t('First name'),*/
+            'class' => array('li-translit', 'data_type_name'),
+              'data-error-title' => t('This field is required'),
+              'data-requiur' => 1,
+            'title' => t('Enter the surname in latin, identically to the passport data'),
+          ),
+          '#default_value' => isset($pas_value->first_name) ? $pas_value->first_name : '',
+        );
+
+        $form_passenger['birthday'] = array(
+          '#type' => 'pickadate_date',
+          '#title' => t('Date of birth'),
+          '#required' => TRUE,
+          '#prefix' => '<div class="seven_col_row birthday_row">',
+          '#suffix' => '</div>',
+          '#attributes' => array(
+              'data-error-title' => t('This field is required'),
+              'data-requiur' => 1,
+              'class' => array('birthday_input'),
+            /*'placeholder' => t('Date of birth'),*/
+            'required' => TRUE
+          ),
+          //'#default_value' => isset($pas_value->birthday) ? $pas_value->birthday : '',
+          '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'selectMonths' => TRUE,
+            'min' => date('[Y,n,j]', $birthday['min']),
+            'max' => date('[Y,n,j]', $birthday['max']),
+            'hiddenName' => FALSE,
+            'selectYears' => 70,
+            'today' => '',
+            'close' => '',
+            'clear' => ''
+          )),
+        );
+
+        $form_passenger['nationality'] = array(
+          '#type' => 'select',
+          '#required' => TRUE,
+          '#title' => t('Nationality'),
+          '#prefix' => '<div class="seven_col_row">',
+          '#suffix' => '</div>',
+          '#options' => $nationality,
+          '#empty_value' => '',
+          '#default_value' => isset($pas_value->nationality) ? $pas_value->nationality : '',
+          '#select2' => array(
+            'allowClear' => FALSE,
+            'minimumResultsForSearch' => 1
+          ),
+          '#attributes' => array(
+              'data-error-title' => t('This field is required'),
+              'data-requiur' => 1,
+              'required' => TRUE
+          ),
+        );
+
+        $form_passenger['passport'] = array(
+          '#type' => 'textfield',
+          '#required' => TRUE,
+          '#prefix' => '<div class="seven_col_row">',
+          '#suffix' => '</div>',
+          '#title' => t('Passport number'),
+          '#attributes' => array(
+            /*'placeholder' => t('Passport number'),*/
+            'class' => array('li-translit'),
+              'data-error-title' => t('This field is required'),
+              'data-requiur' => 1,
+            'required' => TRUE
+          ),
+          '#default_value' => isset($pas_value->passport) ? $pas_value->passport : '',
+        );
+
+
+        $form_passenger['expire'] = array(
+          '#type' => 'pickadate_date',
+          '#required' => TRUE,
+          '#title' => t('Available until'),
+          '#suffix' => '</div>',
+          '#prefix' => '<div class="seven_col_row birthday_row">',
+//           '#suffix' => (empty($lcc['per_passenger'])) ? '</div></div>' : '</div>',
+          '#attributes' => array(
+              'data-error-title' => t('This field is required'),
+              'data-requiur' => 1,
+            'class' => array('expire_input'),
+            /*'placeholder' => t('Date'),*/
+            'required' => TRUE
+          ),
+          //'#default_value' => isset($pas_value->expire) ? $pas_value->expire : '',
+          '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'hiddenName' => FALSE,
+            'selectYears' => TRUE,
+            'selectMonths' => TRUE,
+            'min' => date('[Y,n,j]', isset($return_date) ? strtotime($return_date) : REQUEST_TIME),
+            'today' => '',
+            'close' => '',
+            'clear' => ''
+          )),
+        );
+
+        $form_passenger['sex'] = array(
+          '#type' => 'radios',
+          '#title' => t('Sex'),
+          '#prefix' => '<div class="seven_col_row">',
+//          '#suffix' => '</div>',
+          '#suffix' => (empty($lcc['per_passenger'])) ? '</div>' : '',
+          '#required' => TRUE,
+          '#options' => array('MR' => t('MR.'), 'MRS' => t('MRS.')),
+          '#default_value' => isset($pas_value->sex) ? $pas_value->sex : '',
+            '#attributes' => array(
+                'data-error-title' => t('This field is required'),
+                'data-requiur' => 1,
+            ),
+        );
+
+        /*SET FIELDS IF PROVIDER TRAVELFUSION AND WE HAVE MANDATORY PER PASSENGER FIELDS*/
+        if (!empty($lcc) && !empty($lcc['per_passenger'])) {
+          $fields_pas_already_exist = array('DateOfBirth', 'PassportNumber', 'PassportExpiryDate', 'PassportCountryOfIssue', 'Nationality');
+
+          $form_passenger['lcc'] = array(
+            '#type' => 'fieldset',
+            '#prefix' => '<div class="passenger-lcc">',
+            '#suffix' => '</div>'
+          );
+          foreach ($lcc['per_passenger'] as $name => $value) {
+            $title = ucfirst(hrk_helper_from_camel_case($name, ' '));
+            $form_passenger['lcc'][$name] = array(
+              '#type' => (in_array($name, $fields_pas_already_exist)) ? 'hidden' : 'textfield',
+              '#title' => t($title),
+              '#attributes' => array('placeholder' => t($title), 'class' => array('li-translit')),
+            );
+            if ($form_passenger['lcc'][$name]['#type'] == 'textfield') {
+              $form_passenger['lcc'][$name]['#required'] = TRUE;
+            }
+          }
+        }
+      }
+    }
+  }
+  /*LCC IF TRAVELFUSION*/
+  if (!empty($lcc['lcc'])) {
+    $form['lcc'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Required parameters'),
+      '#prefix' => '<div class="required-lcc col-lg-6 col-md-6 col-sm-6 col-xs-6 data">',
+      '#suffix' => '</div>',
+      '#tree' => TRUE
+    );
+
+    if (!empty($lcc['bags'])) {
+      currency_include('convert');
+
+      /*ADD NONE BAG*/
+      $bags[0] = t('No luggage');
+
+      foreach ($lcc['bags'] as $bag) {
+        $price = ceil($bag['price'][$site_currency]);
+        $bags[$price] = t('@quantity @plural ( Weight: @weight kg, Max: @max_weight kg ) + @price @currency', array(
+          '@quantity' => $bag['quantity'],
+          '@plural' => format_plural($bag['quantity'], t('bag'), t('bags')),
+          '@weight' => $bag['weight'],
+          '@max_weight' => $bag['max_weight'],
+          '@price' => ceil($price),
+          '@currency' => strip_tags(currency_get_prefix($site_currency)),
+        ));
+      }
+
+      $form['help_bags'] = array('#type' => 'value', '#value' => $lcc['bags']);
+      if (!empty($bags)) {
+        $form['lcc']['bags'] = array(
+          '#title' => t('Number of bags'),
+          '#required' => TRUE,
+          '#type' => 'radios',
+          '#options' => $bags,
+          '#attributes' => array('class' => array('lcc-bags'), 'autocomplete' => 'off'),
+        );
+      }
+    }
+    $fields_already_exist = array('NumberOfBags', 'CardSecurityNumber', 'BillingAddress', 'PostCode');
+
+    foreach ($lcc['lcc'] as $name => $lcc_param) {
+      $title = ucfirst(hrk_helper_from_camel_case($name, ' '));
+      $form['lcc'][$name] = array(
+        '#type' => (in_array($name, $fields_already_exist)) ? 'hidden' : 'textfield',
+        '#title' => t($title),
+        '#attributes' => array('class' => array('li-translit')),
+      );
+      if ($form['lcc'][$name] == 'textfield') {
+        $form['lcc'][$name]['#required'] = TRUE;
+      }
+    }
+  }
+
+  /*BILLING IF TRAVELFUSION*/
+  if ($provider != 'amadeus') {
+
+    $form['billing'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Billing Address'),
+      '#prefix' => '<div class="billing-lcc col-lg-6 col-md-6 col-sm-6 col-xs-6 data">',
+      '#suffix' => '</div>',
+      '#tree' => TRUE
+    );
+
+    $form['billing']['address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address'),
+      '#required' => TRUE,
+      '#attributes' => array('class' => array('li-translit')),
+    );
+
+    $form['billing']['city'] = array(
+      '#type' => 'textfield',
+      '#title' => t('City name'),
+      '#required' => TRUE,
+      '#attributes' => array('class' => array('li-translit')),
+    );
+
+    $form['billing']['country'] = array(
+      '#type' => 'select',
+      '#title' => t('Country'),
+      '#required' => TRUE,
+      '#options' => $countries,
+      '#empty_value' => '_none',
+      '#empty_option' => '',
+      '#select2' => array(
+        'placeholder' => t('Select a country'),
+        'allowClear' => FALSE,
+        'minimumResultsForSearch' => 1
+      ),
+    );
+
+    $form['billing']['postal_code'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#title' => t('Postal code'),
+      '#attributes' => array('class' => array('li-translit')),
+    );
+
+    $credit_card_types = hrk_helper_credit_card()->getCreditsCardList((isset($lcc['card']) ? array_keys($lcc['card']) : array('VI')));
+
+    /*CREDIT CARD*/
+    $form['credit_card'] = array(
+      '#type' => 'fieldset',
+      '#prefix' => '<div class="credit-card-llc col-lg-12 col-md-12 col-sm-12 col-xs-12 data">',
+      '#suffix' => '</div>',
+      '#tree' => TRUE,
+      '#title' => t('Credit card'),
+    );
+
+    $form['credit_card']['type'] = array(
+      '#type' => 'radios',
+      '#options' => $credit_card_types,
+      '#prefix' => '<div class="credit-card-types">',
+      '#suffix' => '</div>',
+      '#title' => t('Card type'),
+      '#required' => TRUE,
+    );
+
+    $form['credit_card']['number'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Credit card number'),
+      '#required' => TRUE,
+      '#prefix' => '<div class="credit-card-number">',
+      '#suffix' => '</div>',
+      '#attributes' => array('autocomplete' => 'off'),
+      '#default_value' => isset($values->credit_card['number']) ? $values->credit_card['number'] : '',
+    );
+
+    $form['credit_card']['code'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CVV2/CVC2'),
+      '#required' => TRUE,
+      '#prefix' => '<div class="credit-card-code">',
+      '#suffix' => '</div>',
+      '#attributes' => array('autocomplete' => 'off'),
+      '#default_value' => isset($values->credit_card['code']) ? $values->credit_card['code'] : '',
+    );
+
+    $form['credit_card']['expire'] = array(
+      '#type' => 'pickadate_date',
+      '#title' => t('Available until'),
+      '#required' => TRUE,
+      '#prefix' => '<div class="credit-card-expire">',
+      '#suffix' => '</div>',
+      '#attributes' => array('autocomplete' => 'off'),
+      '#default_value' => isset($values->credit_card['expire']) ? $values->credit_card['expire'] : '',
+      '#settings' => pickadate_date_default_settings(array(
+        'formatSubmit' => 'yyyy-mm-dd',
+        'firstDay' => 1,
+        'hiddenName' => false,
+        'selectYears' => TRUE,
+        'min' => date('[Y,n,j]', REQUEST_TIME),
+        'today' => '',
+        'close' => '',
+        'clear' => '')),
+    );
+  }
+
+  $form['pay_card_text']['#markup'] = '
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 card_data">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 info_block">
+            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-12"><img src="/' . $path . '/images/palm.png"></div>
+            <div class="col-lg-8 col-md-8 col-sm-7 col-xs-12">
+                <h3>' . t('Want more discount? Book hotel Mambo24travel.ru') . '</h3>
+                <p>' . t('Book your hotel in one of the largest and trusted sites in the industry') . '</p>
+            </div>
+            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-12"><input type="button" value="' . t('Choose hotel') . '" class="choice_hostel"></div>
+            <input type="button" value="x" id="close">
+        </div>
+    </div>';
+
+
+  $form['payment_container'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('white_block col-lg-12 col-md-12 col-sm-12 col-xs-12', 'clearfix')),
+    '#tree' => FALSE,
+  );
+
+  /*CONDITIONS BLOCK*/
+    $rules = booking_flights_get_rules($rec_id, $comb_id, $sid, $hash);
+    $form['payment_container']['conditions'] = array(
+    '#markup' => theme('bf_booking_conditions_and_limitations', array(
+      'rule_link' => (!empty($lcc['rule_link'])) ? $lcc['rule_link'] : array(),
+      'url' => 'flights/booking/rules/' . $rec_id . '/' . $comb_id . '/' . $sid . '/' . $hash,
+      'penalties' => $rules
+    ))
+  );
+
+  $form['payment_container']['agree_to_the_rules'] = array(
+    '#type' => 'checkbox',
+    '#required' => TRUE,
+    '#title' => t('I accept the terms, conditions and limitations'),
+    '#attributes' => array(
+        'autocomplete' => 'off',
+        'data-error-title' => t('This field is required'),
+        'data-requiur' => 1,
+    ),
+    '#default_value' => '',
+  );
+//    date('Y-m-d H:i:s', $book->expire)
+  /*PRICE BLOCK*/
+  $site_default_time_zone = new DateTimeZone(date_default_timezone(FALSE));
+  $user_time = new DateTime('now', $site_default_time_zone);
+
+  $today = date('Y-m-d', REQUEST_TIME);
+  if(isset($combination['search_params']['trip'][1]['departure']) && $combination['search_params']['trip'][1]['departure'] == $today) {
+      $time_limit = new DateTime('+20 minutes', $site_default_time_zone);
+      $exp_time = format_date(strtotime('+20 minutes'), 'medium', 'j F H:i \\G\\M\\T(O)');
+  } else {
+      $time_limit = new DateTime(date('Y-m-d 23:59:59', REQUEST_TIME), $site_default_time_zone);
+      $exp_time = format_date(REQUEST_TIME, 'medium', 'j F 23:59 \\G\\M\\T(O)');
+  }
+
+  $diff_time = date_diff($time_limit, $user_time);
+  $left_time = format_interval(($diff_time->h * 3600) + ($diff_time->i * 60) + $diff_time->s);
+
+  $site_currency = strtoupper(Currency::init()->get_base_currency());
+  $commission = $combination['combination']['commission'][$site_currency];
+  $price = $combination['combination']['price'][$site_currency];
+
+  $form['payment_container']['price'] = array(
+    '#markup' => theme('bf_booking_price', array(
+      'time' => $exp_time,
+      'left_time' => $left_time,
+      'commission' => $commission,
+      'price' => $price,
+      'currency' => $site_currency,
+    ))
+  );
+
+  $form_state['build_info']['total'] = $price + $commission;
+
+
+  $form['payment_container']['actions'] = array('#type' => 'actions');
+
+  $form['payment_container']['actions']['book'] = array(
+    '#type' => 'submit',
+    '#attributes' => array('class' => array('buy')),
+    '#value' => ($provider != 'amadeus') ? t('Buy') : t('Book / Buy'),
+    '#submit' => ($provider == 'amadeus') ? array('booking_flights_form_amadeus_submit') : array('booking_flights_form_ext_submit'),
+    '#suffix' => '</div></div>',
+  );
+
+    $form['#validate'] = array('booking_flights_validation');
+  libraries_load('translit');
+  libraries_load('tooltiper', 'shadow');
+  drupal_add_js(drupal_get_path('module', 'booking_flights') . '/js/booking_step_one.js');
+  return $form;
+}
+
+function booking_flights_validation ($form, &$form_state) {
+    global $user;
+    if ($user->uid == 0) {
+        $usr_data = db_select('users', 'u')
+            ->fields('u', array('uid', 'name'))
+            ->condition('u.mail', trim($form_state['values']['contact']['email']))
+            ->execute()
+            ->fetchObject();
+
+        if(!isset($form_state['values']['contact']['pass']) || empty($form_state['values']['contact']['pass'])) {
+            if (!empty($usr_data)) {
+                $form_state['rebuild'] = TRUE;
+
+                form_set_error('contact][email', t('Sorry, but this post is already using. If you already registered, then before ordering please login to your account, or if you lost access to it - please use the form restore password.'));
+            }
+        } else {
+//            $cur_ses = $_SESSION;
+            //login
+            if ($uid = user_authenticate($usr_data->name, $form_state['values']['contact']['pass'])) {
+                global $user;
+                $user = user_load($uid);
+
+                $login_array = array ('name' => $user->name);
+                user_login_finalize($login_array);
+            } else {
+                form_set_error('contact][pass', t('Wrong password. Try entering your password again or receive a new password to your email.'));
+            }
+        }
+    }
+}
+
+function booking_flights_price_changed_form($form, &$form_state, $rec_id, $comb_id, $sid, $hash, $combination) {
+  $values = (object) $form_state['values'];
+
+  foreach ($values as $name => $value) {
+    $form[$name] = array('#type' => 'value', '#value' => $value);
+  }
+
+  $airline = $combination['codes']['airlines'][$combination['combination']['airline']];
+  $site_currency = strtoupper(Currency::init()->get_currency());
+
+  /*HEADER*/
+  $rules = booking_flights_get_rules($rec_id, $comb_id, $sid, $hash);
+  $form['header'] = array(
+    '#markup' => theme('bf_booking_header', array(
+      'airline' => $airline,
+      'penalties' => $rules
+    ))
+  );
+
+  /*MESSAGE*/
+  $commission = ceil($combination['combination']['commission'][$site_currency]);
+  $price = ceil($combination['combination']['price'][$site_currency]);
+  $new_price = ceil($values->new_price['fare'][$site_currency]);
+
+  $old_price_html = theme_container(array(
+    'element' => array(
+      '#attributes' => array('class' => array('old-price')),
+      '#children' => ($price + $commission) . ' ' . $site_currency
+    )
+  ));
+
+  $new_price_html = theme_container(array(
+    'element' => array(
+      '#attributes' => array('class' => array('new-price')),
+      '#children' => ($new_price + $commission) . ' ' . $site_currency
+    )
+  ));
+  $description = t('Unfortunately, the ticket price has changed from') . ' ' . $old_price_html;
+  $description .= t(' to ') . $new_price_html . ' ';
+  $description .= t('(including taxes and fees).');
+  $description .= t('If you are satisfied with this change, click "Continue", otherwise press "Cancel".');
+
+  $form['message'] = array(
+    '#markup' => theme('bf_booking_message', array(
+      'description' => $description,
+      'class' => 'booking-message-wrapper-yellow'
+    ))
+  );
+
+  $form['reference_number'] = array(
+    '#type' => 'value',
+    '#value' => $values->reference_number
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+
+  $form['actions']['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('booking_flights_form_price_changed_submit'),
+  );
+
+  $form['actions']['book'] = array(
+    '#type' => 'submit',
+    '#value' => t('Continue'),
+    '#submit' => array('booking_flights_form_price_changed_submit'),
+  );
+
+  return $form;
+}
+
+function booking_flights_card_verification_form($form, &$form_state, $rec_id, $comb_id, $sid, $hash, $combination) {
+  $values = (object) $form_state['values'];
+
+  foreach ($values as $name => $value) {
+    $form[$name] = array('#type' => 'value', '#value' => $value);
+  }
+
+  $airline = $combination['codes']['airlines'][$combination['combination']['airline']];
+  $site_currency = strtoupper(Currency::init()->get_currency());
+
+  /*HEADER*/
+  $rules = booking_flights_get_rules($rec_id, $comb_id, $sid, $hash);
+  $form['header'] = array(
+    '#markup' => theme('bf_booking_header', array(
+      'airline' => $airline,
+      'penalties' => $rules
+    ))
+  );
+
+  /*MESSAGE*/
+
+  $description = t('To continue purchasing a ticket you need to fill the 3-D Secure. ');
+  $description .= t('To do this, please go to');
+  $description .= l(t('link. '), $values->url, array('attributes' => array('class' => array('3d-secure-link'))));
+  $description .= t('If you want to complete the processes of purchase, press "Cancel".');
+
+  $form['message'] = array('#markup' => theme('bf_booking_message', array('description' => $description)));
+
+  $form['reference_number'] = array(
+    '#type' => 'value',
+    '#value' => $values->reference_number
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+
+  $form['actions']['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('booking_flights_form_card_verification_submit'),
+  );
+
+  $form['actions']['book'] = array(
+    '#type' => 'submit',
+    '#value' => t('Continue'),
+    '#submit' => array('booking_flights_form_card_verification_submit'),
+  );
+  drupal_add_js(drupal_get_path('module', 'booking_flights') . '/js/3d_secure.js');
+  return $form;
+}
+
+function booking_flights_form_ext_submit($form, &$form_state) {
+  global $user;
+
+  $args = $form_state['build_info']['args'];
+  $values = (object) $form_state['values'];
+  $search_params = $args[4]['search_params'];
+  $provider = $args[4]['combination']['provider'];
+  $airline = $args[4]['combination']['airline'];
+  $site_currency = Currency::init()->get_currency();
+
+  /*CHECK IF SESSION EXPIRE OR DESTROYED*/
+  $db_session = hrk_ep_get_session($args[2]);
+
+  /*REBUILD FORM WITHOUT BOOKING REQUEST:IF SESSION EXPIRE*/
+  if (!$db_session && ep_check_db_session_expire($db_session)) {
+    return $form_state['rebuild'] = TRUE;
+  }
+
+  /*PREPARE BILLING INFO*/
+  $values->billing['address'] = ucfirst(str_replace('_', ' ', strtolower($values->billing['address'])));
+  $values->billing['city'] = ucfirst(str_replace('_', ' ', strtolower($values->billing['city'])));
+
+  /*PREPARE LCC PARAMS*/
+  $passengers = &$values->passengers;
+  $fields_pas_already_exist = array(
+    'DateOfBirth' => 'birthday',
+    'PassportNumber' => 'passport',
+    'PassportExpiryDate' => 'expire',
+    'PassportCountryOfIssue' => 'nationality',
+    'Nationality' => 'nationality'
+  );
+
+  foreach ($passengers as $type => $passengers_by_type) {
+    foreach ($passengers_by_type as $index => $passenger) {
+      if (empty($passenger['lcc'])) {
+        break;
+      }
+
+      foreach ($passenger['lcc'] as $name => $value) {
+        if (empty($fields_pas_already_exist[$name])) {
+          continue;
+        }
+
+        $passenger_field_name = $fields_pas_already_exist[$name];
+        $passengers[$type][$index]['lcc'][$name] = $passenger[$passenger_field_name];
+      }
+    }
+  }
+
+  if (isset($values->lcc['CardSecurityNumber'])) {
+    $values->lcc['CardSecurityNumber'] = $values->credit_card['code'];
+  }
+  if (isset($values->lcc['BillingAddress'])) {
+    $values->lcc['BillingAddress'] = $values->billing['address'];
+  }
+  if (isset($values->lcc['PostCode'])) {
+    $values->lcc['PostCode'] = $values->billing['postal_code'];
+  }
+
+  /*LCC NUMBER OF BAGS*/
+  if (empty($values->lcc['bags'])) {
+    $values->lcc['NumberOfBags'] = 0;
+    $values->bags = 0;
+  }
+  else {
+    foreach ($values->help_bags as $bag) {
+      if ($values->lcc['bags'] == ceil($bag['price'][strtoupper($site_currency)])) {
+        $values->lcc['NumberOfBags'] = $bag['quantity'];
+        $values->bags = $bag;
+        break;
+      }
+    }
+  }
+  /*CLEAN BAGS QUANTITY FROM LCC*/
+  unset($values->lcc['bags']);
+
+  /*MAKE FLIGHT_BOOKING REQUEST*/
+  $request_booking = hrk_ep_booking_request('booking_ext');
+  /** @var  $request_booking \requests\EP_BookingExt */
+  $request_booking->setRecommendationID($args[0])
+    ->setCombinationID($args[1])
+    ->setPassengers($values->passengers)
+    ->setContacts($values->contact)
+    ->setCreditCard($values->credit_card)
+    ->setBilling($values->billing)
+    ->setLCC(!empty($values->lcc) ? $values->lcc : array());
+
+  $ep = hrk_ep_engine();
+
+  /*RETURN ERROR_CONNECTION:IF CAN'T CONNECT WITH AMADEUS*/
+  if (!$ep->connect($db_session['session'])) {
+    $form_state['values']['error'] = array('name' => 'connection_failed');
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+  /*DO REQUEST FOR TRAVELFUSION PROVIDER*/
+  $response_booking = $ep->doRequest($request_booking->getRequest(), $request_booking::SOAP_ACTION);
+//  dsm($values);
+  $result = hrk_bf_parse($response_booking)->booking();
+//dsm($result);
+  /*RETURN ERROR IF RESPONSE GET ERRORS*/
+  if (!empty($result['errors']) && empty($result['change_request'])) {
+    $form_state['values']['error'] = array(
+      'name' => 'amadeus_error',
+      'args' => array('errors' => $result['errors'])
+    );
+    $form_state['rebuild'] = TRUE;
+    hrk_ep_errors()->save($db_session['session'], $result['errors'], \includes\EP_Errors::ERROR_BOOKING);
+    return TRUE;
+  }
+
+  $change_request = isset($result['change_request']) ? $result['change_request'] : array('type' => NULL);
+
+  if ($change_request['type'] == 'BOOK_WITH_PRICECHANGE') {
+    $form_state['values']['step'] = 'BOOK_WITH_PRICECHANGE';
+    $form_state['values']['new_price'] = $change_request['new_price'];
+    $form_state['values']['reference_number'] = $change_request['reference_number'];
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+  if ($change_request['type'] == 'BOOK_WITH_PRICECHARGE') {
+    $result_rn = _book_with_reference($result['change_request'], $ep);
+
+    /*RETURN ERROR IF RESPONSE GET ERRORS*/
+    if (!empty($result_rn['errors']) && empty($result_rn['change_request'])) {
+      $form_state['values']['error'] = array(
+        'name' => 'amadeus_error',
+        'args' => array('errors' => $result_rn['errors'])
+      );
+      $form_state['rebuild'] = TRUE;
+      return TRUE;
+    }
+    if (!empty($result_rn['change_request'])) {
+      $change_request = $result_rn['change_request'];
+    }
+    else {
+      $result = $result_rn;
+    }
+  }
+
+  if ($change_request['type'] == 'BOOK_WITH_CARDVERIFICATION') {
+    $form_state['values']['step'] = 'BOOK_WITH_CARDVERIFICATION';
+    $form_state['values']['url'] = $change_request['url'];
+    $form_state['values']['reference_number'] = $change_request['reference_number'];
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+  /*IF ALL OK,SAVE BOOKING TO DB AND REDIRECT TO NEW PAGE*/
+  $cid = reset($result['context_id']);
+  $tid = end($result['context_id']);
+//    $ticket_limit = !empty($result['ticket_limit']['limit']) ? strtotime($result['ticket_limit']['limit']) : strtotime(date('Y-m-d 23:59'));
+
+
+  $bid = hrk_bf_save_book($cid, $tid, $user->uid, $values->contact['email'], $values->contact['code'] . $values->contact['phone'], $db_session['session'], $provider, array(
+    'ticket' => $result,
+    'airline' => $airline,
+    'provider' => $provider,
+    'search_params' => $search_params
+  ));
+
+  if ($bid) {
+    bf_mail_book($values->contact['email'], $bid);
+    drupal_goto('flights/book/' . $bid);
+  }
+
+  $form_state['rebuild'] = TRUE;
+}
+
+function booking_flights_form_amadeus_submit($form, &$form_state) {
+  global $user;
+
+  $args = $form_state['build_info']['args'];
+  $values = (object) $form_state['values'];
+  $search_params = $args[4]['search_params'];
+  $provider = $args[4]['combination']['provider'];
+  $airline = $args[4]['combination']['airline'];
+  $site_currency = Currency::init()->get_currency();
+
+ // dsm($values);
+
+  /*CHECK IF SESSION EXPIRE OR DESTROYED*/
+  $db_session = hrk_ep_get_session($args[2]);
+
+  /*REBUILD FORM WITHOUT BOOKING REQUEST:IF SESSION EXPIRE*/
+  if (!$db_session && ep_check_db_session_expire($db_session)) {
+    return $form_state['rebuild'] = TRUE;
+  }
+
+  $request = hrk_ep_booking_request('booking')
+    ->setRecommendationID($args[0])
+    ->setCombinationID($args[1])
+    ->setPassengers($values->passengers)
+    ->setContacts($values->contact);
+  $request_xml = $request->getRequest();
+
+  $ep = hrk_ep_engine();
+
+  /*RETURN ERROR_CONNECTION:IF CAN'T CONNECT WITH AMADEUS*/
+  if (!$ep->connect($db_session['session'])) {
+    $form_state['values']['error'] = array('name' => 'connection_failed');
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+  /*DO REQUEST FOR AMADEUS PROVIDER*/
+  $response = $ep->doRequest($request_xml, $request::SOAP_ACTION);
+  //dsm($response, '$response');
+  $result = hrk_bf_parse($response)->booking();
+
+
+  /*RETURN AMADEUS_ERROR:IF REQUEST CONTAINED ERROR*/
+  if (!empty($result['errors']) && empty($result['change_request'])) {
+    $form_state['values']['error'] = array(
+      'name' => 'amadeus_error',
+      'args' => array('errors' => $result['errors'])
+    );
+    $form_state['rebuild'] = TRUE;
+    hrk_ep_errors()->save($db_session['session'], $result['errors'], \includes\EP_Errors::ERROR_BOOKING);
+    return TRUE;
+  }
+
+  $change_request = isset($result['change_request']) ? $result['change_request'] : array('type' => NULL);
+
+  if ($change_request['type'] == 'BOOK_WITH_PRICECHANGE') {
+    $form_state['values']['step'] = 'BOOK_WITH_PRICECHANGE';
+    $form_state['values']['new_price'] = $change_request['new_price'];
+    $form_state['values']['reference_number'] = $change_request['reference_number'];
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+  if ($change_request['type'] == 'BOOK_WITH_PRICECHARGE') {
+    $result_rn = _book_with_reference($result['change_request'], $ep);
+
+    /*RETURN ERROR IF RESPONSE GET ERRORS*/
+    if (!empty($result_rn['errors']) && empty($result_rn['change_request'])) {
+      $form_state['values']['error'] = array(
+        'name' => 'amadeus_error',
+        'args' => array('errors' => $result_rn['errors'])
+      );
+      $form_state['rebuild'] = TRUE;
+      hrk_ep_errors()->save($db_session['session'], $result_rn['errors'], \includes\EP_Errors::ERROR_BOOKING);
+      return TRUE;
+    }
+    if (!empty($result_rn['change_request'])) {
+      $change_request = $result_rn['change_request'];
+    }
+    else {
+      $result = $result_rn;
+    }
+  }
+
+  if ($change_request['type'] == 'BOOK_WITH_CARDVERIFICATION') {
+    $form_state['values']['step'] = 'BOOK_WITH_CARDVERIFICATION';
+    $form_state['values']['url'] = $change_request['url'];
+    $form_state['values']['reference_number'] = $change_request['reference_number'];
+    $form_state['rebuild'] = TRUE;
+    return TRUE;
+  }
+
+
+  /*IF ALL OK,SAVE BOOKING TO DB AND REDIRECT TO NEW PAGE*/
+  $cid = reset($result['context_id']);
+//    $ticket_limit = !empty($result['ticket_limit']['limit']) ? strtotime($result['ticket_limit']['limit']) : strtotime(date('Y-m-d 23:59'));
+
+    $today = date('Y-m-d', REQUEST_TIME);
+    if(isset($search_params['trip'][1]['departure']) && $search_params['trip'][1]['departure'] == $today) {
+        $ticket_limit = strtotime('+20 minutes');
+    } else {
+        $ticket_limit = strtotime(date('Y-m-d 23:59'));
+    }
+
+  $data_book = array(
+    'book' => $result,
+    'airline' => $airline,
+    'provider' => $provider,
+    'search_params' => $search_params,
+  );
+
+  if ($values->pay_from_bonus && $values->summ_pay_from_bonus > 0) {
+    $data_book['summ_pay_from_bonus'] = $values->summ_pay_from_bonus;
+  }
+
+  $bid = hrk_bf_save_book(
+    $cid, '',
+    $user->uid,
+    $values->contact['email'],
+    $values->contact['code'] . $values->contact['phone'],
+    $db_session['session'],
+    $provider,
+    $data_book
+    );
+
+  if ($bid) {
+    bf_mail_book($values->contact['email'], $bid);
+    drupal_goto('flights/book/' . $bid);
+  }
+
+  $form_state['rebuild'] = TRUE;
+}
+
+function booking_flights_form_price_changed_submit($form, &$form_state) {
+  global $user;
+  global $base_url;
+
+  $args = $form_state['build_info']['args'];
+  $values = (object) $form_state['values'];
+  $search_params = $args[4]['search_params'];
+  $provider = $args[4]['combination']['provider'];
+  $airline = $args[4]['combination']['airline'];
+
+  switch ($values->op) {
+    case t('Cancel'):
+      drupal_goto($base_url);
+      break;
+    case t('Continue'):
+
+      /*CHECK IF SESSION EXPIRE OR DESTROYED*/
+      $db_session = hrk_ep_get_session($args[2]);
+
+      /*REBUILD FORM WITHOUT BOOKING REQUEST:IF SESSION EXPIRE*/
+      if (!$db_session && ep_check_db_session_expire($db_session)) {
+        return $form_state['rebuild'] = TRUE;
+      }
+
+      $ep = hrk_ep_engine();
+
+      /*RETURN ERROR_CONNECTION:IF CAN'T CONNECT WITH AMADEUS*/
+      if (!$ep->connect($db_session['session'])) {
+        $form_state['values']['error'] = array('name' => 'connection_failed');
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+      }
+
+      $result = _book_with_reference(array(
+        'type' => 'BOOK_WITH_PRICECHANGE',
+        'reference_number' => $values->reference_number
+      ), $ep);
+
+      /*RETURN ERROR IF RESPONSE GET ERRORS*/
+      if (!empty($result['errors']) && empty($result['change_request'])) {
+        $form_state['values']['error'] = array(
+          'name' => 'amadeus_error',
+          'args' => array('errors' => $result['errors'])
+        );
+        $form_state['rebuild'] = TRUE;
+        hrk_ep_errors()->save($db_session['session'], $result['errors'], \includes\EP_Errors::ERROR_BOOKING);
+        return TRUE;
+      }
+
+      $change_request = isset($result['change_request']) ? $result['change_request'] : array('type' => NULL);
+
+      if ($change_request['type'] == 'BOOK_WITH_PRICECHARGE') {
+        $result_rn = _book_with_reference($result['change_request'], $ep);
+
+        /*RETURN ERROR IF RESPONSE GET ERRORS*/
+        if (!empty($result_rn['errors']) && empty($result_rn['change_request'])) {
+          $form_state['values']['error'] = array(
+            'name' => 'amadeus_error',
+            'args' => array('errors' => $result_rn['errors'])
+          );
+          $form_state['rebuild'] = TRUE;
+          hrk_ep_errors()->save($db_session['session'], $result_rn['errors'], \includes\EP_Errors::ERROR_BOOKING);
+          return TRUE;
+        }
+        if (!empty($result_rn['change_request'])) {
+          $change_request = $result_rn['change_request'];
+        }
+        else {
+          $result = $result_rn;
+        }
+      }
+
+      if ($change_request['type'] == 'BOOK_WITH_CARDVERIFICATION') {
+        $form_state['values']['step'] = 'BOOK_WITH_CARDVERIFICATION';
+        $form_state['values']['url'] = $change_request['url'];
+        $form_state['values']['reference_number'] = $change_request['reference_number'];
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+      }
+
+      /*IF ALL OK,SAVE BOOKING TO DB AND REDIRECT TO NEW PAGE*/
+      $cid = reset($result['context_id']);
+      $tid = ($provider == 'amadeus') ? '' : end($result['context_id']);
+      $data_type = ($provider == 'amadeus') ? 'book' : 'ticket';
+//            $ticket_limit = !empty($result['ticket_limit']['limit']) ? strtotime($result['ticket_limit']['limit']) : strtotime(date('Y-m-d 23:59'));
+      $bid = hrk_bf_save_book($cid, $tid, $user->uid, $values->contact['email'], $values->contact['code'] . $values->contact['phone'], $db_session['session'], $provider, array(
+        $data_type => $result,
+        'airline' => $airline,
+        'provider' => $provider,
+        'search_params' => $search_params
+      ));
+
+      if ($bid) {
+        bf_mail_book($values->contact['email'], $bid);
+        drupal_goto('flights/book/' . $bid);
+      }
+
+      break;
+  }
+}
+
+function booking_flights_form_card_verification_submit($form, &$form_state) {
+  global $user;
+  global $base_url;
+
+  $args = $form_state['build_info']['args'];
+  $values = (object) $form_state['values'];
+  $search_params = $args[4]['search_params'];
+  $provider = $args[4]['combination']['provider'];
+  $airline = $args[4]['combination']['airline'];
+
+  switch ($values->op) {
+    case t('Cancel'):
+      drupal_goto($base_url);
+      break;
+    case t('Continue'):
+
+      /*CHECK IF SESSION EXPIRE OR DESTROYED*/
+      $db_session = hrk_ep_get_session($args[2]);
+
+      /*REBUILD FORM WITHOUT BOOKING REQUEST:IF SESSION EXPIRE*/
+      if (!$db_session && ep_check_db_session_expire($db_session)) {
+        return $form_state['rebuild'] = TRUE;
+      }
+
+      $ep = hrk_ep_engine();
+
+      /*RETURN ERROR_CONNECTION:IF CAN'T CONNECT WITH AMADEUS*/
+      if (!$ep->connect($db_session['session'])) {
+        $form_state['values']['error'] = array('name' => 'connection_failed');
+        $form_state['rebuild'] = TRUE;
+        return TRUE;
+      }
+
+      $result = _book_with_reference(array(
+        'type' => 'BOOK_WITH_PRICECHANGE',
+        'reference_number' => $values->reference_number
+      ), $ep);
+
+      /*RETURN ERROR IF RESPONSE GET ERRORS*/
+      if (!empty($result['errors']) && empty($result['change_request'])) {
+        $form_state['values']['error'] = array(
+          'name' => 'amadeus_error',
+          'args' => array('errors' => $result['errors'])
+        );
+        $form_state['rebuild'] = TRUE;
+        hrk_ep_errors()->save($db_session['session'], $result['errors'], \includes\EP_Errors::ERROR_BOOKING);
+        return TRUE;
+      }
+
+      /*IF ALL OK,SAVE BOOKING TO DB AND REDIRECT TO NEW PAGE*/
+      $cid = reset($result['context_id']);
+      $tid = ($provider == 'amadeus') ? '' : end($result['context_id']);
+      $data_type = ($provider == 'amadeus') ? 'book' : 'ticket';
+//            $ticket_limit = !empty($result['ticket_limit']['limit']) ? strtotime($result['ticket_limit']['limit']) : strtotime(date('Y-m-d 23:59'));
+      $bid = hrk_bf_save_book($cid, $tid, $user->uid, $values->contact['email'], $values->contact['code'] . $values->contact['phone'], $db_session['session'], $provider, array(
+        $data_type => $result,
+        'airline' => $airline,
+        'provider' => $provider,
+        'search_params' => $search_params
+      ));
+
+      if ($bid) {
+        bf_mail_book($values->contact['email'], $bid);
+        drupal_goto('flights/book/' . $bid);
+      }
+
+      break;
+  }
+}
+
+function _book_with_reference($change_request, includes\EPower $ep) {
+  $request_ref = hrk_ep_booking_request('booking_reference')->setReferenceNumber($change_request['reference_number']);
+  $response_ref = $ep->doRequest($request_ref->getRequest(), $request_ref::SOAP_ACTION);
+  $result_ref = hrk_bf_parse($response_ref)->booking();
+
+  if (!empty($result_ref['errors'])) {
+    return $result_ref['errors'];
+  }
+
+  if (!empty($result_ref['change_request'])) {
+    return array('change_request' => $result_ref['change_request']);
+  }
+
+  return $result_ref;
+}
+
+/**
+ * @param $cid
+ * @param string $tid
+ * @param int $uid
+ * @param $expire
+ * @param $email
+ * @param $phone
+ * @param $session
+ * @param $provider
+ * @param $data
+ * @return \DatabaseStatementInterface|int
+ * @throws \Exception
+ */
+function hrk_bf_save_book($cid, $tid = '', $uid = 0, $email, $phone, $session, $provider, $data) {
+//    dsm($data, 'save');
+    $today = date('Y-m-d', REQUEST_TIME);
+    if(isset($data['search_params']['trip'][1]['departure']) && $data['search_params']['trip'][1]['departure'] == $today) {
+        $expire = strtotime('+20 minutes');
+    } else {
+        $expire = strtotime(date('Y-m-d 23:59'));
+    }
+
+  $book = array(
+    'cid' => $cid,
+    'tid' => $tid,
+    'uid' => $uid,
+    'created' => REQUEST_TIME,
+    'expire' => $expire,
+    'email' => $email,
+    'phone' => $phone,
+    'sessions' => serialize(array($session)),
+    'provider' => ($provider == 'amadeus') ? EP_PROVIDER_AMADEUS : EP_PROVIDER_TRAVEL_FUSION,
+    'data' => hrk_helper_result_encode($data),
+    'is_ticket' => (!empty($tid)) ? 1 : 0,
+    //К текущей логике добавили uuid.
+    'uuid' => uuid_generate(),
+  );
+
+  $bid = db_insert('hrk_bf_book')->fields($book)->execute();
+
+//    dsm($book);
+  //Добавили свой hook
+  if ($bid) {
+    $book['bid'] = $bid;
+    module_invoke_all('book_flight', 'insert', $book, $data);
+  }
+  return $bid;
+}
+
+function booking_flights_book_flight ($op, $book, $data) {
+  if ($op == 'insert') {
+    $base_currency = Currency::init()->get_base_currency();
+    $price = &$data['book']['price'];
+    $amount = $price['fare'][$base_currency] + $price['commission'][$base_currency];
+
+    $amount = Currency::init()->convert(round($amount), $base_currency, 'RUB');
+
+    //снятие бонусов
+    if (function_exists('bonus_dec')) {
+      if(!empty($data['summ_pay_from_bonus'])) {
+        $amount = bonus_dec($amount, $data['summ_pay_from_bonus'], $book['uid']);
+      }
+    }
+
+      if ($book['uid'] == 0) {
+          $name = $data['book']['passenger']['ADT'][0]['first_name'];
+          $surname = $data['book']['passenger']['ADT'][0]['last_name'];
+          $email = $data['book']['passenger']['ADT'][0]['email'];
+          $uid = book_user_create($name, $surname, $email);
+          hrk_bf_update_book($book['bid'], array('uid' => $uid));
+      }
+
+    unitailer_write_payment($book['uuid'], $amount, $book['bid'], 'flight');
+
+    $site_email = variable_get('site_mail', '');
+
+/*    if($site_email) {
+      global $base_url;
+      drupal_mail('system', 'mail', $site_email, language_default(), array(
+        'context' => array(
+          'subject' => 'Mambo24travel.com - Забронирован билет',
+          'message' => 'Ссылка на билет: ' . $base_url .'/ru/flights/book/' . $book['bid'],
+        )
+      ));
+    }*/
+
+  }
+}
+
+function hrk_bf_update_book($bid, $fields) {
+  return db_update('hrk_bf_book')
+    ->fields($fields)
+    ->condition('bid', $bid)
+    ->execute();
+}
+
+function hrk_bf_book($bid) {
+  $book = array();
+  $query = db_select('hrk_bf_book', 'b')
+    ->fields('b', array())
+    ->condition('bid', $bid);
+  $result = $query->execute();
+
+  foreach ($result as $row) {
+    $book = $row;
+    $book->data = hrk_helper_result_decode($book->data);
+    break;
+  }
+  return (array) $book;
+}
+
+function hrk_bf_parse($response) {
+  bf_include('BookingParse');
+  helper_include('SoapXmlReader');
+  return new \includes\BookingParse(\includes\SoapXmlReader::create()
+    ->parse($response));
+}
+
+function hrk_bf_popup($popup_name, $args = array()) {
+  drupal_add_js(drupal_get_path('module', 'booking_flights') . '/js/booking_popup.js');
+  return theme('booking_popup', array_merge(array('popup' => $popup_name), $args));
+}
+
+/**
+ * Implement hook_from_alter()
+ */
+function booking_flights_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case('booking_flights_form'):
+      form_style_include();
+      form_style_form($form_id, $form['#id'], array('input[type=radio],input[type=checkbox]'));
+      drupal_add_js(drupal_get_path('module', 'booking_flights') . '/js/booking-general.js');
+      break;
+  }
+}
+
+function bf_mail_book($to, $bid) {
+  global $language;
+  global $theme_key;
+  global $base_theme_info;
+
+  $book = hrk_bf_book($bid);
+
+  if (!$book) {
+    return FALSE;
+  }
+
+  $book = (object) $book;
+  $book_info = ($book->tid) ? $book->data['ticket'] : $book->data['book'];
+  $book_info = (object) $book_info;
+
+  $params['l_prefix'] = ($language->language == 'ru') ? 'ru' : 'en';
+
+  /*GET LOGO*/
+  $params['logo'] = theme_image(array(
+    'path' => theme_get_setting('logo_path', $theme_key),
+    'attributes' => array('class' => array('logo'))
+  ));
+
+  /*GET AIRLINE*/
+  $airline_code = hrk_sf_codes()->getCode('airlines', $book->data['airline']);
+  $params['airline'] = reset($airline_code);
+
+  /*GET TITLE*/
+  if ($book->is_cancel) {
+    $params['title'] = t('Your booking is canceled!');
+    $params['message_color'] = '#f32f00';
+  }
+  else {
+    $params['title'] = (!$book->is_ticket) ? t('Your tickets successfully booked!') : t('Your tickets have successfully purchased!');
+    $params['message_color'] = (!$book->is_ticket) ? '#fffbdb' : '#dbffe3';
+    $params['book_link_title'] = (!$book->is_ticket) ? t('Buy tickets') : t('See reservation');
+    $params['bid'] = $book->bid;
+  }
+
+  if (!$book->tid && !$book->is_cancel) {
+
+    $site_default_time_zone = new DateTimeZone(date_default_timezone(FALSE));
+    $time_limit = new DateTime(date('Y-m-d H:i:s', $book->expire), $site_default_time_zone);
+    $user_time = new DateTime('now', $site_default_time_zone);
+
+    $diff_time = date_diff($time_limit, $user_time);
+    $params['expire'] = format_date($book->expire, 'medium', 'j F G:i \\G\\M\\T(O)');
+    $params['left_time'] = format_interval(($diff_time->h * 3600) + ($diff_time->i * 60) + $diff_time->s);
+  }
+
+  /*GET CONTEXT TITLE AND CONTEXT ID;*/
+  $params['context_title'] = (!$book->tid) ? t('Reservation number:') : t('Ticket number:');
+  $params['context_id'] = (!$book->tid) ? $book->cid : $book->tid;
+
+  /*GET PASSENGERS*/
+  $params['passengers'] = $book_info->passenger;
+
+  /*GET FLIGHTS AND CODES*/
+  $params['flights'] = $book_info->flights;
+  $params['codes'] = $book_info->codes;
+  $params['direction_type'] = $book->data['search_params']['direction_type'];
+
+  /*GET CONTACTS*/
+//  $params['contacts'] = flight_az_contacts($language->language);
+  $params['contacts'] = get_new_contacts();
+
+  /*GET EMAIL BODY*/
+  $body = theme('bf_mail', $params);
+
+  $message = array(
+    'subject' => $params['context_title'] . $params['context_id'],
+    'body' => $body,
+  );
+  mailsystem_set(array('booking_flights' => 'HTMLMailSystem__SmtpMailSystem'));
+
+  if ($book->is_ticket && !$book->is_cancel && variable_get('site_mail', FALSE)) {
+    $to .= ',' . variable_get('site_mail');
+  }
+
+  variable_set('bf_bid_for_mail', $bid);
+
+  drupal_mail('booking_flights', 'book', $to, $language->language, $message);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function booking_flights_mail($key, &$message, $params) {
+  $message['module'] = 'booking_flights';
+  $message['key'] = $key;
+  $message['subject'] = $params['subject'];
+  $message['body'] = explode(
+    MAIL_LINE_ENDINGS . MAIL_LINE_ENDINGS,
+    $params['body']
+  );
+  return $message;
+}
+
+function hrk_bf_is_expire($expire) {
+  return ($expire < REQUEST_TIME);
+}
+
+function hrk_bf_cancel_book($bid) {
+
+  $book = hrk_bf_book($bid);
+
+  if (!$book) {
+    return FALSE;
+  }
+
+  $book = (object) $book;
+
+  $book_info = ($book->tid) ? $book->data['ticket'] : $book->data['book'];
+  $book_info = (object) $book_info;
+
+  ep_api_include('EP_Cancel', 'requests');
+
+  $ep = hrk_ep_engine();
+  $db_session = hrk_ep_create_session();
+
+  if (!$db_session || !$ep->connect($db_session['session'])) {
+    return FALSE;
+  }
+
+  $request = new \requests\EP_Cancel();
+  $request->setContextID((!empty($book->tid)) ? $book->tid : $book->cid);
+  $request->setVerificationSurName($book_info->passenger['ADT'][0]['last_name']);
+
+  $response = $ep->doRequest($request->getRequest(), $request::SOAP_ACTION);
+  $result = hrk_bf_parse($response)->cancel();
+
+  return $result;
+}
+
+function booking_flights_unitailer_payment ($op, $payment, $status) {
+  if ($payment->status == 0 &&  $op == 'success' && $payment->entity == 'flight' && ($status == 'authorized' || $status == 'paid')) {
+    //TODO: Вынести в модуль unitailer
+    db_update('unitailer_payment')
+      ->fields(array('status' => UNITAILER_PAID))
+      ->condition('uuid', $payment->uuid)
+      ->execute();
+
+    $book = db_select('hrk_bf_book', 'b')
+      ->fields('b', array())
+      ->condition('b.bid', $payment->entity_id)
+      ->condition('b.uuid', $payment->uuid)
+      ->execute()->fetchObject();
+
+    $book->data = hrk_helper_result_decode($book->data);
+    $book->sessions = unserialize($book->sessions);
+    $db_session = hrk_ep_create_session();
+    $ep = hrk_ep_engine();
+
+    if ($db_session && $ep->connect($db_session['session'])) {
+      //начисление бонусов
+      if (function_exists('bonus_add') && $book->uid != 0 ) {
+        bonus_add($payment->amount, $book->uid);
+      }
+
+      ep_api_include('EP_CreateTicket', 'requests');
+
+      $book_info = (object)$book->data['book'];
+      $passengers = $book_info->passenger;
+
+      $request = new \requests\EP_CreateTicket();
+      $request->setContentID($book->cid)->setPassengers($passengers);
+
+      $response = $ep->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+      $result = hrk_bf_parse($response)->create_ticket();
+
+      if (!empty($result['change_request']) && $result['change_request']['type'] == 'BOOK_WITH_PRICECHARGE') {
+        ep_api_include('EP_TicketReference', 'requests');
+        $refer_request = new \requests\EP_TicketReference();
+        $refer_request->setReferenceNumber($result['change_request']['reference_number']);
+       // dsm('!!!');
+
+        $response = $ep->doRequest($refer_request->getRequest(), $refer_request::SOAP_ACTION);
+        //dsm($response, '$response');
+        $result = hrk_bf_parse($response)->create_ticket();
+        //dsm($result, '$response');
+      }
+
+      $tid = end($result['context_id']);
+      $book->sessions[] = $db_session['session'];
+      $book->data['ticket'] = $result;
+
+      hrk_bf_update_book($book->bid, array(
+        'tid' => $tid,
+        'is_ticket' => 1,
+        'sessions' => serialize($book->sessions),
+        'data' => hrk_helper_result_encode((array)$book->data)
+      ));
+
+      bf_mail_book($book->email, $book->bid);
+    }
+  }
+}

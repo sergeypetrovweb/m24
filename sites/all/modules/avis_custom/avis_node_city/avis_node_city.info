@@ -1,0 +1,5 @@
+name = Avis node city
+description = "Creating nodes for City node type"
+package = Avis
+version = 1.0
+core = 7.x

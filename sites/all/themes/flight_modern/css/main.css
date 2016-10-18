@@ -1,0 +1,2443 @@
+@charset "UTF-8";
+/* line 2, ../sass/_common.scss */
+header .ajax-progress, header .ajax-progress-throbber {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  z-index: 500;
+  vertical-align: middle;
+  text-align: center;
+}
+/* line 14, ../sass/_common.scss */
+header .ajax-progress-throbber .throbber {
+  height: 80px;
+  width: 80px;
+  background: #fff url("../images/ajax-loader.gif") no-repeat center center;
+  opacity: 0.9;
+  -webkit-box-shadow: 0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+  -moz-box-shadow: 0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+  box-shadow: 0px 0px 19px 0px rgba(50, 50, 50, 0.75);
+  border-radius: 50%;
+  z-index: 501;
+  position: relative;
+  top: 50%;
+  left: 50%;
+  margin-top: -25px;
+  margin-left: -25px;
+}
+/* line 31, ../sass/_common.scss */
+header .ajax-progress-throbber .message {
+  display: none;
+}
+
+/* line 37, ../sass/_common.scss */
+#header-padding {
+  padding-top: 70px;
+  background-color: #fff;
+}
+
+/* line 42, ../sass/_common.scss */
+.headroom {
+  -moz-transition: transform 200ms linear;
+  -webkit-transition: transform 200ms linear;
+  transition: transform 200ms linear;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  z-index: 999;
+  -webkit-box-shadow: 0 0 5px 0 rgba(50, 50, 50, 0.35);
+  -moz-box-shadow: 0 0 5px 0 rgba(50, 50, 50, 0.35);
+  box-shadow: 0 0 5px 0 rgba(50, 50, 50, 0.35);
+}
+
+/* line 56, ../sass/_common.scss */
+.headroom--pinned {
+  -moz-transform: translateY(0%);
+  -webkit-transform: translateY(0%);
+  transform: translateY(0%);
+}
+
+/* line 61, ../sass/_common.scss */
+.headroom--unpinned {
+  -moz-transform: translateY(-100%);
+  -webkit-transform: translateY(-100%);
+  transform: translateY(-100%);
+}
+
+/* line 68, ../sass/_common.scss */
+fieldset.captcha {
+  margin-bottom: 20px;
+}
+/* line 71, ../sass/_common.scss */
+fieldset.captcha .fieldset-description,
+fieldset.captcha legend {
+  display: none;
+}
+
+@media (min-width: 0) and (max-width: 769px) {
+  /* line 2, ../sass/_mmenu.scss */
+  a.navbar-brand {
+    display: inline-block;
+    width: 50%;
+  }
+}
+@media (min-width: 0) {
+  /* line 9, ../sass/_mmenu.scss */
+  .navbar-toggle {
+    margin: 11px 0;
+  }
+
+  /* line 13, ../sass/_mmenu.scss */
+  .navbar-toggle .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: #888 !important;
+  }
+}
+/* line 24, ../sass/_mmenu.scss */
+html.mm-opened .mm-page:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+/* line 37, ../sass/_mmenu.scss */
+#off-menu {
+  width: 225px;
+  background: #fff;
+  overflow: visible;
+  -webkit-box-shadow: 1px 1px 15px rgba(50, 50, 50, 0.75);
+  -moz-box-shadow: 1px 1px 15px rgba(50, 50, 50, 0.75);
+  box-shadow: 1px 1px 15px rgba(50, 50, 50, 0.75);
+}
+/* line 45, ../sass/_mmenu.scss */
+#off-menu #mm-close-button {
+  position: absolute;
+  font-size: 26px;
+  color: #fff;
+  opacity: .9;
+  text-decoration: none;
+  left: -46px;
+  top: 20px;
+  background: url("/sites/all/themes/flight_modern/images/glyph_close_button.png") center no-repeat;
+  height: 26px;
+  width: 26px;
+  cursor: pointer;
+  -moz-transition: all 0.2s ease-in-out;
+  -webkit-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+/* line 59, ../sass/_mmenu.scss */
+#off-menu #mm-close-button:hover {
+  opacity: 1;
+}
+/* line 64, ../sass/_mmenu.scss */
+#off-menu .ajax-progress-throbber {
+  display: none;
+}
+/* line 68, ../sass/_mmenu.scss */
+#off-menu .mm-panel {
+  padding: 0 30px;
+}
+/* line 73, ../sass/_mmenu.scss */
+#off-menu .mm-hidden {
+  display: block !important;
+  position: static;
+  width: 100% !important;
+  transform: none !important;
+}
+/* line 80, ../sass/_mmenu.scss */
+#off-menu ul.dropdown-menu.mm-listview {
+  display: none;
+}
+/* line 85, ../sass/_mmenu.scss */
+#off-menu .mm-listview > li:after {
+  content: none;
+}
+/* line 89, ../sass/_mmenu.scss */
+#off-menu .mm-listview > li a {
+  color: #666;
+  font: normal 16px/1.2 'Tahoma';
+  -moz-transition: all 0.15s ease-in-out;
+  -webkit-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+}
+/* line 94, ../sass/_mmenu.scss */
+#off-menu .mm-listview > li a.active, #off-menu .mm-listview > li a:hover {
+  color: #E94C38;
+}
+/* line 101, ../sass/_mmenu.scss */
+#off-menu .main_menu {
+  position: relative;
+  padding-bottom: 26px;
+}
+/* line 105, ../sass/_mmenu.scss */
+#off-menu .main_menu:after {
+  content: '';
+  border-bottom: 1px solid #ccc;
+  display: inline-block;
+  position: absolute;
+  left: 21px;
+  bottom: 0;
+  width: 160px;
+}
+/* line 116, ../sass/_mmenu.scss */
+#off-menu .user-menu {
+  padding-top: 3px;
+}
+/* line 120, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview {
+  display: block;
+  z-index: 1999;
+  border: 1px solid #eee;
+  -webkit-box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 0px 1px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+  background-color: #f9f9f9;
+  top: 57px;
+  min-width: 100px;
+  padding: 2px 0;
+  opacity: 1;
+  left: inherit;
+}
+/* line 135, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview:before {
+  content: '';
+  width: 36px;
+  height: 16px;
+  display: inline-block;
+  position: absolute;
+  top: -8px;
+  right: 18px;
+  background: url("/sites/all/themes/flight_modern/images/arrow_ctools_dropdown.png") no-repeat center;
+}
+/* line 146, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview .active {
+  display: none;
+}
+/* line 151, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview li:after {
+  content: none;
+}
+/* line 156, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview a {
+  padding: 10px;
+}
+/* line 160, ../sass/_mmenu.scss */
+#off-menu .open > ul.dropdown-menu.mm-listview img {
+  display: inline-block;
+}
+/* line 165, ../sass/_mmenu.scss */
+#off-menu .top-mob {
+  overflow: visible !important;
+  position: relative;
+  z-index: 11;
+}
+/* line 170, ../sass/_mmenu.scss */
+#off-menu .top-mob .user-mob,
+#off-menu .top-mob .currency-mob,
+#off-menu .top-mob .language-mob {
+  position: static;
+  display: inline-block;
+  vertical-align: top;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* line 184, ../sass/_mmenu.scss */
+#off-menu .top-mob .user-mob {
+  float: right;
+  margin-top: -1px;
+  margin-right: -5px;
+}
+/* line 189, ../sass/_mmenu.scss */
+#off-menu .top-mob .user-mob img {
+  border-radius: 50%;
+}
+/* line 194, ../sass/_mmenu.scss */
+#off-menu .top-mob .language-mob {
+  margin-top: 1px;
+}
+/* line 197, ../sass/_mmenu.scss */
+#off-menu .top-mob .language-mob img {
+  display: block;
+  width: 19px;
+  height: auto;
+}
+/* line 205, ../sass/_mmenu.scss */
+#off-menu .top-mob .language-mob > ul.dropdown-menu.mm-listview:before {
+  right: 56px;
+}
+/* line 211, ../sass/_mmenu.scss */
+#off-menu .top-mob .currency-mob {
+  margin-top: 3px;
+  border-right: 1px solid #EBEBEC;
+  padding-right: 15px;
+  margin-right: -4px;
+}
+/* line 217, ../sass/_mmenu.scss */
+#off-menu .top-mob .currency-mob > ul.dropdown-menu.mm-listview {
+  min-width: 56px;
+  left: 26px;
+}
+/* line 221, ../sass/_mmenu.scss */
+#off-menu .top-mob .currency-mob > ul.dropdown-menu.mm-listview:before {
+  right: 16px;
+}
+/* line 228, ../sass/_mmenu.scss */
+#off-menu .currency-title-active {
+  font: 17px "Myriad Pro";
+  color: #222;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+/* line 235, ../sass/_mmenu.scss */
+#off-menu a.dropdown-toggle {
+  text-decoration: none;
+}
+/* line 239, ../sass/_mmenu.scss */
+#off-menu a.dropdown-toggle[aria-expanded="true"] .currency-title-active {
+  color: #444;
+}
+/* line 246, ../sass/_mmenu.scss */
+#off-menu .language-mob .dropdown-toggle {
+  text-indent: -9999px;
+  font-size: -9999px;
+  color: transparent;
+  position: relative;
+  white-space: nowrap;
+}
+/* line 253, ../sass/_mmenu.scss */
+#off-menu .language-mob .dropdown-toggle span {
+  text-indent: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 15px;
+  display: block;
+}
+
+/* line 2, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login {
+  margin-left: 0;
+}
+/* line 5, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login .user-not-logged-in {
+  padding-top: 9px;
+}
+/* line 11, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.user {
+  padding: 16px 0 12px;
+}
+/* line 14, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.user .dropdown-menu {
+  left: auto;
+  right: 22px;
+}
+/* line 21, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .dropdown-toggle {
+  text-indent: -9999px;
+  /* sends the text off-screen */
+  position: relative;
+  white-space: nowrap;
+}
+/* line 26, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .dropdown-toggle span {
+  text-indent: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 15px;
+  display: block;
+}
+/* line 34, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .dropdown-toggle span img {
+  display: block;
+}
+/* line 40, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .active_dropdown img {
+  width: 19px;
+  height: auto;
+}
+/* line 45, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .dropdown-menu {
+  left: auto;
+  right: -13px;
+}
+/* line 49, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.languages .dropdown-menu .active {
+  display: none;
+}
+/* line 56, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.currency .dropdown-toggle {
+  padding-right: 16px;
+}
+/* line 60, ../sass/_styles.scss */
+header ul.nav.navbar-nav.login > li.dropdown.currency .dropdown-menu:before {
+  right: 80px;
+}
+/* line 69, ../sass/_styles.scss */
+header .user-name .glyphicon-triangle-bottom {
+  font-size: 9px;
+  color: #555;
+}
+/* line 74, ../sass/_styles.scss */
+header .user-name .user-pic,
+header .user-name .glyphicon {
+  display: inline-block;
+  vertical-align: middle;
+}
+/* line 80, ../sass/_styles.scss */
+header .user-name .user-pic {
+  margin: 0 8px;
+}
+/* line 84, ../sass/_styles.scss */
+header .user-name img {
+  width: 38px;
+  height: 38px;
+  display: inline-block;
+  border-radius: 50%;
+}
+/* line 92, ../sass/_styles.scss */
+header .dropdown-toggle {
+  background: none !important;
+}
+/* line 96, ../sass/_styles.scss */
+header .dropdown-menu > .active > a {
+  background-color: transparent;
+  color: #10ACD6 !important;
+}
+/* line 101, ../sass/_styles.scss */
+header li.dropdown.open span.active_dropdown {
+  background: none;
+}
+/* line 105, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu {
+  border: 1px solid #eee;
+  -webkit-box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+  background-color: #f9f9f9;
+  top: 65px;
+  min-width: 155px;
+  padding: 2px 0;
+}
+/* line 116, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu:before {
+  content: '';
+  width: 36px;
+  height: 16px;
+  display: inline-block;
+  position: absolute;
+  top: -8px;
+  right: 18px;
+  background: url("/sites/all/themes/flight_modern/images/arrow_ctools_dropdown.png") no-repeat center;
+}
+/* line 129, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu li:last-child a {
+  border-bottom: none;
+}
+/* line 134, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu li a {
+  color: #777;
+  font: normal 15px 'Arial';
+  width: 120px;
+  padding: 11px 0;
+  margin: 0 auto;
+  border-bottom: 1px solid #eee;
+  border-right: none !important;
+  -moz-transition: all 0.15s ease-in-out;
+  -webkit-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+}
+/* line 144, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu li a:hover {
+  background: transparent;
+  color: #10ACD6;
+}
+/* line 148, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu li a:hover span.glyphicon {
+  color: #10ADD6;
+}
+/* line 153, ../sass/_styles.scss */
+header .navbar-nav > li > .dropdown-menu li a span.glyphicon {
+  color: #ababab;
+  font-size: 16px;
+  position: relative;
+  top: 3px;
+  margin-right: 9px;
+  -moz-transition: all 0.15s ease-in-out;
+  -webkit-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+}
+
+/* line 166, ../sass/_styles.scss */
+#panelpage {
+  background: #fff;
+  position: relative;
+}
+@media (min-width: 1024px) {
+  /* line 169, ../sass/_styles.scss */
+  #panelpage.twocol {
+    display: table;
+  }
+}
+@media (min-width: 1024px) {
+  /* line 174, ../sass/_styles.scss */
+  #panelpage.twocol .left-column {
+    display: table-cell;
+    width: 60%;
+  }
+}
+/* line 181, ../sass/_styles.scss */
+#panelpage.twocol .right-column {
+  background: #FFFFDD;
+  vertical-align: top;
+  width: 100%;
+  height: auto;
+}
+@media (min-width: 1024px) {
+  /* line 181, ../sass/_styles.scss */
+  #panelpage.twocol .right-column {
+    display: table-cell;
+    width: 40%;
+  }
+}
+/* line 193, ../sass/_styles.scss */
+#panelpage .left-column {
+  padding: 50px;
+  vertical-align: top;
+}
+/* line 198, ../sass/_styles.scss */
+#panelpage .right-column {
+  width: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+}
+/* line 205, ../sass/_styles.scss */
+#panelpage h2 {
+  font: bold 30px/1.2 "Arial";
+  color: #444;
+  margin: 20px 0;
+}
+/* line 210, ../sass/_styles.scss */
+#panelpage h2:first-child {
+  margin: 0 0 20px;
+}
+/* line 215, ../sass/_styles.scss */
+#panelpage li, #panelpage p, #panelpage a {
+  font: 16px/1.2 "Arial";
+  color: #535353;
+}
+/* line 220, ../sass/_styles.scss */
+#panelpage p {
+  line-height: 1.5;
+}
+/* line 224, ../sass/_styles.scss */
+#panelpage ul {
+  padding-left: 7px;
+}
+/* line 228, ../sass/_styles.scss */
+#panelpage #inform {
+  padding-bottom: 50px;
+  border-bottom: 1px dashed #999;
+}
+/* line 232, ../sass/_styles.scss */
+#panelpage #inform h2 {
+  margin-top: 5px;
+}
+/* line 236, ../sass/_styles.scss */
+#panelpage #inform li {
+  display: block;
+  top: 0;
+  margin: 16px 0;
+}
+/* line 241, ../sass/_styles.scss */
+#panelpage #inform li:before {
+  position: relative;
+  top: 5px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  font-size: 20px;
+  color: #FFDA24;
+  margin-right: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* line 258, ../sass/_styles.scss */
+#panelpage .node-webform > h2 {
+  display: none;
+}
+/* line 262, ../sass/_styles.scss */
+#panelpage .webform-client-form {
+  padding-top: 23px;
+}
+/* line 265, ../sass/_styles.scss */
+#panelpage .webform-client-form h2 {
+  margin-bottom: 20px;
+}
+/* line 269, ../sass/_styles.scss */
+#panelpage .webform-client-form input.form-text {
+  margin: 5px 0;
+  height: 50px;
+  width: 100%;
+  padding: 10px;
+  font: 16px "Arial";
+  color: #999999;
+}
+/* line 278, ../sass/_styles.scss */
+#panelpage .webform-client-form textarea {
+  margin: 5px 0 10px;
+  height: 210px;
+  width: 100%;
+  padding: 10px;
+  font: 16px "Arial";
+  color: #999999;
+}
+@media (min-width: 1024px) {
+  /* line 289, ../sass/_styles.scss */
+  #panelpage .map {
+    height: 1000px;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 295, ../sass/_styles.scss */
+  #panelpage .map {
+    height: 500px;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 300, ../sass/_styles.scss */
+  #panelpage .map {
+    height: 300px;
+  }
+}
+
+/* line 308, ../sass/_styles.scss */
+#account.orders-empty {
+  border-bottom: none;
+  background: transparent;
+  padding: 0;
+}
+
+/* line 314, ../sass/_styles.scss */
+#panelpage .no-orders {
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+/* line 319, ../sass/_styles.scss */
+#panelpage .no-orders .button {
+  font: bold 15px/46px 'Arial';
+  color: #fff;
+}
+/* line 323, ../sass/_styles.scss */
+#panelpage .no-orders .button:first-child {
+  margin-left: 0;
+}
+/* line 326, ../sass/_styles.scss */
+#panelpage .no-orders .button:last-child {
+  margin-right: 0;
+}
+
+/* line 332, ../sass/_styles.scss */
+.no-orders {
+  background-color: #fff;
+  border: 1px solid #E5E3E4;
+  text-align: center;
+  padding: 34px 15px 58px;
+}
+/* line 338, ../sass/_styles.scss */
+.no-orders .content {
+  max-width: 690px;
+  margin: 0 auto;
+}
+/* line 343, ../sass/_styles.scss */
+.no-orders h2 {
+  font: bold 30px/1.2 'Arial';
+  color: #444;
+}
+/* line 348, ../sass/_styles.scss */
+.no-orders p {
+  font: normal 16px/1.5 'Arial';
+  color: #525252;
+  margin: 0;
+}
+/* line 354, ../sass/_styles.scss */
+.no-orders .buttons {
+  padding-top: 12px;
+  margin-bottom: 3px;
+}
+/* line 359, ../sass/_styles.scss */
+.no-orders .button {
+  display: inline-block;
+  height: 46px;
+  padding: 0 32px;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  font: bold 15px/46px 'Arial';
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+  margin: 10px 7px 0;
+  -moz-transition: all 0.15s ease-in-out;
+  -webkit-transition: all 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+}
+/* line 371, ../sass/_styles.scss */
+.no-orders .button:hover {
+  text-decoration: none;
+  color: #fff;
+}
+/* line 377, ../sass/_styles.scss */
+.no-orders .button_flight {
+  background-color: #E94E38;
+  -webkit-box-shadow: 3px 3px 0 0 #B22D1B;
+  -moz-box-shadow: 3px 3px 0 0 #B22D1B;
+  box-shadow: 3px 3px 0 0 #B22D1B;
+}
+/* line 383, ../sass/_styles.scss */
+.no-orders .button_flight:hover {
+  background-color: #da4835;
+}
+/* line 386, ../sass/_styles.scss */
+.no-orders .button_flight:active {
+  background-color: #cc4331;
+}
+/* line 391, ../sass/_styles.scss */
+.no-orders .button_hotel {
+  background-color: #F4BE1C;
+  -webkit-box-shadow: 3px 3px 0 0 #C49509;
+  -moz-box-shadow: 3px 3px 0 0 #C49509;
+  box-shadow: 3px 3px 0 0 #C49509;
+}
+/* line 397, ../sass/_styles.scss */
+.no-orders .button_hotel:hover {
+  background-color: #ecb81b;
+}
+/* line 400, ../sass/_styles.scss */
+.no-orders .button_hotel:active {
+  background-color: #dfae1a;
+}
+
+/* line 408, ../sass/_styles.scss */
+#ourteam {
+  padding: 50px;
+}
+/* line 411, ../sass/_styles.scss */
+#ourteam ul {
+  list-style: none;
+}
+/* line 414, ../sass/_styles.scss */
+#ourteam ul li {
+  margin: 25px 0;
+  display: table;
+}
+/* line 418, ../sass/_styles.scss */
+#ourteam ul li > div {
+  display: table-cell;
+  vertical-align: middle;
+}
+/* line 423, ../sass/_styles.scss */
+#ourteam ul li .photowrap {
+  padding-right: 20px;
+}
+/* line 426, ../sass/_styles.scss */
+#ourteam ul li .photowrap img {
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+}
+/* line 434, ../sass/_styles.scss */
+#ourteam ul li .info h3, #ourteam ul li .info h4 {
+  margin: 0;
+}
+/* line 438, ../sass/_styles.scss */
+#ourteam ul li .info h3 {
+  font: bold 16px/1.5 "Arial";
+  color: #535353;
+}
+/* line 443, ../sass/_styles.scss */
+#ourteam ul li .info h4 {
+  margin-top: -1px;
+  font: 16px/1.5 "Arial";
+  color: #535353;
+}
+/* line 449, ../sass/_styles.scss */
+#ourteam ul li .info a {
+  margin-top: 4px;
+}
+/* line 452, ../sass/_styles.scss */
+#ourteam ul li .info a:before {
+  position: relative;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  font-size: 18px;
+  color: #10AED6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* line 475, ../sass/_styles.scss */
+.page-hotels-book .information_block .form-submit {
+  background: #fff;
+  color: #FFA800;
+  border: 0;
+  padding: 10px 25px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  float: right;
+  margin-top: 9px;
+  outline: none !important;
+  width: auto;
+}
+/* line 492, ../sass/_styles.scss */
+.page-hotels-book .buy_hotel_block .thumb_hotel_buy img {
+  width: 100%;
+  height: auto;
+}
+/* line 498, ../sass/_styles.scss */
+.page-hotels-book .buy_hotel_block td.guest_name,
+.page-hotels-book .buy_hotel_block tr.book-policy-popup .popup-window {
+  text-align: left;
+}
+/* line 503, ../sass/_styles.scss */
+.page-hotels-book .buy_hotel_block tr.price_summary td {
+  text-align: right;
+  font-size: 20px;
+}
+/* line 507, ../sass/_styles.scss */
+.page-hotels-book .buy_hotel_block tr.price_summary td .currency {
+  color: #e94e38;
+}
+/* line 512, ../sass/_styles.scss */
+.page-hotels-book .buy_hotel_block .col-xs-12.room_info a {
+  cursor: default;
+  border-bottom: none;
+}
+/* line 518, ../sass/_styles.scss */
+.page-hotels-book .form-actions {
+  display: none;
+}
+
+/* line 526, ../sass/_styles.scss */
+.view-display-id-lending_combo thead {
+  background: #fff;
+  padding: 15px 20px 10px;
+  border-bottom: 1px solid #CFCDCE;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+/* line 533, ../sass/_styles.scss */
+.view-display-id-lending_combo thead tr {
+  display: block;
+}
+/* line 539, ../sass/_styles.scss */
+.view-display-id-lending_combo tbody tr {
+  display: block;
+  background: #fff;
+  padding: 10px 20px;
+  border-bottom: 1px solid #CFCDCE;
+  border-radius: 4px;
+  margin-top: 7px;
+}
+/* line 549, ../sass/_styles.scss */
+.view-display-id-lending_combo tr {
+  letter-spacing: -.36em;
+}
+/* line 553, ../sass/_styles.scss */
+.view-display-id-lending_combo td,
+.view-display-id-lending_combo th {
+  width: 10%;
+  display: inline-block;
+  letter-spacing: normal;
+  color: #595959;
+  font-weight: normal;
+  font-size: 16px;
+}
+/* line 562, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-airline-code,
+.view-display-id-lending_combo th.views-field-airline-code {
+  width: 12%;
+}
+/* line 566, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-plain,
+.view-display-id-lending_combo th.views-field-plain {
+  width: 11%;
+  text-align: center;
+}
+/* line 571, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-arrival,
+.view-display-id-lending_combo th.views-field-arrival {
+  width: 19%;
+}
+/* line 575, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-transfer-flights,
+.view-display-id-lending_combo th.views-field-transfer-flights {
+  width: 9%;
+  text-align: center;
+}
+/* line 580, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-design-quantity,
+.view-display-id-lending_combo th.views-field-design-quantity {
+  width: 11%;
+  text-align: center;
+}
+/* line 585, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-nothing,
+.view-display-id-lending_combo th.views-field-nothing {
+  width: 17%;
+}
+/* line 589, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-price,
+.view-display-id-lending_combo th.views-field-price {
+  width: 10%;
+  text-align: right;
+}
+/* line 594, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-cid,
+.view-display-id-lending_combo th.views-field-cid {
+  width: 10%;
+}
+/* line 599, ../sass/_styles.scss */
+.view-display-id-lending_combo .air-logo {
+  width: auto;
+  max-height: 63px;
+  max-width: 100%;
+}
+/* line 605, ../sass/_styles.scss */
+.view-display-id-lending_combo td.views-field-price {
+  font-size: 20px;
+  font-weight: bold;
+}
+/* line 610, ../sass/_styles.scss */
+.view-display-id-lending_combo .buy {
+  background: #E94E38;
+  padding: 7px 13px;
+  border-radius: 2px;
+  color: #fff;
+  font-weight: bold;
+  border: 0;
+  outline: none !important;
+  margin: 0;
+  width: 80px;
+  text-transform: capitalize;
+  text-align: center;
+}
+/* line 624, ../sass/_styles.scss */
+.view-display-id-lending_combo .glyphicon {
+  top: 2px;
+}
+/* line 627, ../sass/_styles.scss */
+.view-display-id-lending_combo .glyphicon.glyphicon-triangle-bottom {
+  font-size: 14px;
+  color: #10aed6;
+}
+@media (max-width: 991px) {
+  /* line 634, ../sass/_styles.scss */
+  .view-display-id-lending_combo thead {
+    display: none;
+  }
+  /* line 638, ../sass/_styles.scss */
+  .view-display-id-lending_combo td {
+    width: 100% !important;
+    display: block;
+    text-align: center !important;
+    padding: 10px 0;
+  }
+  /* line 644, ../sass/_styles.scss */
+  .view-display-id-lending_combo td .buy {
+    float: none;
+    display: inline-block;
+    width: 100%;
+    max-width: 350px;
+  }
+}
+/* line 654, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights {
+  width: 100%;
+  padding: 0 0 20px;
+}
+/* line 658, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights .form-radios > div {
+  display: inline-block;
+}
+/* line 662, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights input {
+  display: none;
+}
+/* line 666, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights label {
+  color: #595959;
+  font-weight: normal;
+  font-size: 16px;
+  padding: 5px 20px;
+  background: transparent;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+}
+/* line 676, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights label:hover {
+  cursor: pointer;
+}
+/* line 681, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-widget-filter-transfer_flights input:checked + label {
+  background: #E2E2E2;
+}
+/* line 685, ../sass/_styles.scss */
+.view-display-id-lending_combo .views-exposed-form .views-submit-button {
+  display: none;
+}
+
+/* line 691, ../sass/_styles.scss */
+#airports-list {
+  margin: 20px 0;
+}
+/* line 694, ../sass/_styles.scss */
+#airports-list ul {
+  list-style: none;
+  padding: 0;
+}
+/* line 698, ../sass/_styles.scss */
+#airports-list ul li {
+  color: #595959;
+  font-weight: normal;
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+/* line 708, ../sass/_styles.scss */
+.page-route h2 {
+  color: #10aed6;
+  margin: 20px 0;
+}
+
+/* line 714, ../sass/_styles.scss */
+#come-form-list {
+  margin: 20px 0;
+}
+/* line 717, ../sass/_styles.scss */
+#come-form-list ul {
+  list-style: none;
+  padding: 0;
+}
+/* line 721, ../sass/_styles.scss */
+#come-form-list ul li {
+  margin: 3px 0;
+}
+@media (min-width: 1024px) {
+  /* line 721, ../sass/_styles.scss */
+  #come-form-list ul li {
+    width: 22.47191%;
+    float: left;
+    margin-right: 16.29213%;
+  }
+  /* line 727, ../sass/_styles.scss */
+  #come-form-list ul li:nth-child(3n) {
+    width: 22.47191%;
+    float: right;
+    margin-right: 0;
+  }
+  /* line 730, ../sass/_styles.scss */
+  #come-form-list ul li:nth-child(3n+1) {
+    clear: both;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 721, ../sass/_styles.scss */
+  #come-form-list ul li {
+    width: 41.85393%;
+    float: left;
+    margin-right: 16.29213%;
+  }
+  /* line 738, ../sass/_styles.scss */
+  #come-form-list ul li:nth-child(2n) {
+    width: 41.85393%;
+    float: right;
+    margin-right: 0;
+  }
+  /* line 741, ../sass/_styles.scss */
+  #come-form-list ul li:nth-child(2n+1) {
+    clear: both;
+  }
+}
+/* line 746, ../sass/_styles.scss */
+#come-form-list ul li a,
+#come-form-list ul li a:visited {
+  color: #595959;
+  font-weight: normal;
+  font-size: 16px;
+  text-decoration: none;
+  border-bottom: 1px solid #595959;
+  -moz-transition: all 0.3s ease-in-out;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+/* line 755, ../sass/_styles.scss */
+#come-form-list ul li a:hover, #come-form-list ul li a:active,
+#come-form-list ul li a:visited:hover,
+#come-form-list ul li a:visited:active {
+  border-color: transparent;
+}
+
+/* line 765, ../sass/_styles.scss */
+#city-info .city-text {
+  color: #595959;
+  font-weight: normal;
+  font-size: 16px;
+  margin: 10px 0;
+}
+/* line 772, ../sass/_styles.scss */
+#city-info .city-imgs {
+  margin: 40px 0 20px;
+}
+/* line 2, ../sass/_mixins.scss */
+#city-info .city-imgs:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+@media (min-width: 1024px) {
+  /* line 776, ../sass/_styles.scss */
+  #city-info .city-imgs .city-img-wrap {
+    width: 31.97183%;
+    float: left;
+    margin-right: 2.04225%;
+  }
+  /* line 780, ../sass/_styles.scss */
+  #city-info .city-imgs .city-img-wrap:nth-child(3n) {
+    width: 31.97183%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 785, ../sass/_styles.scss */
+#city-info .city-imgs .city-img-wrap img {
+  width: 100%;
+  height: auto;
+}
+
+/*
+Бонусы в личном кабинете
+*/
+/* line 799, ../sass/_styles.scss */
+#breadcrumbs .profile_logo {
+  text-transform: uppercase;
+}
+/* line 803, ../sass/_styles.scss */
+#breadcrumbs .user-page-item.user-bonus {
+  display: inline-block;
+  margin: 0 20px 0 0;
+}
+
+/* line 810, ../sass/_styles.scss */
+.breadcrumbs-flights .parameters-transit {
+  position: relative;
+  width: 35px;
+  display: inline-block;
+  text-align: center;
+}
+/* line 816, ../sass/_styles.scss */
+.breadcrumbs-flights .parameters-transit span {
+  position: absolute;
+  font-size: 10px;
+  top: -4px;
+  left: 1px;
+}
+
+/* line 1, ../sass/_new-year.scss */
+.pane-new-year-turkey {
+  background: url("../images/new-year/header.jpg") repeat-y;
+  margin-top: 5px;
+  margin-bottom: -35px;
+  padding: 0 30px;
+  z-index: 5;
+  position: relative;
+}
+@media (min-width: 1170px) {
+  /* line 1, ../sass/_new-year.scss */
+  .pane-new-year-turkey {
+    background-size: 100% 100%;
+    padding: 0;
+  }
+}
+/* line 14, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content {
+  max-width: 1170px;
+  min-height: 310px;
+  margin: 0 auto;
+  padding: 35px 0;
+}
+@media (min-width: 1170px) {
+  /* line 14, ../sass/_new-year.scss */
+  .pane-new-year-turkey .pane-content {
+    padding: 12px 0 11px;
+  }
+}
+/* line 2, ../sass/_mixins.scss */
+.pane-new-year-turkey .pane-content:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+/* line 25, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content h1 {
+  font: 40px "Myriad Pro";
+  color: #fff;
+  text-align: center;
+}
+/* line 31, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content p {
+  font: 25px "Myriad Pro";
+  color: #fff;
+  text-align: center;
+}
+/* line 36, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content p:last-child {
+  font-size: 40px;
+  font-weight: bold;
+}
+/* line 40, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content p:last-child span {
+  font-size: 65px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+/* line 48, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .left {
+  float: none;
+  width: 100%;
+  margin: 30px 0;
+}
+@media (min-width: 1170px) {
+  /* line 48, ../sass/_new-year.scss */
+  .pane-new-year-turkey .pane-content .left {
+    width: 70%;
+    float: left;
+  }
+}
+/* line 58, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform {
+  width: 100%;
+  max-width: 600px;
+  margin: 30px auto;
+  position: relative;
+}
+/* line 64, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .ajax-progress {
+  display: none;
+}
+@media (min-width: 1170px) {
+  /* line 58, ../sass/_new-year.scss */
+  .pane-new-year-turkey .pane-content .node-webform {
+    width: 30%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 72, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform h2 {
+  display: none;
+}
+/* line 76, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form {
+  position: relative;
+}
+/* line 79, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form select,
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form input[type="email"],
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form input[type="text"] {
+  width: 100%;
+  opacity: 0.8;
+  border: 0;
+  outline: 0;
+  padding: 7px 15px;
+  height: 34px;
+  margin-bottom: 15px;
+}
+/* line 91, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form select:hover {
+  cursor: pointer;
+}
+@media (min-width: 1170px) {
+  /* line 96, ../sass/_new-year.scss */
+  .pane-new-year-turkey .pane-content .node-webform .webform-client-form .webform-component--name {
+    width: 48%;
+    float: left;
+  }
+  /* line 100, ../sass/_new-year.scss */
+  .pane-new-year-turkey .pane-content .node-webform .webform-client-form .webform-component--surname {
+    width: 48%;
+    float: right;
+  }
+}
+/* line 106, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .webform-component--date {
+  position: relative;
+}
+/* line 109, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .webform-component--date input:hover {
+  cursor: pointer;
+}
+/* line 113, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .webform-component--date .picker {
+  margin-top: 0;
+  border-top: 0;
+  top: 40px;
+  right: 0;
+}
+/* line 121, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .form-actions {
+  text-align: center;
+}
+/* line 124, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .form-actions input {
+  border: 0;
+  outline: 0;
+  background: #DF051D;
+  -webkit-border-radius: 20px;
+  -moz-border-radius: 20px;
+  border-radius: 20px;
+  -moz-transition: all 0.3s ease-in-out;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+/* line 133, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content .node-webform .webform-client-form .form-actions input:hover, .pane-new-year-turkey .pane-content .node-webform .webform-client-form .form-actions input:active {
+  cursor: pointer;
+  border: 0;
+  outline: 0;
+  background: #a00519;
+}
+/* line 145, ../sass/_new-year.scss */
+.pane-new-year-turkey .pane-content #unitailer-form {
+  text-align: center;
+}
+
+/* line 153, ../sass/_new-year.scss */
+#content #panelpage h2 {
+  font-size: 25px;
+  text-transform: uppercase;
+  text-align: center;
+}
+/* line 159, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul {
+  list-style: none;
+  padding: 20px 0;
+}
+/* line 2, ../sass/_mixins.scss */
+#content #panelpage #features-turkey ul:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+@media (min-width: 1024px) {
+  /* line 164, ../sass/_new-year.scss */
+  #content #panelpage #features-turkey ul li {
+    width: 16.19433%;
+    float: left;
+    margin-right: 11.74089%;
+  }
+}
+@media (min-width: 1024px) {
+  /* line 169, ../sass/_new-year.scss */
+  #content #panelpage #features-turkey ul li:nth-child(4) {
+    width: 16.19433%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 175, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p {
+  text-align: center;
+  font-size: 20px;
+  line-height: 1.2;
+}
+/* line 180, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p:before {
+  content: '';
+  display: block;
+  background: #F3F1F2;
+  width: 104px;
+  height: 104px;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+  margin: 0 auto 5px;
+}
+/* line 193, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p.home-icon:before {
+  background: #F3F1F2 url("../images/new-year/home.png") no-repeat 50%;
+}
+/* line 199, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p.peoples-icon:before {
+  background: #F3F1F2 url("../images/new-year/peoples.png") no-repeat 50%;
+}
+/* line 205, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p.home2-icon:before {
+  background: #F3F1F2 url("../images/new-year/home2.png") no-repeat 50%;
+}
+/* line 210, ../sass/_new-year.scss */
+#content #panelpage #features-turkey ul li p.pig-icon:before {
+  background: #F3F1F2 url("../images/new-year/pig.png") no-repeat 50%;
+}
+
+/* line 221, ../sass/_new-year.scss */
+#hotels-turkey h2 {
+  font-weight: normal;
+}
+/* line 224, ../sass/_new-year.scss */
+#hotels-turkey h2 span {
+  font-weight: bold;
+  display: block;
+}
+/* line 230, ../sass/_new-year.scss */
+#hotels-turkey .desc {
+  margin-top: 25px;
+}
+/* line 234, ../sass/_new-year.scss */
+#hotels-turkey .features-hotels {
+  list-style: none;
+  margin-top: 25px;
+  margin-bottom: 50px;
+}
+/* line 2, ../sass/_mixins.scss */
+#hotels-turkey .features-hotels:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+@media (min-width: 1024px) {
+  /* line 240, ../sass/_new-year.scss */
+  #hotels-turkey .features-hotels li {
+    width: 48.92672%;
+    float: left;
+    margin-right: 2.14656%;
+  }
+}
+/* line 245, ../sass/_new-year.scss */
+#hotels-turkey .features-hotels li:before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: url("../images/new-year/feat.png") no-repeat;
+  float: left;
+  margin-right: 10px;
+}
+@media (min-width: 1024px) {
+  /* line 255, ../sass/_new-year.scss */
+  #hotels-turkey .features-hotels li:nth-child(2n) {
+    width: 48.92672%;
+    float: right;
+    margin-right: 0;
+  }
+}
+
+/* line 264, ../sass/_new-year.scss */
+#panelpage .flexslider {
+  width: 100%;
+  position: relative;
+}
+@media (min-width: 1170px) {
+  /* line 264, ../sass/_new-year.scss */
+  #panelpage .flexslider {
+    width: 780px;
+  }
+}
+/* line 272, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav {
+  margin: 10px 0;
+  list-style: none;
+  padding: 0;
+}
+/* line 2, ../sass/_mixins.scss */
+#panelpage .flexslider .flex-control-nav:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+@media (min-width: 1170px) {
+  /* line 272, ../sass/_new-year.scss */
+  #panelpage .flexslider .flex-control-nav {
+    position: absolute;
+    top: 0;
+    right: -300px;
+    width: 280px;
+    margin: 0;
+  }
+}
+/* line 285, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav li {
+  display: inline-block;
+  overflow: hidden;
+  text-align: center;
+  width: 16.07881%;
+  float: left;
+  margin-right: 0.70542%;
+}
+/* line 291, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav li:nth-child(6) {
+  width: 16.07881%;
+  float: right;
+  margin-right: 0;
+}
+@media (min-width: 1170px) {
+  /* line 285, ../sass/_new-year.scss */
+  #panelpage .flexslider .flex-control-nav li {
+    width: 46.23377%;
+    float: left;
+    margin-right: 7.53247%;
+    margin-bottom: 21px;
+  }
+  /* line 299, ../sass/_new-year.scss */
+  #panelpage .flexslider .flex-control-nav li:nth-child(2n) {
+    width: 46.23377%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 304, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav li img {
+  margin: 0 -100%;
+}
+/* line 310, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-direction-nav {
+  display: none;
+}
+/* line 314, ../sass/_new-year.scss */
+#panelpage .flexslider ul {
+  padding-left: 0;
+}
+/* line 318, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav img {
+  height: 60px;
+}
+/* line 321, ../sass/_new-year.scss */
+#panelpage .flexslider .flex-control-nav img:hover {
+  cursor: pointer;
+}
+/* line 326, ../sass/_new-year.scss */
+#panelpage .flexslider .slides img {
+  width: 100%;
+  height: 356px;
+}
+@media (min-width: 1170px) {
+  /* line 332, ../sass/_new-year.scss */
+  #panelpage .flexslider .slides img {
+    height: 423px;
+  }
+  /* line 336, ../sass/_new-year.scss */
+  #panelpage .flexslider .flex-control-nav img {
+    height: 127px;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 342, ../sass/_new-year.scss */
+  #panelpage .flexslider .slides img {
+    height: 180px;
+  }
+  /* line 346, ../sass/_new-year.scss */
+  #panelpage .flexslider .flex-control-nav img {
+    height: 40px;
+  }
+}
+
+/* line 352, ../sass/_new-year.scss */
+#webform-client-form-315-ajax-forms-messages,
+#webform-client-form-319-ajax-forms-messages {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 3;
+}
+/* line 359, ../sass/_new-year.scss */
+#webform-client-form-315-ajax-forms-messages > p,
+#webform-client-form-319-ajax-forms-messages > p {
+  background: #1BAF5D;
+  color: #fff;
+  padding: 10px;
+  font-size: 15px;
+  margin-top: 70px;
+}
+
+/* line 1, ../sass/_new-search.scss */
+.search-fly {
+  width: 100%;
+}
+/* line 4, ../sass/_new-search.scss */
+.search-fly .search-fly-block {
+  position: relative;
+  padding: 40px 40px 20px;
+  background: rgba(11, 148, 183, 0.57);
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  /* line 4, ../sass/_new-search.scss */
+  .search-fly .search-fly-block {
+    max-width: 1024px;
+    padding: 40px 40px 20px;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 4, ../sass/_new-search.scss */
+  .search-fly .search-fly-block {
+    max-width: 641px;
+    padding: 28px 33px 26px;
+  }
+}
+@media (min-width: 820px) and (max-width: 1023px) {
+  /* line 4, ../sass/_new-search.scss */
+  .search-fly .search-fly-block {
+    max-width: 723px;
+    padding: 32px 37px 30px;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 4, ../sass/_new-search.scss */
+  .search-fly .search-fly-block {
+    width: 100%;
+    padding: 35px 39px 32px;
+  }
+}
+/* line 32, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .bottom_options_block .people_count_block {
+  width: 49.1%;
+  float: left;
+}
+/* line 35, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .bottom_options_block .search-btn {
+  width: 49.1%;
+  float: right;
+  margin-right: 0;
+}
+/* line 39, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .calendar_block {
+  width: 100%;
+  float: none;
+}
+/* line 44, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .count_add {
+  line-height: 40px;
+  margin-left: 5px;
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 51, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop .bottom_options_block .people_count_block {
+    width: 100%;
+    float: none;
+    margin: 0;
+  }
+  /* line 56, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop .bottom_options_block .search-btn {
+    margin-top: 20px;
+    width: 100%;
+    float: none;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 65, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop .points_air {
+    margin-bottom: 14px;
+  }
+}
+@media (min-width: 1024px) {
+  /* line 30, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop {
+    max-width: 800px;
+    padding: 40px 40px 20px;
+  }
+  /* line 74, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop .points_air {
+    width: 31.6%;
+    float: left;
+  }
+  /* line 78, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop i.search-flights-form-trip-revert {
+    width: 3.4%;
+    float: left;
+  }
+  /* line 82, ../sass/_new-search.scss */
+  .search-fly .search-fly-block.type-multi_stop .calendar_block {
+    margin-left: 0;
+    width: 31.6%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 89, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .bottom-white .count_control {
+  display: inline-block;
+}
+/* line 92, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .bottom-white span {
+  margin-right: 4px;
+}
+/* line 97, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .container_search.multi_stop {
+  position: relative;
+}
+/* line 100, ../sass/_new-search.scss */
+.search-fly .search-fly-block.type-multi_stop .container_search.multi_stop .count_control {
+  right: -40px;
+}
+/* line 106, ../sass/_new-search.scss */
+.search-fly .search-fly-block .points_air {
+  position: relative;
+  width: 100%;
+  float: none;
+}
+@media (min-width: 1024px) {
+  /* line 106, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .points_air {
+    width: 23%;
+    float: left;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 106, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .points_air {
+    width: 47.3%;
+    float: left;
+  }
+  /* line 118, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .points_air.direction-return {
+    width: 47.3%;
+    float: right;
+    margin-right: 0;
+  }
+}
+/* line 123, ../sass/_new-search.scss */
+.search-fly .search-fly-block .points_air .reset.choice_cities_filter {
+  right: 15px !important;
+}
+/* line 127, ../sass/_new-search.scss */
+.search-fly .search-fly-block .points_air .form-item.form-type-textfield:before {
+  content: '';
+  position: absolute;
+  bottom: 2px !important;
+  top: auto !important;
+  right: 2px !important;
+  height: 46px !important;
+  width: 40px !important;
+  z-index: 1;
+  background: transparent;
+  background: -moz-linear-gradient(left, transparent 0%, #ffffff 25%, #ffffff 100%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, transparent), color-stop(25%, #ffffff), color-stop(100%, #ffffff));
+  background: -webkit-linear-gradient(left, transparent 0%, #ffffff 25%, #ffffff 100%);
+  background: -o-linear-gradient(left, transparent 0%, #ffffff 25%, #ffffff 100%);
+  background: -ms-linear-gradient(left, transparent 0%, #ffffff 25%, #ffffff 100%);
+  background: linear-gradient(to right, transparent 0%, #ffffff 25%, #ffffff 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='transparent', endColorstr='#ffffff',GradientType=1 );
+}
+/* line 147, ../sass/_new-search.scss */
+.search-fly .search-fly-block i.search-flights-form-trip-revert {
+  color: #fff;
+  top: 18px;
+  width: 100%;
+  float: none;
+}
+@media (min-width: 1024px) {
+  /* line 147, ../sass/_new-search.scss */
+  .search-fly .search-fly-block i.search-flights-form-trip-revert {
+    width: 2.6%;
+    float: left;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 147, ../sass/_new-search.scss */
+  .search-fly .search-fly-block i.search-flights-form-trip-revert {
+    width: 5.4%;
+    float: left;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 147, ../sass/_new-search.scss */
+  .search-fly .search-fly-block i.search-flights-form-trip-revert {
+    top: 0;
+    padding: 3px 0px;
+    display: block;
+  }
+}
+/* line 167, ../sass/_new-search.scss */
+.search-fly .search-fly-block i.search-flights-form-trip-revert:before {
+  display: block;
+  text-align: center;
+}
+@media (min-width: 641px) {
+  /* line 167, ../sass/_new-search.scss */
+  .search-fly .search-fly-block i.search-flights-form-trip-revert:before {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
+  }
+}
+/* line 181, ../sass/_new-search.scss */
+.search-fly .search-fly-block .calendar_block {
+  padding: 0;
+  width: 100%;
+  float: none;
+}
+@media (min-width: 1024px) {
+  /* line 181, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .calendar_block {
+    margin: 0 1.2%;
+    width: 19%;
+    float: left;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 181, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .calendar_block {
+    clear: both;
+    margin-top: 14px;
+    width: 47.3%;
+    float: left;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 181, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .calendar_block {
+    margin-top: 20px;
+  }
+}
+/* line 202, ../sass/_new-search.scss */
+.search-fly .search-fly-block .people_count_block {
+  padding: 0;
+  width: 100%;
+  float: none;
+}
+@media (min-width: 1024px) {
+  /* line 202, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block {
+    width: 12.3%;
+    float: left;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 202, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block {
+    margin-top: 14px;
+    width: 47.3%;
+    float: right;
+    margin-right: 0;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 202, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block {
+    margin-top: 20px;
+  }
+}
+/* line 218, ../sass/_new-search.scss */
+.search-fly .search-fly-block .people_count_block input.people_count {
+  margin: 0 !important;
+  float: none;
+}
+/* line 223, ../sass/_new-search.scss */
+.search-fly .search-fly-block .people_count_block .people_count_overlay {
+  display: none;
+  width: 180px;
+}
+@media (min-width: 1024px) {
+  /* line 223, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay {
+    width: 190px;
+  }
+}
+@media (min-width: 0) and (max-width: 1023px) {
+  /* line 223, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay {
+    width: 100%;
+    float: none;
+  }
+  /* line 234, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay .people {
+    width: 30.06757%;
+    float: left;
+    margin-right: 4.89865%;
+    display: inline-block;
+    border-top: 0;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  /* line 241, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay .people:last-child {
+    width: 30.06757%;
+    float: right;
+    margin-right: 0;
+  }
+  /* line 245, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay .people .text {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+@media (min-width: 0) and (max-width: 1023px) and (min-width: 641px) and (max-width: 820px) {
+  /* line 245, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .people_count_block .people_count_overlay .people .text {
+    min-height: 50px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* line 259, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .one_way,
+  .search-fly .search-fly-block .round_trip {
+    margin: 0;
+  }
+  /* line 264, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .one_way .bottom-white,
+  .search-fly .search-fly-block .round_trip .bottom-white {
+    margin-top: 12px;
+    float: left;
+    width: 70%;
+    position: static;
+  }
+  /* line 271, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .one_way input.seacrh,
+  .search-fly .search-fly-block .round_trip input.seacrh {
+    bottom: 49px;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 277, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .bottom-white {
+    margin-top: 16px;
+    width: 75.5%;
+    float: left;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 277, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .bottom-white {
+    width: 100%;
+    padding: 4px 0 10px;
+  }
+  /* line 2, ../sass/_mixins.scss */
+  .search-fly .search-fly-block .bottom-white:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  /* line 287, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .bottom-white span {
+    float: left;
+  }
+  /* line 290, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .bottom-white span:last-child {
+    float: right;
+  }
+}
+/* line 297, ../sass/_new-search.scss */
+.search-fly .search-fly-block .search-btn {
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  /* line 297, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .search-btn {
+    width: 16.5%;
+    float: right;
+    margin-right: 0;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 297, ../sass/_new-search.scss */
+  .search-fly .search-fly-block .search-btn {
+    margin-top: 14px;
+    width: 24.5%;
+    float: right;
+    margin-right: 0;
+  }
+}
+
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 312, ../sass/_new-search.scss */
+  .datepick-popup {
+    max-width: 75% !important;
+    min-width: 242px;
+  }
+
+  /* line 316, ../sass/_new-search.scss */
+  .datepick.datepick-multi {
+    width: 100% !important;
+  }
+
+  /* line 320, ../sass/_new-search.scss */
+  .datepick-month-list {
+    display: none;
+  }
+
+  /* line 323, ../sass/_new-search.scss */
+  .datepick-month-row {
+    width: 100%;
+    float: none;
+  }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* line 329, ../sass/_new-search.scss */
+  #advanced_search.variant_one {
+    padding: 70px 0;
+  }
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 329, ../sass/_new-search.scss */
+  #advanced_search.variant_one {
+    padding: 50px 0 0;
+  }
+}
+
+/* line 341, ../sass/_new-search.scss */
+#breadcrumbs #search-direction {
+  margin-left: 40px;
+}
+/* line 345, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline, #breadcrumbs.open .breadcrumbs-flights {
+  display: none;
+}
+/* line 351, ../sass/_new-search.scss */
+#breadcrumbs.open #flight_search_inline {
+  display: block;
+}
+/* line 357, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .search-fly-block {
+  max-width: 100%;
+  padding: 0 30px 0 0;
+  background: transparent;
+}
+/* line 363, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .search-fly-block.type-multi_stop .container_search.multi_stop .count_control {
+  right: -30px;
+  width: 30px;
+}
+/* line 369, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .search-fly-block .points_air .form-item.form-type-textfield:before {
+  height: 36px !important;
+}
+/* line 374, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .choice_cities_filter {
+  bottom: 15px;
+}
+/* line 378, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .select2-container {
+  width: auto !important;
+}
+/* line 381, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .select2-container .select2-choice {
+  background: transparent;
+  margin: 0;
+}
+/* line 386, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .select2-container .select2-arrow {
+  background: none;
+}
+/* line 390, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .select2-container.select2-dropdown-open .select2-choice {
+  color: #444 !important;
+  background: #fff;
+}
+/* line 396, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline input.seacrh,
+#breadcrumbs #flight_search_inline .people_count_block input.people_count,
+#breadcrumbs #flight_search_inline .calendar_block input.calendar,
+#breadcrumbs #flight_search_inline .flight-point {
+  height: 40px;
+}
+/* line 403, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline input.seacrh {
+  padding: 6px 12px;
+}
+/* line 407, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline i.search-flights-form-trip-revert {
+  top: 12px;
+}
+/* line 411, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .people_count_overlay {
+  top: 47px;
+  border: 1px solid #C1C1C1;
+}
+@media (min-width: 0) and (max-width: 640px) {
+  /* line 417, ../sass/_new-search.scss */
+  #breadcrumbs #flight_search_inline i.search-flights-form-trip-revert {
+    top: 0;
+  }
+}
+@media (min-width: 1024px) {
+  /* line 422, ../sass/_new-search.scss */
+  #breadcrumbs #flight_search_inline .search-fly-block {
+    padding: 0 10px;
+  }
+  /* line 425, ../sass/_new-search.scss */
+  #breadcrumbs #flight_search_inline .search-fly-block.type-multi_stop {
+    padding: 0 30px;
+  }
+  /* line 430, ../sass/_new-search.scss */
+  #breadcrumbs #flight_search_inline input.seacrh {
+    bottom: 40px;
+  }
+  /* line 434, ../sass/_new-search.scss */
+  #breadcrumbs #flight_search_inline .search-fly-block.type-multi_stop input.seacrh {
+    bottom: 0;
+  }
+}
+/* line 438, ../sass/_new-search.scss */
+#breadcrumbs #flight_search_inline .ajax-progress {
+  float: right;
+}
+
+/* line 445, ../sass/_new-search.scss */
+.navbar-toggle {
+  padding: 8px 10px;
+}
+
+/* line 449, ../sass/_new-search.scss */
+.select2-drop {
+  border-radius: 0;
+  color: #444;
+  margin-top: 6px;
+}
+
+/* line 455, ../sass/_new-search.scss */
+.select2-drop-active {
+  border: 1px solid #C1C1C1;
+}
+
+@media (min-width: 1024px) {
+  /* line 460, ../sass/_new-search.scss */
+  #flight_search.multi-stop {
+    height: 300px;
+  }
+}
+/* line 1, ../sass/_new-tickets.scss */
+.content-row-new {
+  background: #fff;
+  padding: 11px;
+  margin-bottom: 20px;
+}
+/* line 6, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new {
+  font-size: 16px;
+  background: #fff;
+}
+/* line 10, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block {
+  padding: 27px;
+}
+/* line 13, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_logo {
+  max-width: 300px;
+  margin: 0 auto;
+}
+/* line 17, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_logo img {
+  width: 100%;
+}
+/* line 21, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_price {
+  text-align: center;
+  margin-top: 15px;
+}
+/* line 25, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_price .currency {
+  color: #0CACD6;
+  font-size: 28px;
+  font-weight: bold;
+}
+/* line 31, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_price .currency .currency__price:after {
+  margin-left: 10px;
+}
+/* line 37, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy {
+  margin-top: 7px;
+}
+/* line 40, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy,
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy:visited {
+  margin: 0;
+  float: none;
+  text-align: center;
+  display: block;
+  background: #E94E38;
+  border: 0;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #fff;
+  text-transform: capitalize;
+  -moz-transition: all 0.3s ease-in-out;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+/* line 56, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy:hover, .content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy:active,
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy:visited:hover,
+.content-row-new .ticket-table-new .ticket_left_block .ticket_buy .buy:visited:active {
+  background: #943f29;
+  color: #fff;
+  text-decoration: none;
+}
+/* line 64, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_left {
+  text-align: left;
+  margin-top: 16px;
+}
+/* line 68, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_left_block .ticket_left span {
+  margin-right: 12px;
+}
+/* line 73, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block {
+  border-left: 1px solid #E3E3E3;
+  padding: 20px;
+}
+/* line 77, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row {
+  border-bottom: 1px solid #E3E3E3;
+  padding-bottom: 16px;
+  margin-bottom: 28px;
+}
+/* line 83, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row:last-child {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+/* line 90, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to h4 {
+  font-size: 16px;
+  margin: 0 0 5px;
+  color: #0FABD3;
+}
+/* line 95, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to p {
+  margin: 0 0 5px;
+  line-height: 22px;
+}
+/* line 99, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to p .glyphicon-time,
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to p .glyphicon-calendar {
+  color: #0FABD3;
+  float: left;
+  margin-top: 2px;
+  width: 22px;
+}
+@media (min-width: 0) and (max-width: 767px) {
+  /* line 89, ../sass/_new-tickets.scss */
+  .content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to {
+    text-align: center;
+  }
+  /* line 110, ../sass/_new-tickets.scss */
+  .content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to p {
+    display: inline-block;
+  }
+  /* line 113, ../sass/_new-tickets.scss */
+  .content-row-new .ticket-table-new .ticket_right_block .details_avia_row .avia_from_to p.airport_code {
+    display: block;
+  }
+}
+/* line 119, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .plain-info {
+  text-align: center;
+  margin-top: 40px;
+}
+@media (min-width: 0) and (max-width: 767px) {
+  /* line 119, ../sass/_new-tickets.scss */
+  .content-row-new .ticket-table-new .ticket_right_block .details_avia_row .plain-info {
+    margin-top: 0;
+  }
+}
+/* line 126, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .plain-info .glyphicon-plane {
+  margin-right: 2px;
+  top: 2px;
+}
+/* line 132, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info {
+  padding: 10px 30px;
+}
+/* line 135, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > p.time-in-air {
+  margin-bottom: -7px;
+  text-align: center;
+}
+/* line 140, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div {
+  position: relative;
+}
+/* line 2, ../sass/_mixins.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+/* line 144, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div:before {
+  content: '';
+  width: 100%;
+  display: block;
+  border: 1px dashed;
+  position: absolute;
+  left: 0;
+  bottom: 7px;
+}
+/* line 154, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span {
+  bottom: 0;
+  left: 50%;
+  margin-left: -5px;
+  position: absolute;
+  padding: 5px 2px;
+  background: #fff;
+}
+/* line 162, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span i {
+  -moz-transform: rotate(90deg);
+  -webkit-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+/* line 170, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:after {
+  content: '';
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: #595959;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  margin: 13px auto 0;
+  -moz-transition: all 0.3s ease-in-out;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+/* line 183, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:first-child {
+  float: left;
+  position: relative;
+  left: auto;
+  bottom: auto;
+}
+/* line 189, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:first-child .colapsable-item {
+  left: 10px;
+}
+/* line 193, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:last-child {
+  float: right;
+  position: relative;
+  left: auto;
+  bottom: auto;
+}
+/* line 199, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:last-child .colapsable-item {
+  left: auto;
+  right: 10px;
+}
+/* line 205, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:hover {
+  cursor: pointer;
+}
+/* line 208, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:hover:after {
+  background: #0FABD3;
+}
+/* line 212, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span:hover .colapsable-item {
+  visibility: visible;
+  opacity: 1;
+}
+/* line 218, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span .colapsable-item {
+  visibility: collapse;
+  opacity: 0;
+  width: auto;
+  height: auto;
+  position: absolute;
+  background: #DCF1F6;
+  padding: 5px;
+  left: -60px;
+  bottom: 20px;
+  z-index: 5;
+  -moz-transition: all 0.3s ease-in-out;
+  -webkit-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+/* line 231, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info > div > span .colapsable-item span {
+  display: block;
+  white-space: nowrap;
+}
+/* line 240, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-2 > div > span.transfer-point-1 {
+  left: 33.3%;
+}
+/* line 243, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-2 > div > span.transfer-point-2 {
+  left: 66.6%;
+}
+/* line 249, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-3 > div > span.transfer-point-1 {
+  left: 25%;
+}
+/* line 252, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-3 > div > span.transfer-point-2 {
+  left: 50%;
+}
+/* line 255, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-3 > div > span.transfer-point-3 {
+  left: 75%;
+}
+/* line 261, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-4 > div > span.transfer-point-1 {
+  left: 20%;
+}
+/* line 264, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-4 > div > span.transfer-point-2 {
+  left: 40%;
+}
+/* line 267, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-4 > div > span.transfer-point-3 {
+  left: 60%;
+}
+/* line 270, ../sass/_new-tickets.scss */
+.content-row-new .ticket-table-new .ticket_right_block .details_avia_row .fly-info.transfers-4 > div > span.transfer-point-4 {
+  left: 80%;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* line 282, ../sass/_new-tickets.scss */
+  .page-flights-results #filter .footer_filter {
+    padding: 15px 20px 0;
+  }
+}

@@ -1,0 +1,5 @@
+name = Avis user migrate
+description = "Migration module for users from mambo24.ru"
+package = Avis
+version = 1.0
+core = 7.x

@@ -1,0 +1,37 @@
+#weather-city {
+    margin: 20px 0;
+}
+
+#weather-city .weather-data {
+    list-style: none;
+    background: #fff;
+    letter-spacing: -.36em;
+}
+
+#weather-city ul {
+    padding-left: 0;
+    text-align: center;
+}
+
+#weather-city ul li {
+    width: 20%;
+    font-size: 14px;
+    text-align: center;
+    display: inline-block;
+    letter-spacing: normal;
+    padding: 10px 0;
+}
+
+#weather-city .weather-date {
+    color: #414141;
+}
+
+#weather-city .weather-temp {
+    color: #10aed3;
+}
+
+@media (max-width: 500px) {
+    #weather-city ul li {
+        width: 30%;
+    }
+}

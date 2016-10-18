@@ -1,0 +1,10 @@
+name = Loading screen
+description = Add Loading screen with advertisement
+core = 7.x
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-travel"
+datestamp = "1407427200"
+

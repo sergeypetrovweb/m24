@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function avis_fieldinline_theme()
+{
+  return array(
+    'simple_radios' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    // Theme for single radio.
+    'simple_radio' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );	
+}
+
+/**
+ * Implements theme_simple_radios().
+ */
+function theme_simple_radios($element) {
+  $element = array_shift($element);
+  $keys = array_keys($element['#options']);
+  $type = $element[$keys[0]]['#type'];
+  $output = '';
+  foreach ($keys as $key) {
+    $output .= theme('simple_radio', $element[$key]);
+  }
+
+
+  //dsm($output);
+  return $output;
+}
+
+/**
+ * Implements theme_simple_radio().
+ */
+function theme_simple_radio($element) {
+  _form_set_class($element, array('form-radio'));
+  $output = '<input id="" checked="checked" name="" type="radio" />';
+  if (!is_null($element['#title'])) {
+    $output = '<label class="option" for="' . $element['#id'] . '">' . $output . ' ' . $element['#title'] . '</label>';
+  }
+  unset($element['#title']);
+  return $output;
+}

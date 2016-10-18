@@ -1,0 +1,30 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function avis_user_migrate_schema() {
+  $schema['avis_migrate_users'] = array(
+    'description' => 'Table for directions from migrate users result',
+    'fields' => array(
+      'mamba_id' => array(
+        'description' => 'ID user on mamba.ru',
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID on this site',
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+function avis_user_migrate_uninstall() {
+  drupal_uninstall_schema('avis_user_migrate');
+}

@@ -1,0 +1,5 @@
+name = Air Cache
+description = "Cache for popular transfers"
+package = Avis
+version = 1.0
+core = 7.x

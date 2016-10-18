@@ -1,0 +1,7 @@
+name = Avis service
+description = Custom service module
+package = Avis
+version = 1.0
+core = 7.x
+
+dependencies[] = services

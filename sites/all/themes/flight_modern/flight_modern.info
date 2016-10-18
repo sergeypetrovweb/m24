@@ -1,0 +1,67 @@
+name = Flight Modern
+description = Flight.az modern theme 2015
+screenshot = screenshot.png
+engine = phptemplate
+core = 7.x
+
+; ========================================
+; Stylesheets
+; ========================================
+;stylesheets[all][] = 
+stylesheets[all][] = css/bootstrap.css
+stylesheets[all][] = css/style.css
+stylesheets[all][] = css/ion.rangeSlider.css
+stylesheets[all][] = css/ion.rangeSlider.skinFlat.css
+stylesheets[all][] = css/chosen.css
+stylesheets[all][] = css/new_dp.css
+stylesheets[all][] = css/drupal_reset.cs
+stylesheets[all][] = css/fonts.css
+stylesheets[all][] = css/custom.css
+stylesheets[all][] = css/main.css
+
+
+; ========================================
+; Scripts
+; ========================================
+;scripts[] =
+
+scripts[] = js/stylernumber.js
+scripts[] = js/ion.rangeSlider.js
+scripts[] = js/bootstrap.js
+scripts[] = js/contrib/jquery.validate.min.js
+;scripts[] = js/contrib/jquery.timeago.ru.js
+scripts[] = js/contrib/jquery.flexslider-min.js
+scripts[] = js/allscripts.js
+scripts[] = js/main.js
+
+
+; ========================================
+; Plugins
+; ========================================
+plugins[panels][layouts] = panels/layouts
+plugins[panels][styles] = panels/styles
+
+stylesheets[all][] = plugins/hide-admin-menu/css/hide-admin-menu.css
+scripts[] = plugins/hide-admin-menu/js/hide-admin-menu.js
+scripts[] = plugins/headroom/headroom.min.js
+scripts[] = plugins/headroom/jQuery.headroom.min.js
+
+stylesheets[all][] = plugins/mmenu/jquery.mmenu.css
+stylesheets[all][] = plugins/mmenu/jquery.mmenu.positioning.css
+scripts[] = plugins/mmenu/jquery.mmenu.min.all.js
+
+stylesheets[all][] = plugins/flipclock/flipclock.css
+scripts[] = plugins/flipclock/flipclock.min.js
+
+; ========================================
+; Regions
+; ========================================
+regions[branding] = Branding
+regions[header] = Header
+regions[navigation] = Navigation
+regions[highlighted] = Highlighted
+regions[help] = Help
+regions[content] = Content
+regions[sidebar_first] = First Sidebar
+regions[sidebar_second] = Second Sidebar
+regions[footer] = Footer

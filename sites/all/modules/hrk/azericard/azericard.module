@@ -1,0 +1,373 @@
+<?php
+
+define('AZERICARD_TEST_MODE', 1);
+define('AZERICARD_REAL_MODE', 2);
+/**
+ * Implements hook_menu().
+ */
+function azericard_menu()
+{
+    $items['admin/config/system/azericard'] = array(
+        'title' => t('Azericard Configuration'),
+        'description' => t('Administer basic settings for the azericard module.'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('azericard_configuration_form'),
+        'access callback' => TRUE,
+        'file' => 'azericard.admin.inc'
+    );
+
+    $items['azericard/response/answer'] = array(
+        'title' => t('Azericard Payment answer'),
+        'page callback' => 'azericard_response_payment',
+        'access callback' => TRUE,
+    );
+
+    return $items;
+}
+
+function hrk_az_create_payment($amount, $currency)
+{
+    $configuration = (object)variable_get('azericard', array());
+
+    $payment = array(
+        'oid' => base_convert(uniqid(), 11, 10),
+        'amount' => $amount,
+        'currency' => $currency,
+        'mode' => ($configuration->mode == 'real') ? AZERICARD_REAL_MODE : AZERICARD_TEST_MODE
+    );
+
+    $query = db_insert('hrk_az_payment')->fields($payment);
+
+    $azid = $query->execute();
+
+    if ($azid) $payment['azid'] = $azid;
+
+    return ($azid) ? $payment : array();
+}
+
+
+function hrk_az_get_payment($azid)
+{
+    $payment = array();
+
+
+    $query = db_select('hrk_az_payment', 'a')->fields('a', array())->condition('azid', $azid);
+
+    $result = $query->execute();
+
+    foreach ($result as $row) {
+        $payment = $row;
+    }
+
+    return (array)$payment;
+}
+
+function hrk_az_update_payment($azid, $fields)
+{
+    return db_update('hrk_az_payment')->fields($fields)->condition('azid', $azid)->execute();
+}
+
+
+function azericard_payment_form($form, &$form_state, $payment, $back_ref = null)
+{
+    global $base_url;
+    $configuration = variable_get('azericard', array());
+    $payment = (object)$payment;
+
+    if ($configuration) {
+        $mode_config = (object)$configuration[$configuration['mode']];
+        $configuration = (object)$configuration;
+        $timestamp = gmdate("YmdHis");
+        $site_email = variable_get('site_mail', '');
+        $nonce = substr(md5(rand()), 0, 16);
+        $back_ref = ($back_ref) ? $back_ref : $base_url;
+
+        $form['#action'] = $mode_config->url;
+        $form['az_amount'] = array('#type' => 'hidden', '#name' => 'AMOUNT', '#value' => $payment->amount);
+        $form['az_description'] = array('#type' => 'hidden', '#name' => 'DESC', '#value' => $configuration->merchant_name . ' Payment');
+        $form['az_terminal'] = array('#type' => 'hidden', '#name' => 'TERMINAL', '#value' => $mode_config->terminal);
+        $form['az_currency'] = array('#type' => 'hidden', '#name' => 'CURRENCY', '#value' => $payment->currency);
+        $form['az_order_id'] = array('#type' => 'hidden', '#name' => 'ORDER', '#value' => $payment->oid);
+        $form['az_merchant_name'] = array('#type' => 'hidden', '#name' => 'MERCH_NAME', '#value' => $configuration->merchant_name);
+        $form['az_merchant_url'] = array('#type' => 'hidden', '#name' => 'MERCH_URL', '#value' => $configuration->merchant_url);
+        $form['az_email'] = array('#type' => 'hidden', '#name' => 'EMAIL', '#value' => $site_email);
+        $form['az_tr_type'] = array('#type' => 'hidden', '#name' => 'TRTYPE', '#value' => '1');
+        $form['az_country'] = array('#type' => 'hidden', '#name' => 'COUNTRY', '#value' => $configuration->country);
+        $form['az_merchant_gmt'] = array('#type' => 'hidden', '#name' => 'MERCH_GMT', '#value' => '+' . $configuration->merchant_gmt);
+        $form['az_back_ref'] = array('#type' => 'hidden', '#name' => 'BACKREF', '#value' => $back_ref);
+        $form['az_timestamp'] = array('#type' => 'hidden', '#name' => 'TIMESTAMP', '#value' => $timestamp);
+        $form['az_nonce'] = array('#type' => 'hidden', '#name' => 'NONCE', '#value' => $nonce);
+
+        $for_sign = '';
+        $for_sign .= strlen($payment->amount) . $payment->amount; //AMOUNT
+        $for_sign .= strlen($payment->currency) . $payment->currency; //CURRENCY
+        $for_sign .= strlen($payment->oid) . $payment->oid; //ORDER
+        $for_sign .= strlen($configuration->merchant_name . ' Payment') . $configuration->merchant_name . ' Payment'; //DESC
+        $for_sign .= strlen($configuration->merchant_name) . $configuration->merchant_name; //MERCH_NAME
+        $for_sign .= strlen($configuration->merchant_url) . $configuration->merchant_url . '-'; //MERCH_URL
+        $for_sign .= strlen($mode_config->terminal) . $mode_config->terminal; //TERMINAL
+        $for_sign .= strlen($site_email) . $site_email; //EMAIL
+        $for_sign .= strlen('1') . '1'; //TRTYPE
+        $for_sign .= strlen($configuration->country) . $configuration->country; //COUNTRY
+        $for_sign .= strlen('+' . $configuration->merchant_gmt) . '+' . $configuration->merchant_gmt; //MERCH_GMT
+        $for_sign .= strlen($timestamp) . $timestamp; //TIMESTAMP
+        $for_sign .= strlen($nonce) . $nonce; //NONCE
+        $for_sign .= strlen($back_ref) . $back_ref; //BACKREF
+
+        $form['az_to_sign'] = array('#type' => 'hidden', '#name' => 'TO_SIGN', '#value' => $for_sign);
+
+        $p_sign = hash_hmac('sha1', $for_sign, hrk_az_hex2bin($mode_config->key_for_sign));
+        $form['az_p_sign'] = array('#type' => 'hidden', '#name' => 'P_SIGN', '#value' => $p_sign);
+
+    }
+    return $form;
+}
+
+function hrk_az_hex2bin($hexData)
+{
+    $binData = "";
+
+    for ($i = 0; $i < strlen($hexData); $i += 2) {
+        $binData .= chr(hexdec(substr($hexData, $i, 2)));
+    }
+
+    return $binData;
+}
+
+function  hrk_az_get_web_page($url, $dataIn)
+{
+    $options = array(
+        //CURLOPT_SSLVERSION     => 3,
+        CURLOPT_RETURNTRANSFER => true, // return web page
+        CURLOPT_HEADER => false, // don't return headers
+        CURLOPT_FOLLOWLOCATION => true, // follow redirects
+        CURLOPT_ENCODING => "", // handle all encodings
+        //CURLOPT_USERAGENT      => "spider", // who am i
+        CURLOPT_AUTOREFERER => true, // set referer on redirect
+        CURLOPT_CONNECTTIMEOUT => 120, // timeout on connect
+        CURLOPT_TIMEOUT => 120, // timeout on response
+        CURLOPT_MAXREDIRS => 10, // stop after 10 redirects
+        //-------to post-------------
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $dataIn, //$data,
+        CURLOPT_SSL_VERIFYPEER => false, // DONT VERIFY
+        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_CAINFO => "a.cer",
+    );
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, $options);
+    $content = curl_exec($ch);
+    $err = curl_errno($ch);
+    $errMsg = curl_error($ch);
+    $header = curl_getinfo($ch);
+    curl_close($ch);
+    $header['errno'] = $err;
+    $header['errmsg'] = $errMsg;
+    $header['content'] = $content;
+
+    return $header;
+}
+
+
+function azericard_response_payment()
+{
+
+    /*RETURN PAGE_NOT_FOUND:IF $_POST EMPTY*/
+    if (empty($_POST) || !isset($_POST['ACTION']) || !isset($_POST['ORDER'])) drupal_not_found();
+
+    $az = (object)array();
+    $query = db_select('hrk_az_payment', 'a')->fields('a', array())->condition('oid', $_POST['ORDER']);
+    $result = $query->execute();
+    foreach ($result as $row) {
+        $az = $row;
+        break;
+    }
+
+    if (empty($az->azid) || $_POST['ACTION'] != 0) drupal_not_found();
+
+    db_update('hrk_az_payment')->fields(array('rrn' => $_POST['RRN'], 'intref' => $_POST['INTREF']))->condition('azid', $az->azid)->execute();
+
+    /*CHECK IF PAYMENT WAS FOR FLIGHT*/
+    $query = db_select('hrk_bf_book', 'b')->fields('b', array())
+        ->condition('azid', $az->azid)
+        ->condition('is_cancel', 0)
+        ->condition('is_ticket', 0)
+        ->condition('is_deleted', 0);
+
+    $result = $query->execute();
+
+    $book = array();
+
+    foreach ($result as $row) {
+        $book = $row;
+        $book->data = hrk_helper_result_decode($book->data);
+        $book->sessions = unserialize($book->sessions);
+    }
+
+    /*IF FLIGHT PAY*/
+    if ($book) hrk_az_pay_flight($az, $book);
+
+    if (!$book) {
+        /*CHECK IF PAYMENT WAS FOR Hotels*/
+        $query = db_select('hrk_bh_book', 'b')->fields('b', array())
+            ->condition('azid', $az->azid)
+            ->condition('is_cancel', 0)
+            ->condition('is_paid', 0)
+            ->condition('is_deleted', 0);
+
+        $result = $query->execute();
+
+        foreach ($result as $row) {
+            $book = $row;
+            $book->data = hrk_helper_result_decode($book->data);
+            $book->sessions = unserialize($book->sessions);
+        }
+
+        if ($book) hrk_az_pay_hotel($az, $book);
+    }
+    drupal_not_found();
+}
+
+function hrk_az_pay_flight($az, $book)
+{
+    $book = (object)$book;
+
+    /*IF BOOK EXPIRE*/
+    if (hrk_bf_is_expire($book->expire)) {
+        db_update('hrk_bf_book')->fields(array('is_cancel' => 1))->condition('bid', $book->bid)->execute();
+        az_cancel_payment($az->azid);
+        bf_mail_book($book->email, $book->bid);
+    } else {
+        $db_session = hrk_ep_create_session();
+        $ep = hrk_ep_engine();
+
+        if ($db_session && $ep->connect($db_session['session'])) {
+            ep_api_include('EP_CreateTicket', 'requests');
+
+            $book_info = (object)$book->data['book'];
+            $passengers = $book_info->passenger;
+
+
+            $request = new \requests\EP_CreateTicket();
+            $request->setContentID($book->cid)->setPassengers($passengers);
+
+            $response = $ep->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+            $result = hrk_bf_parse($response)->create_ticket();
+
+            if (!empty($result['change_request']) && $result['change_request']['type'] == 'BOOK_WITH_PRICECHARGE') {
+                ep_api_include('EP_TicketReference', 'requests');
+                $refer_request = new \requests\EP_TicketReference();
+                $refer_request->setReferenceNumber($result['change_request']['reference_number']);
+
+                $response = $ep->doRequest($refer_request->getRequest(), $refer_request::SOAP_ACTION);
+
+                $result = hrk_bf_parse($response)->create_ticket();
+            }
+
+            $tid = end($result['context_id']);
+            $book->sessions[] = $db_session['session'];
+            $book->data['ticket'] = $result;
+
+            hrk_bf_update_book($book->bid, array(
+                'tid' => $tid,
+                'is_ticket' => 1,
+                'sessions' => serialize($book->sessions),
+                'data' => hrk_helper_result_encode((array)$book->data)
+            ));
+
+            bf_mail_book($book->email, $book->bid);
+        }
+    }
+}
+
+function hrk_az_pay_hotel($az, $book)
+{
+    $book = (object)$book;
+
+    /*IF BOOK EXPIRE*/
+    if (hrk_bh_is_expire($book->expire)) {
+
+        $db_session = hrk_cl_create_session();
+
+        $request = hrk_cl_cancel_book($db_session['session'], $book->seid);
+
+        $cl = hrk_cl_engine();
+        $response = $cl->doRequest($request->getRequest(), $request::SOAP_ACTION);
+
+        if (!$response) {
+            hrk_cl_delete_session($db_session['sid']);
+        };
+
+        bh_include('BH_Helper');
+        $result = \includes\BH_Helper::parseCancelResponse($response);
+
+        if ($result['error']) {
+            hrk_cl_errors()->save($db_session['session'], array($result['error']), \includes\CL_Errors::ERROR_BOOKING);
+        }
+
+        if (empty($result['cancel_id'])) {
+            hrk_cl_delete_session($db_session['sid']);
+        }
+
+        db_update('hrk_bh_book')->fields(array('is_cancel' => 1, 'cancel_id' => $result['cancel_id']))->condition('bid', $book->bid)->execute();
+        hrk_cl_delete_session($db_session['sid']);
+
+        az_cancel_payment($az->azid);
+        bh_mail_book($book->email, $book->bid);
+    } else {
+        db_update('hrk_bh_book')->fields(array('is_paid' => 1))->condition('bid', $book->bid)->execute();
+        bh_mail_book($book->email, $book->bid);
+    }
+}
+
+function az_cancel_payment($azid)
+{
+
+    $az = (object)hrk_az_get_payment($azid);
+
+    if ($az) {
+        $configuration = variable_get('azericard', array());
+        $mode = ($az->mode == 1) ? 'test' : 'real';
+        $mode_config = (object)$configuration[$mode];
+
+        $data = array(
+            'AMOUNT' => $az->amount,
+            'CURRENCY' => $az->currency,
+            'ORDER' => $az->oid,
+            'RRN' => $az->rrn,
+            'INT_REF' => $az->intref,
+            'TERMINAL' => $mode_config->terminal,
+            'TRTYPE' => '22',
+            'TIMESTAMP' => gmdate("YmdHis"),
+            'NONCE' => substr(md5(rand()), 0, 16)
+        );
+
+        $FOR_SIGN = "" . strlen($data['ORDER']) . $data['ORDER'] .
+            strlen($data['AMOUNT']) . $data['AMOUNT'] .
+            strlen($data['CURRENCY']) . $data['CURRENCY'] .
+            strlen($data['RRN']) . $data['RRN'] .
+            strlen($data['INT_REF']) . $data['INT_REF'] .
+            strlen('22') . '22' .
+            strlen($data['TERMINAL']) . $data['TERMINAL'] .
+            strlen($data["TIMESTAMP"]) . $data["TIMESTAMP"] .
+            strlen($data["NONCE"]) . $data["NONCE"];
+
+
+        $P_SIGN = hash_hmac('sha1', $FOR_SIGN, hrk_az_hex2bin($mode_config->key_for_sign));
+
+        $data["P_SIGN"] = $P_SIGN;
+
+        $POST_STRING = array();
+
+        foreach ($data as $key => $value) {
+            $POST_STRING[] = $key . '=' . $value;
+        }
+
+        $POST_STRING = implode("&", $POST_STRING);
+        return hrk_az_get_web_page($mode_config->url, $POST_STRING);
+    }
+
+    return FALSE;
+}

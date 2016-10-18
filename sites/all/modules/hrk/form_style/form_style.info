@@ -1,0 +1,9 @@
+name = jQuery form style
+description = Styled form element ex:radios,checkboxes and another
+core = 7.x
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-form-style"
+datestamp = "1407427200"

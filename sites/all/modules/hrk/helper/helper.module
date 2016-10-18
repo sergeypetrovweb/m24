@@ -1,0 +1,153 @@
+<?php
+
+function helper_include($type, $dir = 'includes')
+{
+    static $used = array();
+
+    $dir = '/' . ($dir ? $dir . '/' : '');
+
+    if (!isset($used['helper'][$dir][strtolower($type)])) {
+        require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'helper') . $dir . $type . ".inc");
+        $used['helper'][$dir][strtolower($type)] = TRUE;
+    }
+}
+
+
+function hrk_helper_result_encode($result)
+{
+    return base64_encode(gzcompress(serialize($result)));
+}
+
+function hrk_helper_result_decode($result_string)
+{
+    return unserialize(gzuncompress(base64_decode($result_string)));
+}
+
+function hrk_helper_from_camel_case($input, $separator = '_')
+{
+    preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
+    $ret = $matches[0];
+    foreach ($ret as &$match) {
+        $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
+    }
+    return implode($separator, $ret);
+}
+
+function hrk_helper_credit_card()
+{
+    helper_include('CreditCards');
+    return new CreditCards();
+}
+
+function hrk_helper_transliteration($string, $revert = FALSE)
+{
+    $trans = array(
+
+        'а' => 'a', 'б' => 'b', 'в' => 'v',
+
+        'г' => 'g', 'д' => 'd', 'е' => 'e',
+
+        'ё' => 'yo', 'ж' => 'zh', 'з' => 'z',
+
+        'и' => 'i', 'й' => 'j', 'к' => 'k',
+
+        'л' => 'l', 'м' => 'm', 'н' => 'n',
+
+        'о' => 'o', 'п' => 'p', 'р' => 'r',
+
+        'с' => 's', 'т' => 't', 'у' => 'u',
+
+        'ф' => 'f', 'х' => 'x', 'ц' => 'c',
+
+        'ч' => 'ch', 'ш' => 'sh', 'щ' => 'shh',
+
+        'ь' => '`', 'ы' => 'y', 'ъ' => '``',
+
+        'э' => 'e`', 'ю' => 'yu', 'я' => 'ya',
+
+
+        'А' => 'A', 'Б' => 'B', 'В' => 'V',
+
+        'Г' => 'G', 'Д' => 'D', 'Е' => 'E',
+
+        'Ё' => 'Yo', 'Ж' => 'Zh', 'З' => 'Z',
+
+        'И' => 'I', 'Й' => 'J', 'К' => 'K',
+
+        'Л' => 'L', 'М' => 'M', 'Н' => 'N',
+
+        'О' => 'O', 'П' => 'P', 'Р' => 'R',
+
+        'С' => 'S', 'Т' => 'T', 'У' => 'U',
+
+        'Ф' => 'F', 'Х' => 'X', 'Ц' => 'C',
+
+        'Ч' => 'Ch', 'Ш' => 'Sh', 'Щ' => 'Shh',
+
+        'Ь' => '`', 'Ы' => 'Y`', 'Ъ' => '``',
+
+        'Э' => 'E`', 'Ю' => 'Yu', 'Я' => 'Ya',
+
+    );
+
+    $en = array(
+        'A'=>'А',
+        'a'=>'а',
+        'B'=>'Б',
+        'b'=>'б',
+        'C'=>'Ц',
+        'c'=>'ц',
+        'D'=>'Д',
+        'd'=>'д',
+        'E'=>'Е',
+        'e'=>'e',
+        'F'=>'Ф',
+        'f'=>'Ф',
+        'G'=>'Г',
+        'g'=>'г',
+        'H'=>'Х',
+        'h'=>'х',
+        'I'=>'И',
+        'i'=>'и',
+        'J'=>'Дж',
+        'j'=>'дж',
+        'K'=>'К',
+        'k'=>'к',
+        'L'=>'Л',
+        'l'=>'л',
+        'M'=>'М',
+        'm'=>'м',
+        'N'=>'н',
+        'n'=>'н',
+        'O'=>'О',
+        'o'=>'о',
+        'P'=>'П',
+        'p'=>'п',
+        'Q'=>'Кью',
+        'q'=>'кью',
+        'R'=>'Р',
+        'r'=>'р',
+        'S'=>'С',
+        's'=>'с',
+        'T'=>'Т',
+        't'=>'т',
+        'U'=>'Ю',
+        'u'=>'ю',
+        'V'=>'В',
+        'v'=>'в',
+        'W'=>'В',
+        'w'=>'в',
+    );
+
+    if($revert){
+        $trans = array_flip($trans);
+        $string = strtr($string, $trans);
+        return strtr($string, $en);
+    }
+
+    return  strtr($string, $trans);
+}
+
+function hrk_helper_ucfirst($text) {
+    return mb_strtoupper(mb_substr($text, 0, 1)) . mb_substr($text, 1);
+}

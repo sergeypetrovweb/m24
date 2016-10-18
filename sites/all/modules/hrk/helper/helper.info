@@ -1,0 +1,9 @@
+name = HRK helper
+description = "Adds some cool classies and functions"
+package = HRK
+
+version = "7.x-1.0"
+core = "7.x"
+project = "hrk-helper"
+datestamp = "1407427200"
+

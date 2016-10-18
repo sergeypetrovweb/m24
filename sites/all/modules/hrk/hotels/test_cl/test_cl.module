@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function test_cl_permission()
+{
+    return array(
+        'test_cl_api' => array(
+            'title' => t('Test Carsolize API'),
+            'restrict access' => TRUE,
+        )
+    );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function test_cl_menu()
+{
+    $items['admin/test/carsolize'] = array(
+        'title' => t('Test Carsolize'),
+        'description' => t('Test Carsolize Api'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('test_cl_form'),
+        'access arguments' => array('test_cl_api'),
+    );
+
+    $items['test_cl/location/autocomplete'] = array(
+        'page callback' => 'test_cl_location_autocomplete',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+function test_cl_form($form, &$form_state)
+{
+    $values = !empty($form_state['values']) ? $form_state['values'] : array();
+    $values = (object)$values;
+
+    $step = !empty($values->step) ? $values->step : NULL;
+
+    switch ($step) {
+        case 'search':
+            $form = test_cl_search_request_form($form, $form_state);
+            break;
+        default:
+            $form = test_cl_search_form($form, $form_state);
+            break;
+    }
+
+
+    return $form;
+}
+
+function test_cl_search_form($form, &$form_state)
+{
+
+    $form['mode'] = array(
+        '#type' => 'radios',
+        '#title' => 'Mode',
+        '#options' => array('test' => 'TEST', 'real' => 'REAL'),
+        '#attributes' => array('class' => array('container-inline')),
+        '#default_value' => 'test'
+
+    );
+
+    $form['params'] = array('#type' => 'fieldset', '#title' => 'Search Params', '#tree' => TRUE, '#attributes' => array('class' => array('exposed-filters')));
+
+    $form['params']['location'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Location ID',
+        '#autocomplete_path' => 'test_cl/location/autocomplete',
+
+    );
+
+    $form['params']['check_in'] = array(
+        '#type' => 'pickadate_date',
+        '#title' => 'Check in',
+        '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'hiddenName' => false,
+            'today' => '',
+            'close' => '',
+            'clear' => '')),
+    );
+
+    $form['params']['check_out'] = array(
+        '#type' => 'pickadate_date',
+        '#title' => 'Check out',
+        '#settings' => pickadate_date_default_settings(array(
+            'formatSubmit' => 'yyyy-mm-dd',
+            'firstDay' => 1,
+            'hiddenName' => false,
+            'today' => '',
+            'close' => '',
+            'clear' => ''))
+    );
+
+    $form['params']['rooms_count'] = array(
+        '#type' => 'select',
+        '#options' => array('1' => '1', '2' => '2', '3' => '3', '4' => '4'),
+        '#title' => 'Rooms count'
+    );
+
+    $form['params']['adt'] = array(
+        '#type' => 'select',
+        '#options' => array(1 => 1, 2 => 2, 3 => 3, 4 => 4),
+        '#title' => 'Adults '
+    );
+
+    $form['params']['chd'] = array(
+        '#type' => 'select',
+        '#options' => array(0 => 0, 1 => 1, 2 => 2),
+        '#title' => 'Child'
+    );
+
+    $form['params']['chd_age'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Child age',
+        '#size' => 5
+    );
+
+    $form['params']['link'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Link',
+    );
+
+    $form['params']['actions'] = array('#type' => 'actions');
+
+    $form['params']['actions']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Do request',
+        '#validate' => array('test_cl_search_form_validate'),
+        '#submit' => array('test_cl_search_form_submit')
+    );
+
+    return $form;
+}
+
+function test_cl_search_form_validate($form, &$form_state)
+{
+    $values = !empty($form_state['values']) ? $form_state['values'] : array();
+    $values = (object)$values;
+
+
+    if (empty($values->params)) {
+        drupal_set_message('Search params empty', 'error');
+    } else {
+        $search_params = (object)$values->params;
+
+        if (empty($search_params->link)) {
+            $search_params->location = intval($search_params->location);
+            if (empty($search_params->location)) form_error($form['params']['location']);
+            if (empty($search_params->check_in)) form_error($form['params']['check_in']);
+            if (empty($search_params->check_out)) form_error($form['params']['check_out']);
+            if (empty($search_params->check_out)) form_error($form['params']['check_out']);
+
+            $search_params->chd_age = intval($values->chd_age);
+            if (!empty($search_params->chd) && empty($search_params->chd_age)) form_error($form['params']['chd_age']);
+        } else {
+
+            global $base_url;
+            $languages = language_list();
+            $url = str_replace($base_url . '/', '', $search_params->link);
+
+            foreach ($languages as $prefix => $language) {
+                $url = str_replace($prefix . '/', '', $url);
+            }
+
+            $params = hrk_sh_get_params_from_results_page_link($url, TRUE);
+
+            if (!hrk_sh_validate_request_param($params)){
+                form_error($form['params']['link'], 'Bad url');
+            }else{
+                $form_state['values']['params']['location'] = $params['location_id'];
+                $form_state['values']['params']['check_in'] = $params['check_in'];
+                $form_state['values']['params']['check_out'] = $params['check_out'];
+                $form_state['values']['params']['rooms_count'] = count($params['rooms']);
+                $form_state['values']['params']['adt'] = $params['rooms'][0]['adt'];
+                $form_state['values']['params']['chd'] = $params['rooms'][0]['chd'];
+                $form_state['values']['params']['chd_age'] = $params['rooms'][0]['age'];
+            }
+        }
+    }
+
+    if (empty($values->mode)) {
+        form_error($form['mode']);
+    } else {
+        $cl = hrk_cl_engine($values->mode);
+        if (!$cl->connect()) {
+            drupal_set_message('Cant connect to Carsolize with ' . $values->mode . ' mode,check connection settings', 'error');
+        }
+    }
+}
+
+function test_cl_search_form_submit($form, &$form_state)
+{
+    $values = !empty($form_state['values']) ? $form_state['values'] : array();
+    $form_state['values']['step'] = 'search';
+    $form_state['rebuild'] = TRUE;
+}
+
+function test_cl_search_request_form($form, &$form_state)
+{
+    $search_params = (object)$form_state['values']['params'];
+    $mode = (object)$form_state['values']['mode'];
+
+    /*CREATE NEW CL_SESSION*/
+    $cl_session = hrk_cl_create_session($mode);
+    $cl = hrk_cl_engine($mode);
+
+    $query = db_select('hrk_sh_cities', 'ct');
+    $query->leftJoin('hrk_sh_countries', 'c', 'ct.cid = c.cid');
+    $query->fields('c', array('code'));
+    $query->condition('ct.lid', $search_params->location);
+
+    $result = $query->execute();
+
+    $country_code = '';
+    foreach ($result as $row) {
+        $country_code = $row->code;
+    }
+
+    $rooms = array();
+
+    for ($i = 1; $i <= $search_params->rooms_count; $i++) {
+        $rooms[] = array(
+            'adt' => $search_params->adt,
+            'chd' => $search_params->chd,
+            'age' => $search_params->chd_age,
+        );
+    }
+
+    $check_in = $search_params->check_in;
+    $check_out = $search_params->check_out;
+
+    /* CREATE SEARCH HOTELS WITH LOW DETAILS REQUEST*/
+    $request = hrk_cl_search_hotels_request($cl_session['session'])
+        ->setCountry($country_code)
+        ->setCurrency('EUR')
+        ->setDates($check_in, $check_out)
+        ->setRooms($rooms)
+        ->setLocationID($search_params->location);
+
+    $request_xml = $request->getRequest();
+
+    $form['request'] = array('#type' => 'fieldset', '#collapsible' => TRUE, '#collapsed' => FALSE, '#title' => 'Request');
+    $form['request']['xml'] = array('#markup' => __test_cl_filter_syntax_highlighter($request_xml));
+
+    /*DO SEARCH HOTELS REQUEST*/
+    $response = $cl->doRequest($request_xml, $request::SOAP_ACTION);
+
+    $form['response'] = array('#type' => 'fieldset', '#collapsible' => TRUE, '#collapsed' => FALSE, '#title' => 'Response');
+    $form['response']['xml'] = array('#markup' => __test_cl_filter_syntax_highlighter($response));
+
+    return $form;
+}
+
+
+function test_cl_location_autocomplete($string)
+{
+    global $language;
+
+    $matches = array();
+    $l_prefix = ($language->language == 'en') ? 'en' : 'ru';
+
+    $query = db_select('hrk_sh_cities', 'ct');
+    $query->fields('ct', array('name_en', 'name_ru', 'lid'));
+
+    $condition_or = db_or();
+    $condition_or->condition('ct.name_ru', db_like($string) . '%', 'LIKE');
+    $condition_or->condition('ct.name_en', db_like($string) . '%', 'LIKE');
+
+    $query->condition($condition_or);
+    $query->range(0, 10);
+
+    $cities_rows = $query->execute();
+
+    foreach ($cities_rows as $row) {
+        $city_name = (empty($row->name_ru)) ? 'name_en' : 'name_' . $l_prefix;
+        $matches[$row->lid] = $row->$city_name;
+
+    }
+    drupal_json_output($matches);
+}
+
+function __test_cl_filter_syntax_highlighter($xml)
+{
+    return check_markup('<pre class="brush: xml">' . __test_cl_xml_refactoring($xml) . '</pre>', 'syntax_highlighter');
+}
+
+
+function __test_cl_xml_refactoring($xml_string)
+{
+
+    if (!$xml_string) return $xml_string;
+
+    helper_include('SoapXmlReader');
+
+    $xml = \includes\SoapXmlReader::create()->parse($xml_string);
+
+    $dom = dom_import_simplexml($xml)->ownerDocument;
+    $dom->formatOutput = true;
+
+    return $dom->saveXML();
+}

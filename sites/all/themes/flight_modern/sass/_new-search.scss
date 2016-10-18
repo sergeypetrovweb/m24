@@ -1,0 +1,463 @@
+.search-fly {
+  width: 100%;
+
+  .search-fly-block {
+    position: relative;
+    padding: 40px 40px 20px;
+    background: rgba(11,148,183,.57);
+    margin: 0 auto;
+
+    @include breakpoint($desktop) {
+      max-width: 1024px;
+      padding: 40px 40px 20px;
+    }
+
+    @include breakpoint($tablet) {
+      max-width: 641px;
+      padding: 28px 33px 26px;
+    }
+
+    @include breakpoint($tabletMid) {
+      max-width: 723px;
+      padding: 32px 37px 30px;
+    }
+
+    @include breakpoint($mobile) {
+      width: 100%;
+      padding: 35px 39px 32px;
+    }
+
+    &.type-multi_stop {
+      .bottom_options_block {
+        .people_count_block {
+          @include span(49.1% no-gutters);
+        }
+        .search-btn {
+          @include span(49.1% last);
+        }
+      }
+      .calendar_block {
+        width: 100%;
+        float: none;
+      }
+
+      .count_add {
+        line-height: 40px;
+        margin-left: 5px;
+      }
+
+      @include breakpoint($mobile) {
+        .bottom_options_block {
+          .people_count_block {
+            width: 100%;
+            float: none;
+            margin: 0;
+          }
+          .search-btn {
+            margin-top: 20px;
+            width: 100%;
+            float: none;
+          }
+        }
+      }
+
+      @include breakpoint($tablet) {
+        .points_air {
+          margin-bottom: 14px;
+        }
+      }
+
+      @include breakpoint($desktop) {
+        max-width: 800px;
+        padding: 40px 40px 20px;
+
+        .points_air {
+          @include span(31.6% no-gutters);
+        }
+
+        i.search-flights-form-trip-revert {
+          @include span(3.4% no-gutters);
+        }
+
+        .calendar_block {
+          margin-left: 0;
+          @include span(31.6% last);
+        }
+      }
+
+      .bottom-white {
+        .count_control {
+          display: inline-block;
+        }
+        span {
+          margin-right: 4px;
+        }
+      }
+
+      .container_search.multi_stop {
+        position: relative;
+
+        .count_control {
+          right: -40px;
+        }
+      }
+    }
+
+    .points_air {
+      position: relative;
+      width: 100%;
+      float: none;
+
+      @include breakpoint($desktop) {
+        @include span(23% no-gutters);
+      }
+
+      @include breakpoint($tablet) {
+        @include span(47.3% no-gutters);
+
+        &.direction-return {
+          @include span(47.3% last);
+        }
+      }
+
+      .reset.choice_cities_filter {
+        right: 15px !important;
+      }
+
+      .form-item.form-type-textfield:before {
+        content: '';
+        position: absolute;
+        bottom: 2px !important;
+        top: auto !important;
+        right: 2px !important;
+        height: 46px !important;
+        width: 40px !important;
+        z-index: 1;
+        background: transparent;
+        background: -moz-linear-gradient(left, transparent 0%, #ffffff 25%, #ffffff 100%);
+        background: -webkit-gradient(linear, left top, right top, color-stop(0%,transparent), color-stop(25%,#ffffff), color-stop(100%,#ffffff));
+        background: -webkit-linear-gradient(left, transparent 0%,#ffffff 25%,#ffffff 100%);
+        background: -o-linear-gradient(left, transparent 0%,#ffffff 25%,#ffffff 100%);
+        background: -ms-linear-gradient(left, transparent 0%,#ffffff 25%,#ffffff 100%);
+        background: linear-gradient(to right, transparent 0%,#ffffff 25%,#ffffff 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='transparent', endColorstr='#ffffff',GradientType=1 );
+      }
+    }
+
+    i.search-flights-form-trip-revert {
+      color: #fff;
+      top: 18px;
+      width: 100%;
+      float: none;
+
+      @include breakpoint($desktop) {
+        @include span(2.6% no-gutters);
+      }
+
+      @include breakpoint($tablet) {
+        @include span(5.4% no-gutters);
+      }
+
+      @include breakpoint($mobile) {
+        top: 0;
+        padding: 3px 0px;
+        display: block;
+      }
+
+      &:before {
+        display: block;
+        text-align: center;
+        @include breakpoint($tabletDesktop) {
+          -webkit-transform: rotate(90deg);
+          -moz-transform: rotate(90deg);
+          -ms-transform: rotate(90deg);
+          -o-transform: rotate(90deg);
+          transform: rotate(90deg);
+        }
+      }
+
+    }
+
+    .calendar_block {
+      padding: 0;
+      width: 100%;
+      float: none;
+
+      @include breakpoint($desktop) {
+        margin: 0 1.2%;
+        @include span(19% no-gutters);
+      }
+
+      @include breakpoint($tablet) {
+        clear: both;
+        margin-top: 14px;
+        @include span(47.3% no-gutters);
+      }
+
+      @include breakpoint($mobile) {
+        margin-top: 20px;
+      }
+    }
+
+    .people_count_block {
+      padding: 0;
+      width: 100%;
+      float: none;
+
+      @include breakpoint($desktop) {
+        @include span(12.3% no-gutters);
+      }
+      @include breakpoint($tablet) {
+        margin-top: 14px;
+        @include span(47.3% last);
+      }
+      @include breakpoint($mobile) {
+        margin-top: 20px;
+      }
+
+      input.people_count {
+        margin: 0 !important;
+        float: none;
+      }
+
+      .people_count_overlay {
+        display: none;
+        width: 180px;
+
+        @include breakpoint($desktop) {
+          width: 190px;
+        }
+        @include breakpoint($mobileTablet) {
+          width: 100%;
+          float: none;
+
+          .people {
+            @include span(3 of 9);
+            display: inline-block;
+            border-top: 0;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+
+            &:last-child {
+              @include span(3 of 9 last);
+            }
+
+            .text {
+              width: 100%;
+              font-size: 14px;
+
+              @include breakpoint($tabletSm) {
+                min-height: 50px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+    .one_way,
+    .round_trip {
+      @include breakpoint($desktop) {
+        margin: 0;
+
+        .bottom-white {
+          margin-top: 12px;
+          float: left;
+          width: 70%;
+          position: static;
+        }
+
+        input.seacrh {
+          bottom: 49px;
+        }
+      }
+    }
+
+    .bottom-white {
+      @include breakpoint($tablet) {
+        margin-top: 16px;
+        @include span(75.5% no-gutters);
+      }
+      @include breakpoint($mobile) {
+        width: 100%;
+        padding: 4px 0 10px;
+        @include clearfix();
+
+        span {
+          float: left;
+
+          &:last-child {
+            float: right;
+          }
+        }
+      }
+    }
+
+    .search-btn {
+      width: 100%;
+
+      @include breakpoint($desktop) {
+        @include span(16.5% last);
+      }
+      @include breakpoint($tablet) {
+        margin-top: 14px;
+        @include span(24.5% last);
+      }
+    }
+  }
+}
+
+@include breakpoint($mobile) {
+  .datepick-popup {
+    max-width: 75% !important;
+    min-width: 242px;
+  }
+  .datepick.datepick-multi {
+    width: 100% !important;
+  }
+
+  .datepick-month-list {
+    display: none;
+  }
+  .datepick-month-row {
+    width: 100%;
+    float: none;
+  }
+}
+
+#advanced_search.variant_one {
+  @include breakpoint($tablet) {
+    padding: 70px 0;
+  }
+  @include breakpoint($mobile) {
+    padding: 50px 0 0;
+  }
+}
+
+
+#breadcrumbs {
+
+  #search-direction {
+    margin-left: 40px;
+  }
+
+  #flight_search_inline,
+  &.open .breadcrumbs-flights {
+    display: none;
+  }
+
+  &.open {
+    #flight_search_inline {
+      display: block;
+    }
+  }
+
+  #flight_search_inline {
+    .search-fly-block {
+      max-width: 100%;
+      padding: 0 30px 0 0;
+      background: transparent;
+
+      &.type-multi_stop .container_search.multi_stop {
+        .count_control {
+          right: -30px;
+          width: 30px;
+        }
+      }
+
+      .points_air .form-item.form-type-textfield:before {
+        height: 36px !important;
+      }
+    }
+
+    .choice_cities_filter {
+      bottom: 15px;
+    }
+
+    .select2-container {
+      width: auto !important;
+
+      .select2-choice {
+        background: transparent;
+        margin: 0;
+      }
+
+      .select2-arrow {
+        background: none;
+      }
+
+      &.select2-dropdown-open .select2-choice {
+        color: #444 !important;
+        background: #fff;
+      }
+    }
+
+    input.seacrh,
+    .people_count_block input.people_count,
+    .calendar_block input.calendar,
+    .flight-point {
+      height: 40px;
+    }
+
+    input.seacrh {
+      padding: 6px 12px;
+    }
+
+    i.search-flights-form-trip-revert {
+      top: 12px;
+    }
+
+    .people_count_overlay {
+      top: 47px;
+      border: 1px solid #C1C1C1;
+    }
+
+    @include breakpoint($mobile) {
+      i.search-flights-form-trip-revert {
+        top: 0;
+      }
+    }
+    @include breakpoint($desktop) {
+      .search-fly-block {
+        padding: 0 10px;
+
+        &.type-multi_stop {
+          padding: 0 30px;
+        }
+      }
+
+      input.seacrh {
+        bottom: 40px;
+      }
+
+      .search-fly-block.type-multi_stop input.seacrh {
+        bottom: 0;
+      }
+    }
+    .ajax-progress {
+      float: right;
+    }
+  }
+
+}
+
+.navbar-toggle {
+  padding: 8px 10px;
+}
+
+.select2-drop {
+  border-radius: 0;
+  color: #444;
+  margin-top: 6px;
+}
+
+.select2-drop-active {
+  border: 1px solid #C1C1C1;
+}
+
+@include breakpoint($desktop) {
+  #flight_search.multi-stop {
+    height: 300px;
+  }
+}

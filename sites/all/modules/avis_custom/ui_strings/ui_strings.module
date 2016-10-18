@@ -1,0 +1,110 @@
+<?php
+
+include_once 'inc/ui_strings.class.inc';
+include_once 'inc/ui_strings.form.inc';
+include_once 'inc/ui_strings.elements.inc';
+
+function ui_strings_menu() {
+  $items = array();
+  $settings = ui_settings::init();
+
+  foreach ($settings->forms as $key => $form) {
+    if (!empty($form['settings']['form_url'])) {
+
+      $title = !empty($form['settings']['title']) ? $form['settings']['title'] : 'Редактировать блок';
+      $items[$form['settings']['form_url']] = array(
+        'title' => $title,
+        'page callback' => '_ui_strings_form_page',
+        'page arguments' => array($key, $title),
+        'access arguments' => array('administer site configuration'),
+      );
+
+    }
+  }
+
+  return $items;
+}
+
+function _ui_strings_form_page($key, $title) {
+  $form = drupal_get_form('ui_string_form', $key);
+
+  return theme(
+    'ui_strings_form',
+    array('form' => render($form), 'title' => $title)
+  );
+}
+
+function ui_strings_block_info() {
+  $blocks = array();
+  $settings = ui_settings::init();
+  foreach ($settings->forms_list as $key) {
+    $blocks[$key] = array(
+      'info' => 'Форма настроек: ' . $key,
+    );
+  }
+
+  foreach ($settings->views_list as $view_name => $view) {
+    $blocks[$view_name] = array(
+      'info' => "Avis отображение: " . $view['view_title'],
+    );
+  }
+
+  return $blocks;
+}
+
+function ui_strings_block_view($delta = '') {
+  $block = array();
+  $settings = ui_settings::init();
+
+  //Если есть такая форма настроек, выведем ее в блок:
+  if (isset($settings->forms[$delta])) {
+    $form = drupal_get_form('ui_string_form', $delta);
+    $block['content'] = drupal_render($form);
+  }
+  //Или, если есть такое отображение, то выведем его в блок
+  elseif ($settings->views_list[$delta]) {
+    //Поучим настройки и значения этой формы, если такие заданы.
+    $values = $settings->get_values_by_view($delta);
+    if (!empty($values)) {
+      $block['content'] = theme(
+        'ui_strings_view',
+        array('settings' => $values, 'hook' => $delta)
+      );
+    }
+  }
+
+  return $block;
+}
+
+function ui_strings_preprocess_ui_strings_view(&$variables) {
+  //Пользовательские функции темизации
+  if (isset($variables['hook'])) {
+    $variables['theme_hook_suggestions'][] = 'ui_strings_view__' . $variables['hook'];
+    $data = array();
+    drupal_alter('ui_strings_settings', $data, $variables['settings'], $variables['hook']);
+    $variables['data'] = $data;
+  }
+}
+
+
+function ui_strings_theme($existing, $type, $theme, $path) {
+  //Постоянные функции темизации
+  $themes = array(
+    'ui_strings_view' => array(
+      'variables' => array(
+        'settings' => NULL,
+        'hook' => NULL,
+      ),
+      'template' => 'ui_strings_view',
+    ),
+    'ui_strings_form' => array(
+      'variables' => array(
+        'form' => NULL,
+        'title' => NULL,
+      ),
+      'template' => 'ui_strings_form',
+    ),
+  );
+
+  return $themes;
+}

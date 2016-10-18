@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * Implement hook_block_info()
+ */
+function flight_az_contacts_block_info()
+{
+    $blocks['contacts'] = array(
+        'info' => t('Custom contacts list'),
+        'cache' => DRUPAL_NO_CACHE, // default
+    );
+
+    return $blocks;
+}
+
+/**
+ * Implement hook_block_view()
+ */
+function flight_az_contacts_block_view($delta = '')
+{
+    $block = array();
+
+    switch ($delta) {
+        case('contacts'):
+            $block['subject'] = t('Custom contacts list');
+            $block['content'] = '';
+            break;
+    }
+
+    return $block;
+}
+
+function flight_az_contacts($lang = '')
+{
+    global $language;
+
+    $result = array();
+
+    $contacts = node_load_multiple(array(), array('type' => 'contacts', 'language' => ($lang) ? $lang : $language->language));
+
+    $contact = reset($contacts);
+
+    $result['address'] = $contact->body['und'][0]['value'];
+
+    foreach ($contact->field_phones['und'] as $key => $phone) {
+        $result['phones'][] = $phone['value'];
+    }
+
+    foreach ($contact->field_mobile['und'] as $key => $mobile) {
+        $result['mobiles'][] = $mobile['value'];
+    }
+
+    foreach ($contact->field_email['und'] as $key => $email) {
+        $result['emails'][] = $email['email'];
+    }
+
+    foreach ($contact->field_social_networks['und'] as $key => $social_network) {
+        $result['social_networks'][ $social_network['title']] = $social_network['url'];
+    }
+    return $result;
+}
+
+function flight_az_contacts_get_phones_links()
+{
+    global $language;
+
+    $links = array();
+
+    $contacts = node_load_multiple(array(), array('type' => 'contacts', 'language' => $language->language));
+
+    $contact = reset($contacts);
+    if ($contact) {
+        if (isset($contact->field_phones['und'])) {
+            foreach ($contact->field_phones['und'] as $index => $value) {
+                $links[] = array(
+                    'title' => $value['safe_value'],
+                    'href' => 'tel:' . filter_var($value['safe_value'], FILTER_SANITIZE_NUMBER_INT),
+                    'attributes' => array('class' => array('links'))
+                );
+            }
+        }
+    }
+
+    return $links;
+}
+
+
+function flight_az_contacts_get_contacts_links()
+{
+    global $language;
+
+    $links = array();
+
+    $contacts = node_load_multiple(array(), array('type' => 'contacts', 'language' => $language->language));
+
+    $contact = reset($contacts);
+
+    if ($contact) {
+        if (isset($contact->field_email['und'])) {
+            foreach ($contact->field_email['und'] as $index => $value) {
+                $links[] = array(
+                    'title' => $value['email'],
+                    'href' => 'mailto:' . $value['email'],
+                    'attributes' => array('class' => array('mail'))
+                );
+            }
+        }
+
+        if (isset($contact->field_social_networks['und'])) {
+            foreach ($contact->field_social_networks['und'] as $index => $value) {
+                $links[] = array(
+                    'title' => $value['title'],
+                    'href' => $value['url'],
+                    'attributes' => array('class' => array('social-networks', 'social-network-' . strtolower($value['title'])))
+                );
+            }
+        }
+    }
+
+    return $links;
+}

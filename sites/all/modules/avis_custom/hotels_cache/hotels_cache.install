@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function hotels_cache_schema() {
+  $schema = array();
+
+  $schema['air_hotels'] = array(
+    'description' => 'Flight combinations for fast search.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'The primary identifier for booking.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Name',
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'lower_price' => array(
+        'description' => 'Price',
+        'type' => 'float',
+        'length' => '24',
+        'not null' => TRUE,
+      ),
+      'address' => array(
+        'description' => 'Name',
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'rating' => array(
+        'description' => 'Name',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'img_src' => array(
+        'description' => 'Name',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'location_id' => array(
+        'description' => 'Location id',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'location_code' => array(
+        'description' => 'Location code',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  $schema['air_hotels_time'] = array(
+    'description' => 'Hotels for fast search.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'cid' => array(
+        'description' => 'City code',
+        'type' => 'varchar',
+        'length' => '10',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'time' => array(
+        'description' => 'Parsed on',
+        'type' => 'varchar',
+        'length' => '20',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+function hotels_cache_uninstall() {
+  drupal_uninstall_schema('air_hotels');
+  drupal_uninstall_schema('air_hotels_time');
+}

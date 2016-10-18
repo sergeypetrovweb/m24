@@ -1,0 +1,195 @@
+<?php
+/**
+ * @file
+ * Bonus system
+ */
+
+/**
+ * Implements hook_menu()
+ */
+function avis_bonus_menu() {
+  $items = array();
+  $items['control/bonus'] = array(
+    'title' => 'Настройки бонусов',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => 'Страничка для настроки бонусов',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('avis_bonus_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Create a settings form for bonus system
+ */
+function avis_bonus_settings_form($form, &$form_state) {
+  $settings = variable_get('avis_bonus_settings');
+
+  $form['avis_bonus_settings_buy'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Сумма бонуса при покупке',
+    '#default_value' => variable_get('avis_bonus_settings_buy') ? variable_get('avis_bonus_settings_buy') : 0,
+    '#attributes' => array('data-type' => 'numeric'),
+  );
+
+  $form['avis_bonus_settings_proc'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Процент бонуса от суммы покупки',
+    '#default_value' => variable_get('avis_bonus_settings_proc') ? variable_get('avis_bonus_settings_proc') : 0,
+    '#attributes' => array('data-type' => 'numeric'),
+  );
+
+  $form['avis_bonus_settings_type'] = array(
+    '#type' => 'radios',
+    '#title' => 'Какой тип бонуса использовать?',
+    '#default_value' => variable_get('avis_bonus_settings_type') ? variable_get('avis_bonus_settings_type') : 'proc',
+    '#options' => array('buy' => 'Бонусы при покупке', 'proc' => 'Процент'),
+  );
+
+  $form['avis_bonus_settings_fly_pay'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Какой процент от стоимости перелёта можно оплачивать бонусом?',
+    '#default_value' => variable_get('avis_bonus_settings_fly_pay') ? variable_get('avis_bonus_settings_fly_pay') : 0,
+    '#attributes' => array('data-type' => 'numeric'),
+  );
+
+  $form['avis_bonus_settings_hotel_pay'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Какой процент от стоимости отеля можно оплачивать бонусом?',
+    '#default_value' => variable_get('avis_bonus_settings_hotel_pay') ? variable_get('avis_bonus_settings_hotel_pay') : 0,
+    '#attributes' => array('data-type' => 'numeric'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function avis_bonus_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  $user = user_load($user->uid);
+  $bonus = $user->field_user_bonus[LANGUAGE_NONE][0]['value'];
+  $have_bonus = FALSE;
+  $discont = 0;
+
+  switch ($form_id) {
+    case 'user_profile_form':
+      if ($user->uid != 1) {
+        $form['field_user_bonus']['#access'] = FALSE;
+      }
+      break;
+
+    case 'booking_flights_form':
+      if (!empty($bonus) && $bonus != 0) {
+        $discont = variable_get('avis_bonus_settings_fly_pay');
+        $have_bonus = TRUE;
+      }
+      break;
+
+    case 'booking_hotels_form':
+      if (!empty($bonus) && $bonus != 0) {
+        $form['payment_container'] = array(
+          '#type' => 'container',
+          '#attributes' => array('class' => array('bonus-block', 'clearfix')),
+          '#tree' => FALSE,
+        );
+
+        $discont = variable_get('avis_bonus_settings_hotel_pay');
+        $have_bonus = TRUE;
+      }
+      break;
+  }
+
+  if ($have_bonus) {
+    $price = $form_state['build_info']['total'];
+    drupal_add_js(drupal_get_path('module', 'avis_bonus') . '/js/bonus.js');
+
+    $form['payment_container']['pay_from_bonus'] = array(
+      '#type' => 'checkbox',
+      '#required' => FALSE,
+      '#title' => t('I want to pay it from my bonus'),
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'style' => 'display:inline-block;'
+      ),
+      '#default_value' => '',
+    );
+
+    $max_discont = $price / 100 * $discont;
+
+    if ($bonus > $max_discont) {
+      $client_discont = round($max_discont, 2);
+    }
+    else {
+      $client_discont = $bonus;
+    }
+
+    $form['payment_container']['summ_pay_from_bonus'] = array(
+      '#type' => 'textfield',
+      '#required' => FALSE,
+      '#title' => t('Discount amount'),
+      '#attributes' => array(
+        'autocomplete' => 'off',
+        'data-max-val' => $client_discont,
+        'size' => 30
+      ),
+      '#default_value' => $client_discont,
+    );
+  }
+}
+
+/**
+ * Function removal user bonuses and recalculate amount
+ */
+function bonus_dec($amount, $payfrombonus, $uid) {
+  $user = user_load($uid);
+  $amount = $amount - $payfrombonus;
+  $user->field_user_bonus[LANGUAGE_NONE][0]['value'] = $user->field_user_bonus[LANGUAGE_NONE][0]['value'] - $payfrombonus;
+  y_syncrBonus($user->field_user_bonus[LANGUAGE_NONE][0]['value'], $user->mail);
+  user_save($user);
+  return $amount;
+}
+
+/**
+ * Function add user bonuses for payment from amount
+ */
+function bonus_add($amount, $uid) {
+  $type = variable_get('avis_bonus_settings_type');
+  $bonus = 0;
+
+  switch ($type) {
+    case 'buy':
+      $bonus = (float) variable_get('avis_bonus_settings_buy');
+      break;
+    case 'proc':
+      $bonus = round(((float) $amount / 100 * (float) variable_get('avis_bonus_settings_proc')), 2);
+      break;
+  }
+
+  $user = user_load($uid);
+  $user->field_user_bonus[LANGUAGE_NONE][0]['value'] += $bonus;
+
+  y_syncrBonus($user->field_user_bonus[LANGUAGE_NONE][0]['value'], $user->mail);
+
+  user_save($user);
+}
+
+/**
+ * Function send request to rest about user bonuses to mambo24.ru REST endpoint
+ */
+function y_syncrBonus($bonus, $userEmail) {
+  $create_user_url = 'http://mambo24.ru/rest-bonus';
+  $adminToken = '99ba9370a53cdfd54297a0e8a90505f8';
+
+  $user_options = array(
+    'method' => 'POST',
+    'data' =>
+      'bonus=' . $bonus . '&user_email=' . $userEmail,
+  );
+
+  $result = y_httpRequest($create_user_url, $user_options, $adminToken);
+  $data = json_decode($result);
+  return $data->success;
+}

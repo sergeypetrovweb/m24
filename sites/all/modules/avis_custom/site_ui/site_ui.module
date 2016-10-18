@@ -1,0 +1,505 @@
+<?php
+
+/**
+ * Implements hook_ui_strings_form_settings().
+ */
+function site_ui_ui_strings_form_settings($settings) {
+  //Slider of partners.
+  $settings['brands_list'] = array(
+    'content' => array(
+      'items' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add brand'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'img' => array(
+                '#title' => t('Image'),
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+              'url' => array(
+                '#title' => t('URL'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(
+                    t(
+                      'Enter value'
+                    )
+                  )
+                ),
+              ),
+            ),
+            'title' => t('Brand'),
+          ),
+        )
+      ),
+
+    ),
+    'settings' => array(
+      'title' => t('Edit block: Brands'),
+      'form_url' => 'control/brands',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_brands_list' => t('Brands'),
+      ),
+    ),
+  );
+
+  //footer.
+  $settings['footer'] = array(
+    'content' => array(
+      'title' => array(
+        '#title' => t('Block title'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'copyrights' => array(
+        '#title' => t('Copyrights'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit block: Footer'),
+      'form_url' => 'control/footer',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_footer' => t('Footer'),
+      ),
+    ),
+  );
+
+  //Social block.
+  $settings['social'] = array(
+    'content' => array(
+      'title' => array(
+        '#title' => t('Title before buttons:'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'items' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'img' => array(
+                '#title' => t('Social img button'),
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+              'url' => array(
+                '#title' => t('URL'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(
+                    t(
+                      'Enter value'
+                    )
+                  )
+                ),
+              ),
+            ),
+            'title' => t('Social'),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit block: Social'),
+      'form_url' => 'control/social',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_social' => t('Social'),
+      ),
+    ),
+  );
+
+  //Contacts block.
+  $settings['contacts'] = array(
+    'content' => array(
+      'title' => array(
+        '#title' => t('Title block'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'items' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'icon' => array(
+                '#title' => t('Bootstrap icon class'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(t('Enter value'))
+                ),
+              ),
+              'text' => array(
+                '#title' => t('Text'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(t('Enter value'))
+                ),
+              ),
+            ),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit block: Contacts'),
+      'form_url' => 'control/contacts',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_contacts' => t('Contacts'),
+      ),
+    ),
+  );
+
+  //Ourteam block.
+  $settings['ourteam'] = array(
+    'content' => array(
+      'title' => array(
+        '#title' => t('Title block'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'items' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'name' => array(
+                '#title' => t('Name'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(t('Enter value'))
+                ),
+              ),
+              'photo' => array(
+                '#title' => t('Photo'),
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+              'role' => array(
+                '#title' => t('Role'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(t('Enter value'))
+                ),
+              ),
+              'mail' => array(
+                '#title' => t('Email'),
+                '#type' => 'textfield',
+                '#attributes' => array(
+                  'placeholder' => array(t('Enter value'))
+                ),
+              ),
+            ),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit block: Our team'),
+      'form_url' => 'control/ourteam',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_ourteam' => t('Our team'),
+      ),
+    ),
+  );
+
+  //hotels block.
+  $settings['hotels'] = array(
+    'content' => array(
+      'title_help' => array(
+        '#title' => t('Title of block: WE HELP YOU CHOOSE THE BEST HOTEL'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'help' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'img' => array(
+                '#title' => t('Icon'),
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+              'title' => array(
+                '#title' => t('Title'),
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+              'desc' => array(
+                '#title' => t('Description'),
+                '#maxlength' => 512,
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('Edit block: WE HELP YOU CHOOSE THE BEST HOTEL (Display only 3 top items)'),
+          ),
+        )
+      ),
+      'title_offers' => array(
+        '#title' => t('Title of block: VARIETY OF OFFERS'),
+        '#type' => 'textfield',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+      ),
+      'offers' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'numb' => array(
+                '#title' => t('Number'),
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+              'desc' => array(
+                '#title' => t('Description'),
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('Edit block: VARIETY OF OFFERS (Display only 4 top items)'),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit page: Hotels'),
+      'form_url' => 'control/hotels',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_offers' => t('Offers'),
+      ),
+    ),
+  );
+
+  $settings['spec_flight'] = array(
+    'content' => array(
+      'flight' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'img' => array(
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+            ),
+            'title' => t('Image'),
+          ),
+          1 => array(
+            'fields' => array(
+              'from' => array(
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('From'),
+          ),
+          2 => array(
+            'fields' => array(
+              'to' => array(
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('To'),
+          ),
+          3 => array(
+            'fields' => array(
+              'price' => array(
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('Default price'),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit page: Spec flight'),
+      'form_url' => 'control/spec_flight',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_spec_flight' => t('Spec flight'),
+      ),
+    ),
+  );
+
+  $settings['spec_city'] = array(
+    'content' => array(
+      'flight' => array(
+        '#type' => 'smart_form_table',
+        '#add_name' => t('Add item'),
+        '#columns' => array(
+          0 => array(
+            'fields' => array(
+              'img' => array(
+                '#type' => 'managed_file',
+                '#upload_location' => 'public://ui_images/',
+              ),
+            ),
+            'title' => t('Image'),
+          ),
+          1 => array(
+            'fields' => array(
+              'name' => array(
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('City name'),
+          ),
+          2 => array(
+            'fields' => array(
+              'code' => array(
+                '#type' => 'textfield',
+                '#attributes' => array('placeholder' => array(t('Enter value'))),
+              ),
+            ),
+            'title' => t('City code'),
+          ),
+        )
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Edit page: Spec city'),
+      'form_url' => 'control/spec_city',
+      'save_name' => t('Save block'),
+      'views' => array(
+        'block_spec_city' => t('Spec city'),
+      ),
+    ),
+  );
+
+  //Cities suggestions for flights and hotels
+  $settings['cities_list'] = array(
+    'content' => array(
+      'flights_list' => array(
+        '#title' => t('Cities list for flights autocomplete'),
+        '#type' => 'textarea',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+        '#description' => 'One value per row!',
+      ),
+      'hotels_list' => array(
+        '#title' => t('Cities list for hotels autocomplete'),
+        '#type' => 'textarea',
+        '#attributes' => array('placeholder' => array(t('Enter value'))),
+        '#description' => 'One value per row!',
+      ),
+    ),
+    'settings' => array(
+      'title' => t('Cities for flights & hotels'),
+      'form_url' => 'admin/config/cities',
+      'save_name' => t('Save block'),
+    ),
+  );
+
+  return $settings;
+}
+
+
+/**
+ * Implements hook__ui_strings_settings_alter().
+ * @param $data
+ * @param $settings
+ * @param $hook
+ * @throws Exception
+ */
+function site_ui_ui_strings_settings_alter(&$data, &$settings, $hook) {
+  switch ($hook) {
+
+    // Формирование данных для блока "Спец. предложения: Отели"
+    case 'block_spec_city' :
+
+      $cyties = array();
+
+      for ($i = 0; $i < 5; $i++) {
+        if (!empty($settings['flight'][$i]['code'])) {
+          $img = file_load($settings['flight'][$i]['img']);
+
+          if (isset($img->fid)) {
+            $img = theme(
+              'image_style',
+              array(
+//                'style_name' => '360x330',
+                'style_name' => 'flight_modern__special_offers',
+                'path' => $img->uri,
+              ));
+          }
+
+          $data['flight'][$i] = array(
+            'img' => $img,
+            'lid' => $settings['flight'][$i]['code'],
+          );
+
+          $cyties[] = $settings['flight'][$i]['code'];
+          $cyties = array_unique($cyties);
+
+          $data['cyties'] = db_select('hrk_sh_cities', 'c')
+            ->fields('c', array('lid', 'name_en', 'name_ru'))
+            ->condition('c.lid', $cyties, 'IN')
+            ->execute()
+            ->fetchAllAssoc('lid');
+
+          $now = time() + 3600 * 2;
+
+          $data['date_start'] = date('ymd', $now);
+          $data['date_end'] = date('ymd', $now + 86400 * 2);
+          $data['date'] = time() + 86400;
+        }
+      }
+      break;
+
+    // Формирование данных для блока "Спец. предложения: Перелеты"
+    case 'block_spec_flight' :
+      $cyties = array();
+      for ($i = 0; $i < 5; $i++) {
+        $img = file_load($settings['flight'][$i]['img']);
+
+        if (isset($img->fid)) {
+          $img = theme(
+            'image_style',
+            array(
+              'style_name' => 'flight_modern__special_offers',
+              'path' => $img->uri,
+            ));
+        }
+
+        $data['flight'][$i] = array(
+          'from' => $settings['flight'][$i]['from'],
+          'to' => $settings['flight'][$i]['to'],
+          'img' => $img,
+          'price' => isset($settings['flight'][$i]['price']) ? $settings['flight'][$i]['price'] : 0,
+        );
+
+        $cyties[] = $settings['flight'][$i]['from'];
+        $cyties[] = $settings['flight'][$i]['to'];
+        $cyties = array_unique($cyties);
+
+        $data['cyties'] = db_select('hrk_sf_cities', 'c')
+          ->fields('c', array('code', 'name_en', 'name_ru'))
+          ->condition('c.code', $cyties, 'IN')
+          ->execute()
+          ->fetchAllAssoc('code');
+
+        $data['date'] = time() + 86400;
+      }
+      break;
+  }
+}

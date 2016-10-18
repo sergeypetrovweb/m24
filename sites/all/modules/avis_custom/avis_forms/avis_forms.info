@@ -1,0 +1,6 @@
+name = Avis Forms
+description = "Api for ajax forms"
+package = Avis
+version = 1.0
+core = 7.x
+scripts[] = avis_forms.js

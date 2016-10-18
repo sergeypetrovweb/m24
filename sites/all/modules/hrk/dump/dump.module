@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function dump_permission()
+{
+    return array(
+        'management_dump' => array(
+            'title' => t('Management DUMP settings'),
+            'restrict access' => TRUE,
+        ),
+        'see_dump' => array(
+            'title' => t('See dump`s on the page'),
+            'restrict access' => TRUE,
+        ),
+    );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function dump_menu()
+{
+    $items['admin/config/system/dump'] = array(
+        'title' => t('DEBUG Configuration'),
+        'description' => t('Administer DUMP settings.'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('dump_configuration_form'),
+        'access callback' => 'user_access',
+        'access arguments' => array('management_dump')
+    );
+
+    return $items;
+}
+
+function dump($var, $title = '', $is_full_data = FALSE)
+{
+    if (dump_access('see_dump')) {
+
+        drupal_add_css(drupal_get_path('module', 'dump') . '/css/dump.css');
+        drupal_add_js(drupal_get_path('module', 'dump') . '/js/dump.js');
+
+        print '<div class="_dump_">';
+        print '<span class="_dump_close_" title="Hide this DUMP" onclick="_dump_close_click(this);">&times;</span>';
+        print '<span class="_dump_pin_" title="Pin this DUMP" onclick="_dump_pin_click(this);">&copy;</span>';
+
+        if (!empty($title)) {
+            print '<span class="_dump_title_" title="DUMP TITLE">' . $title . '</span>';
+        }
+
+        $var = str_replace("&","&amp;", $var);
+        $var = str_replace("<","&lt;", $var);
+        $var = str_replace(">","&gt;", $var);
+
+        if (!empty($is_full_data)) {
+            var_dump($var);
+        } else {
+            print_r($var);
+        }
+
+        print '</div>';
+    }
+}
+
+function dump_access($string, $account = NULL)
+{
+    switch ($string) {
+        case 'see_dump':
+            $configuration = variable_get('hrk_dump', array());
+            return (user_access($string, $account) && (isset($_GET['debug']) || !empty($configuration['hrk_dump']))) ? TRUE : FALSE;
+            break;
+        default:
+            return user_access($string, $account);
+            break;
+    }
+}
+
+function dump_configuration_form($form, &$form_state)
+{
+    $configuration = variable_get('hrk_dump', array());
+
+    $form['hrk_dump'] = array(
+        '#type' => 'radios',
+        '#title' => t('DEBUG'),
+        '#options' => array(1 => t('Yes'), 0 => t('No')),
+        '#default_value' => (isset($configuration['hrk_dump'])) ? $configuration['hrk_dump'] : 0,
+        '#attributes' => array('class' => array('container-inline'))
+    );
+
+
+    return system_settings_form($form);
+}

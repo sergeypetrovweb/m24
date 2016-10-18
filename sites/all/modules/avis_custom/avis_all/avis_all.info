@@ -1,0 +1,5 @@
+name = Avis All
+description = "Collection of small, scattered edits"
+package = Avis
+version = 1.0
+core = 7.x
